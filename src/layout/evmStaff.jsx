@@ -8,35 +8,41 @@ import {
   LogoutOutlined,
   DownOutlined,
   ShopOutlined,
-  BarChartOutlined,
-  LineChartOutlined,
-  PieChartOutlined,
+  CarOutlined,
+  TagOutlined,
+  StockOutlined,
   FileTextOutlined,
+  DollarOutlined,
+  ContactsOutlined,
+  BankOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Header, Content, Footer, Sider } = Layout;
 
-function getItem(label, key, icon, children) {
-  return { key, icon, children, label };
+function getItem(label, key, icon, children, path) {
+  return { key, icon, children, label, path };
 }
 
 const adminMenuItems = [
-  getItem("Dashboard", "dashboard", <DashboardOutlined />),
-  getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
-    getItem("Doanh số theo khu vực", "sales-by-region", <LineChartOutlined />),
-    getItem("Doanh số theo đại lý", "sales-by-dealer", <PieChartOutlined />),
-    getItem(
-      "Tồn kho & Tiêu thụ",
-      "inventory-consumption",
-      <FileTextOutlined />
-    ),
-    getItem("Báo cáo tổng hợp", "summary-reports", <BarChartOutlined />),
+  getItem("Dashboard", "dashboard", <DashboardOutlined />, null, "/evm-staff/dashboard"),
+  getItem("Product Management", "1", <CarOutlined />, [
+    getItem("Vehicle-catalog", "2", <CarOutlined />, null, "/evm-staff/vehicle-catalog"),
+    getItem("Inventory Management", "3", <StockOutlined />, null, "/evm-staff/inventory-management"),
+    getItem("Vehicle Allocation", "4", <ShopOutlined />, null, "/evm-staff/vehicle-allocation"),
   ]),
-  getItem("Quản lý EVM Staff", "staff-management", <TeamOutlined />),
+  getItem("Promotion Management", "5", <TagOutlined />, [
+    getItem("Promotion List", "6", <ContactsOutlined />, null, "/evm-staff/promotion-list"),
+    getItem("Promotion For Dealer", "7", <FileTextOutlined />, null, "/evm-staff/promotion-dealer"),
+  ]),
+  getItem("Dealer Management", "8", <ShopOutlined />, [
+    getItem("Dealer List", "9", <ContactsOutlined />, null, "/evm-staff/dealer-list"),
+    getItem("Contracts & Targets", "10", <FileTextOutlined />, null, "/evm-staff/contracts-targets"),
+    getItem("Debts", "11", <DollarOutlined />, null, "/evm-staff/debts"),
+  ]),
 ];
 
-const Admin = ({ children }) => {
+const EvmStaff = ({ children }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -70,6 +76,26 @@ const Admin = ({ children }) => {
     },
   ];
 
+  const handleMenuClick = ({ key }) => {
+    const findMenuItem = (items, targetKey) => {
+      for (const item of items) {
+        if (item.key === targetKey) {
+          return item;
+        }
+        if (item.children) {
+          const found = findMenuItem(item.children, targetKey);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const menuItem = findMenuItem(adminMenuItems, key);
+    if (menuItem && menuItem.path) {
+      navigate(menuItem.path);
+    }
+  };
+
   return (
     <Layout className="min-h-screen bg-gray-50">
       <Sider
@@ -90,10 +116,11 @@ const Admin = ({ children }) => {
         </div>
         <Menu
           mode="inline"
-          defaultSelectedKeys={["1"]}
+          defaultSelectedKeys={["dashboard"]}
           items={adminMenuItems}
           className="border-0 h-full"
           theme="light"
+          onClick={handleMenuClick}
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
@@ -163,4 +190,4 @@ const Admin = ({ children }) => {
   );
 };
 
-export default Admin;
+export default EvmStaff;
