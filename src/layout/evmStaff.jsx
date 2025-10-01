@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DashboardOutlined,
@@ -25,24 +25,73 @@ function getItem(label, key, icon, children, path) {
 }
 
 const adminMenuItems = [
-  getItem("Dashboard", "dashboard", <DashboardOutlined />, null, "/evm-staff/dashboard"),
-  getItem("Product Management", "1", <CarOutlined />, [
-    getItem("Vehicle-catalog", "2", <CarOutlined />, null, "/evm-staff/vehicle-catalog"),
-    getItem("Inventory Management", "3", <StockOutlined />, null, "/evm-staff/inventory-management"),
-    getItem("Vehicle Allocation", "4", <ShopOutlined />, null, "/evm-staff/vehicle-allocation"),
+  getItem(
+    "Dashboard",
+    "1",
+    <DashboardOutlined />,
+    null,
+    "/evm-staff/dashboard"
+  ),
+  getItem("Product Management", "2", <CarOutlined />, [
+    getItem(
+      "Vehicle-catalog",
+      "3",
+      <CarOutlined />,
+      null,
+      "/evm-staff/vehicle-catalog"
+    ),
+    getItem(
+      "Inventory Management",
+      "4",
+      <StockOutlined />,
+      null,
+      "/evm-staff/inventory-management"
+    ),
+    getItem(
+      "Vehicle Allocation",
+      "5",
+      <ShopOutlined />,
+      null,
+      "/evm-staff/vehicle-allocation"
+    ),
   ]),
-  getItem("Promotion Management", "5", <TagOutlined />, [
-    getItem("Promotion List", "6", <ContactsOutlined />, null, "/evm-staff/promotion-list"),
-    getItem("Promotion For Dealer", "7", <FileTextOutlined />, null, "/evm-staff/promotion-dealer"),
+  getItem("Promotion Management", "6", <TagOutlined />, [
+    getItem(
+      "Promotion List",
+      "7",
+      <ContactsOutlined />,
+      null,
+      "/evm-staff/promotion-list"
+    ),
+    getItem(
+      "Promotion For Dealer",
+      "8",
+      <FileTextOutlined />,
+      null,
+      "/evm-staff/promotion-dealer"
+    ),
   ]),
-  getItem("Dealer Management", "8", <ShopOutlined />, [
-    getItem("Dealer List", "9", <ContactsOutlined />, null, "/evm-staff/dealer-list"),
-    getItem("Contracts & Targets", "10", <FileTextOutlined />, null, "/evm-staff/contracts-targets"),
-    getItem("Debts", "11", <DollarOutlined />, null, "/evm-staff/debts"),
+  getItem("Dealer Management", "9", <ShopOutlined />, [
+    getItem(
+      "Dealer List",
+      "10",
+      <ContactsOutlined />,
+      null,
+      "/evm-staff/dealer-list"
+    ),
+    getItem(
+      "Contracts & Targets",
+      "11",
+      <FileTextOutlined />,
+      null,
+      "/evm-staff/contracts-targets"
+    ),
+    getItem("Debts", "12", <DollarOutlined />, null, "/evm-staff/debts"),
   ]),
 ];
 
 const EvmStaff = ({ children }) => {
+  const [current, setCurrent] = useState("1");
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -102,6 +151,7 @@ const EvmStaff = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
+        defaultCollapsed={false}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -116,8 +166,8 @@ const EvmStaff = ({ children }) => {
         </div>
         <Menu
           mode="inline"
-          defaultSelectedKeys={["dashboard"]}
           items={adminMenuItems}
+          selectedKeys={[current]}
           className="border-0 h-full"
           theme="light"
           onClick={handleMenuClick}
