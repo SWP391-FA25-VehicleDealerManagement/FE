@@ -5,20 +5,22 @@ const axiosClient = axios.create({
   baseURL: "http://localhost:8080",
 });
 
+// Request interceptor
 axiosClient.interceptors.request.use(
-  async (config) => {
-    const access_token = Cookies.get("__token");
-    if (access_token) {
-      config.headers.Authorization = `Bearer ${access_token}`;
-    } else {
-      console.log("JWT token is not available");
+  (config) => {
+    const accessToken = Cookies.get("__token");
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    config.headers["Content-Type"] = "application/json";
+    if (!config.headers["Content-Type"] && !config.formData) {
+      config.headers["Content-Type"] = "application/json";
+    }
     return config;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
+
 
 export default axiosClient;

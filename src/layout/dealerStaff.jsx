@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DesktopOutlined,
@@ -12,37 +12,41 @@ import {
   CarOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import useAuthen from "../hooks/useAuthen";
+
 const { Header, Content, Footer, Sider } = Layout;
-function getItem(label, key, icon, children) {
+function getItem(label, key, icon, children, path) {
   return {
     key,
     icon,
     children,
     label,
+    path,
   };
 }
 const menuItems = [
-  getItem("Dashboard", "1", <PieChartOutlined />),
-  getItem("Vehicle Management", "2", <CarOutlined />),
+  getItem("Dashboard", "1", <PieChartOutlined />, null, "/dealer-staff/dashboard"),
+  getItem("Vehicle Management", "2", <CarOutlined />, null, "/dealer-staff/vehicle-management"),
   getItem("User Management", "sub1", <UserOutlined />, [
-    getItem("Customers", "3"),
-    getItem("Staff", "4"),
-    getItem("Dealers", "5"),
+    getItem("Customers", "3", null, null, "/dealer-staff/customers"),
+    getItem("Staff", "4", null, null, "/dealer-staff/staff"),
+    getItem("Dealers", "5", null, null, "/dealer-staff/dealers"),
   ]),
   getItem("Reports", "sub2", <TeamOutlined />, [
-    getItem("Sales Report", "6"),
-    getItem("Inventory Report", "8"),
+    getItem("Sales Report", "6", null, null, "/dealer-staff/sales-report"),
+    getItem("Inventory Report", "8", null, null, "/dealer-staff/inventory-report"),
   ]),
-  getItem("Files", "9", <FileOutlined />),
+  getItem("Files", "9", <FileOutlined />, null, "/dealer-staff/files"),
 ];
 
 const DealerStaff = ({ children }) => {
+  const [current, setCurrent] = useState("1");
   const navigate = useNavigate();
+  const { logout, userDetail } = useAuthen();
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
-    console.log("Logging out...");
   };
 
   const handleProfileSettings = () => {
@@ -77,6 +81,26 @@ const DealerStaff = ({ children }) => {
     },
   ];
 
+  const handleMenuClick = ({ key }) => {
+    const findMenuItem = (items, targetKey) => {
+      for (const item of items) {
+        if (item.key === targetKey) {
+          return item;
+        }
+        if (item.children) {
+          const found = findMenuItem(item.children, targetKey);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const menuItem = findMenuItem(menuItems, key);
+    if (menuItem && menuItem.path) {
+      navigate(menuItem.path);
+    }
+  };
+
   return (
     <Layout className="min-h-screen bg-gray-50">
       <Sider
@@ -103,10 +127,11 @@ const DealerStaff = ({ children }) => {
         </div>
         <Menu
           mode="inline"
-          defaultSelectedKeys={["1"]}
           items={menuItems}
+          selectedKeys={[current]}
           className="border-0 h-full"
           theme="light"
+          onClick={handleMenuClick}
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
@@ -143,10 +168,10 @@ const DealerStaff = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+                    src={userDetail?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=admin"}
                     className="border-2 border-white"
                   />
-                  <span className="text-black font-medium">Admin User</span>
+                  <span className="text-black font-medium">{ userDetail?.userName || "Dealer Staff"}</span>
                   <DownOutlined className="text-black text-xs" />
                 </Space>
               </Button>

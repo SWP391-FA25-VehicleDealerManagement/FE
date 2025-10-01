@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DashboardOutlined,
@@ -14,39 +14,64 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
 
-function getItem(label, key, icon, children) {
-  return { key, icon, children, label };
+function getItem(label, key, icon, children, path) {
+  return { key, icon, children, label, path };
 }
 
 const adminMenuItems = [
-  getItem("Dashboard", "dashboard", <DashboardOutlined />),
-  getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
-    getItem("Doanh số theo khu vực", "sales-by-region", <LineChartOutlined />),
-    getItem("Doanh số theo đại lý", "sales-by-dealer", <PieChartOutlined />),
+  getItem("Dashboard", "dashboard", <DashboardOutlined />, null, "/admin/dashboard"),
+  getItem("Reporting & Analysis", "reports", <BarChartOutlined />, [
+    getItem("Sales by region", "sales-by-region", <LineChartOutlined />, null, "/admin/sales-by-region"),
+    getItem("Sales by dealer", "sales-by-dealer", <PieChartOutlined />, null, "/admin/sales-by-dealer"),
     getItem(
-      "Tồn kho & Tiêu thụ",
+      "Inventory & Consumption",
       "inventory-consumption",
-      <FileTextOutlined />
+      <FileTextOutlined />,
+      null,
+      "/admin/inventory-consumption"
     ),
-    getItem("Báo cáo tổng hợp", "summary-reports", <BarChartOutlined />),
+    getItem("Summary report", "summary-reports", <BarChartOutlined />, null, "/admin/summary-reports"),
   ]),
-  getItem("Quản lý EVM Staff", "staff-management", <TeamOutlined />),
+  getItem("EVM Staff Management", "staff-management", <TeamOutlined />, null, "/admin/staff-management"),
 ];
 
 const Admin = ({ children }) => {
+  const [current, setCurrent] = useState("dashboard");
   const navigate = useNavigate();
+  const { logout, userDetail } = useAuthen();
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
+  const handleMenuClick = ({ key }) => {
+    const findMenuItem = (items, targetKey) => {
+      for (const item of items) {
+        if (item.key === targetKey) {
+          return item;
+        }
+        if (item.children) {
+          const found = findMenuItem(item.children, targetKey);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const menuItem = findMenuItem(adminMenuItems, key);
+    if (menuItem && menuItem.path) {
+      navigate(menuItem.path);
+    }
+  };
+
   const user = {
-    name: "Admin User",
-    avatar: "https://i.pravatar.cc/150?img=3",
+    name:  userDetail?.userName || "Admin User",
+    avatar: userDetail?.avatar || "https://i.pravatar.cc/150?img=3",
   };
 
   const userMenuItems = [
@@ -90,10 +115,11 @@ const Admin = ({ children }) => {
         </div>
         <Menu
           mode="inline"
-          defaultSelectedKeys={["1"]}
           items={adminMenuItems}
+          selectedKeys={[current]}
           className="border-0 h-full"
           theme="light"
+          onClick={handleMenuClick}
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
