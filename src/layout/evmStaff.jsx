@@ -17,6 +17,7 @@ import {
   BankOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -93,15 +94,16 @@ const adminMenuItems = [
 const EvmStaff = ({ children }) => {
   const [current, setCurrent] = useState("1");
   const navigate = useNavigate();
+  const { logout, userDetail } = useAuthen();
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
   const user = {
-    name: "Admin User",
-    avatar: "https://i.pravatar.cc/150?img=3",
+    name:  userDetail?.userName || "EVM Staff",
+    avatar: userDetail?.avatar || "https://i.pravatar.cc/150?img=3",
   };
 
   const userMenuItems = [

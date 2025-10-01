@@ -9,7 +9,7 @@ import Loading from "../components/loading.jsx";
 import ScrollToTop from "../components/scrolltotop.jsx";
 import Error404 from "../components/404.jsx";
 import Error403 from "../components/403.jsx";
-
+import useAuthen from "../hooks/useAuthen";
 
 //Import page 
 //Authentication
@@ -33,16 +33,12 @@ const EVMDashboard = lazy(() =>
 //Dealer Staff
 
 const Routes = () => {
+  const { isAuthenticated, role, isInitialized } = useAuthen();
 
-  // Hook để lấy thông tin authentication
-  const useAuth = () => {
-    const token = localStorage.getItem('isAuthenticated');
-    return {
-      isAuthenticated: !!token,
-    };
-  };
-
-  const { isAuthenticated } = useAuth();
+  // Hiển thị loading trong khi đang khởi tạo auth state
+  if (!isInitialized) {
+    return <Loading />;
+  }
 
   // check role
   const RoleBasedRoute = ({ allowedRoles, children }) => {
@@ -50,15 +46,42 @@ const Routes = () => {
       return <Navigate to="/" replace />;
     }
     
-    // if (allowedRoles && !allowedRoles.includes(userRole)) {
-    //   return <Navigate to="/403" replace />;
-    // }
+    if (allowedRoles && !allowedRoles.includes(role)) {
+      return <Navigate to="/403" replace />;
+    }
     
     return children;
   };
 
+  // Redirect authenticated users từ login page
+  const AuthGuard = ({ children }) => {
+    if (isAuthenticated) {
+      // Redirect based on role
+      switch (role) {
+        case "ADMIN":
+          return <Navigate to="/admin/dashboard" replace />;
+        case "EVM_STAFF":
+          return <Navigate to="/evm-staff/dashboard" replace />;
+        case "DEALER_MANAGER":
+          return <Navigate to="/dealer-manager/dashboard" replace />;
+        case "DEALER_STAFF":
+          return <Navigate to="/dealer-staff/dashboard" replace />;
+        default:
+          return <Navigate to="/403" replace />;
+      }
+    }
+    return children;
+  };
+
   const routes = useRoutes([
-    { path: "/", element: <Login /> },
+    { 
+      path: "/", 
+      element: (
+        <AuthGuard>
+          <Login />
+        </AuthGuard>
+      ) 
+    },
     { path: "/403", element: <Error403 /> },
 
     // Admin routes
