@@ -26,75 +26,92 @@ function getItem(label, key, icon, children, path) {
 }
 
 const adminMenuItems = [
-  getItem(
-    "Dashboard",
-    "1",
-    <DashboardOutlined />,
-    null,
-    "/evm-staff/dashboard"
-  ),
-  getItem("Product Management", "2", <CarOutlined />, [
+  getItem("Quản lý đại lý", "9", <ShopOutlined />, [
     getItem(
-      "Vehicle-catalog",
-      "3",
-      <CarOutlined />,
-      null,
-      "/evm-staff/vehicle-catalog"
-    ),
-    getItem(
-      "Inventory Management",
-      "4",
-      <StockOutlined />,
-      null,
-      "/evm-staff/inventory-management"
-    ),
-    getItem(
-      "Vehicle Allocation",
-      "5",
-      <ShopOutlined />,
-      null,
-      "/evm-staff/vehicle-allocation"
-    ),
-  ]),
-  getItem("Promotion Management", "6", <TagOutlined />, [
-    getItem(
-      "Promotion List",
-      "7",
-      <ContactsOutlined />,
-      null,
-      "/evm-staff/promotion-list"
-    ),
-    getItem(
-      "Promotion For Dealer",
-      "8",
-      <FileTextOutlined />,
-      null,
-      "/evm-staff/promotion-dealer"
-    ),
-  ]),
-  getItem("Dealer Management", "9", <ShopOutlined />, [
-    getItem(
-      "Dealer List",
+      "Danh sách đại lý",
       "10",
       <ContactsOutlined />,
       null,
       "/evm-staff/dealer-list"
     ),
     getItem(
-      "Contracts & Targets",
+      "Hợp đồng & Mục tiêu",
       "11",
       <FileTextOutlined />,
       null,
       "/evm-staff/contracts-targets"
     ),
-    getItem("Debts", "12", <DollarOutlined />, null, "/evm-staff/debts"),
+    getItem("Công nợ", "12", <DollarOutlined />, null, "/evm-staff/debts"),
+  ]),
+  getItem("Quản lý sản phẩm", "2", <CarOutlined />, [
+    getItem(
+      "Danh mục xe",
+      "3",
+      <CarOutlined />,
+      null,
+      "/evm-staff/vehicle-catalog"
+    ),
+    getItem(
+      "Quản lý kho hàng",
+      "4",
+      <StockOutlined />,
+      null,
+      "/evm-staff/inventory-management"
+    ),
+    getItem(
+      "Phân bổ xe",
+      "5",
+      <ShopOutlined />,
+      null,
+      "/evm-staff/vehicle-allocation"
+    ),
+  ]),
+  getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
+    getItem(
+      "Danh sách khuyến mãi",
+      "7",
+      <ContactsOutlined />,
+      null,
+      "/evm-staff/promotion-list"
+    ),
+    getItem(
+      "Khuyến mãi cho đại lý",
+      "8",
+      <FileTextOutlined />,
+      null,
+      "/evm-staff/promotion-dealer"
+    ),
   ]),
 ];
 
 const EvmStaff = ({ children }) => {
   const [current, setCurrent] = useState("1");
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const { logout, userDetail } = useAuthen();
+
+  // Xử lý cập nhật selected key dựa trên URL hiện tại khi component mount
+  React.useEffect(() => {
+    const currentPath = window.location.pathname;
+    // Tìm menu item có path trùng với URL hiện tại
+    const findMenuItemByPath = (items, targetPath) => {
+      for (const item of items) {
+        if (item.path === targetPath) {
+          return item;
+        }
+        if (item.children) {
+          const found = findMenuItemByPath(item.children, targetPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const menuItem = findMenuItemByPath(adminMenuItems, currentPath);
+    if (menuItem) {
+      setCurrent(menuItem.key);
+    }
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -102,7 +119,7 @@ const EvmStaff = ({ children }) => {
   };
 
   const user = {
-    name:  userDetail?.userName || "EVM Staff",
+    name: userDetail?.userName || "EVM Staff",
     avatar: userDetail?.avatar || "https://i.pravatar.cc/150?img=3",
   };
 
@@ -110,7 +127,8 @@ const EvmStaff = ({ children }) => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile",
+      label: "Hồ sơ cá nhân",
+      onClick: () => navigate("/evm-staff/profile"),
     },
     {
       type: "divider",
@@ -122,7 +140,7 @@ const EvmStaff = ({ children }) => {
           <LogoutOutlined />
         </div>
       ),
-      label: <div className="text-red-500">Logout</div>,
+      label: <div className="text-red-500">Đăng xuất</div>,
       onClick: handleLogout,
     },
   ];
@@ -143,6 +161,11 @@ const EvmStaff = ({ children }) => {
 
     const menuItem = findMenuItem(adminMenuItems, key);
     if (menuItem && menuItem.path) {
+      // Đảm bảo sidebar không bị collapse khi chuyển trang
+      setCollapsed(false);
+      // Cập nhật current key
+      setCurrent(key);
+      // Điều hướng đến trang
       navigate(menuItem.path);
     }
   };
@@ -153,7 +176,9 @@ const EvmStaff = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
-        defaultCollapsed={false}
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        collapsible={false}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -164,7 +189,7 @@ const EvmStaff = ({ children }) => {
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
-          <div className="text-xl font-bold text-blue-600">EVM System</div>
+          <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
           mode="inline"
@@ -205,7 +230,7 @@ const EvmStaff = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src={user?.avatar}
+                    icon={<UserOutlined />}
                     className="border-2 border-white"
                   />
                   <span className="text-black font-medium">{user?.name}</span>
@@ -233,7 +258,7 @@ const EvmStaff = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} EVM System. All rights reserved.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
             </span>
           </div>
         </Footer>
