@@ -26,13 +26,23 @@ function getItem(label, key, icon, children, path) {
 }
 
 const adminMenuItems = [
-  getItem(
-    "Dashboard",
-    "1",
-    <DashboardOutlined />,
-    null,
-    "/evm-staff/dashboard"
-  ),
+  getItem("Dealer Management", "9", <ShopOutlined />, [
+    getItem(
+      "Dealer List",
+      "10",
+      <ContactsOutlined />,
+      null,
+      "/evm-staff/dealer-list"
+    ),
+    getItem(
+      "Contracts & Targets",
+      "11",
+      <FileTextOutlined />,
+      null,
+      "/evm-staff/contracts-targets"
+    ),
+    getItem("Debts", "12", <DollarOutlined />, null, "/evm-staff/debts"),
+  ]),
   getItem("Product Management", "2", <CarOutlined />, [
     getItem(
       "Vehicle-catalog",
@@ -72,29 +82,36 @@ const adminMenuItems = [
       "/evm-staff/promotion-dealer"
     ),
   ]),
-  getItem("Dealer Management", "9", <ShopOutlined />, [
-    getItem(
-      "Dealer List",
-      "10",
-      <ContactsOutlined />,
-      null,
-      "/evm-staff/dealer-list"
-    ),
-    getItem(
-      "Contracts & Targets",
-      "11",
-      <FileTextOutlined />,
-      null,
-      "/evm-staff/contracts-targets"
-    ),
-    getItem("Debts", "12", <DollarOutlined />, null, "/evm-staff/debts"),
-  ]),
 ];
 
 const EvmStaff = ({ children }) => {
   const [current, setCurrent] = useState("1");
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const { logout, userDetail } = useAuthen();
+
+  // Xử lý cập nhật selected key dựa trên URL hiện tại khi component mount
+  React.useEffect(() => {
+    const currentPath = window.location.pathname;
+    // Tìm menu item có path trùng với URL hiện tại
+    const findMenuItemByPath = (items, targetPath) => {
+      for (const item of items) {
+        if (item.path === targetPath) {
+          return item;
+        }
+        if (item.children) {
+          const found = findMenuItemByPath(item.children, targetPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const menuItem = findMenuItemByPath(adminMenuItems, currentPath);
+    if (menuItem) {
+      setCurrent(menuItem.key);
+    }
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -102,7 +119,7 @@ const EvmStaff = ({ children }) => {
   };
 
   const user = {
-    name:  userDetail?.userName || "EVM Staff",
+    name: userDetail?.userName || "EVM Staff",
     avatar: userDetail?.avatar || "https://i.pravatar.cc/150?img=3",
   };
 
@@ -143,6 +160,11 @@ const EvmStaff = ({ children }) => {
 
     const menuItem = findMenuItem(adminMenuItems, key);
     if (menuItem && menuItem.path) {
+      // Đảm bảo sidebar không bị collapse khi chuyển trang
+      setCollapsed(false);
+      // Cập nhật current key
+      setCurrent(key);
+      // Điều hướng đến trang
       navigate(menuItem.path);
     }
   };
@@ -153,7 +175,9 @@ const EvmStaff = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
-        defaultCollapsed={false}
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        collapsible={false}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -205,8 +229,9 @@ const EvmStaff = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src={user?.avatar}
+                    icon={<UserOutlined />}
                     className="border-2 border-white"
+                    style={{backgroundColor: "#2c72c6"}}
                   />
                   <span className="text-black font-medium">{user?.name}</span>
                   <DownOutlined className="text-black text-xs" />

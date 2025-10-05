@@ -5,19 +5,15 @@ const LoginPage = () => {
   return (
     <div
       style={{
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
         height: "100vh",
         width: "100vw",
         margin: 0,
         padding: 0,
         overflow: "hidden",
-        backgroundColor: "#253343",
       }}
     >
       <Helmet>
-        <title>Login</title>
+        <title>EVM System Login</title>
       </Helmet>
       <Login />
     </div>

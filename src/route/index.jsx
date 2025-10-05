@@ -11,7 +11,7 @@ import Error404 from "../components/404.jsx";
 import Error403 from "../components/403.jsx";
 import useAuthen from "../hooks/useAuthen";
 
-//Import page 
+//Import page
 //Authentication
 const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
 
@@ -29,6 +29,7 @@ const DealerDashboard = lazy(() =>
 const EVMDashboard = lazy(() =>
   import("../sections/evm/dashboard/evmdashboard.jsx")
 );
+const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
 
 //Dealer Staff
 
@@ -45,11 +46,11 @@ const Routes = () => {
     if (!isAuthenticated) {
       return <Navigate to="/" replace />;
     }
-    
+
     if (allowedRoles && !allowedRoles.includes(role)) {
       return <Navigate to="/403" replace />;
     }
-    
+
     return children;
   };
 
@@ -61,11 +62,11 @@ const Routes = () => {
         case "ADMIN":
           return <Navigate to="/admin/dashboard" replace />;
         case "EVM_STAFF":
-          return <Navigate to="/evm-staff/dashboard" replace />;
+          return <Navigate to="/evm-staff/dealer-list" replace />;
         case "DEALER_MANAGER":
           return <Navigate to="/dealer-manager/dashboard" replace />;
         case "DEALER_STAFF":
-          return <Navigate to="/dealer-staff/dashboard" replace />;
+          return <Navigate to="/dealer-staff/customer-list" replace />;
         default:
           return <Navigate to="/403" replace />;
       }
@@ -74,13 +75,13 @@ const Routes = () => {
   };
 
   const routes = useRoutes([
-    { 
-      path: "/", 
+    {
+      path: "/",
       element: (
         <AuthGuard>
           <Login />
         </AuthGuard>
-      ) 
+      ),
     },
     { path: "/403", element: <Error403 /> },
 
@@ -120,6 +121,7 @@ const Routes = () => {
       ),
       children: [
         { path: "dashboard", element: <EVMDashboard /> },
+        { path: "dealer-list", element: <DealerList /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -140,6 +142,7 @@ const Routes = () => {
       ),
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
+        { path: "customer-list", element: <DealerList /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -160,10 +163,11 @@ const Routes = () => {
       ),
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
+        { path: "customer-list", element: <DealerList /> },
         { path: "*", element: <Error404 /> },
       ],
     },
-    {path: "*", element: <Error404 /> },
+    { path: "*", element: <Error404 /> },
   ]);
   return routes;
 };

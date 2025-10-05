@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DashboardOutlined,
@@ -13,7 +13,7 @@ import {
   PieChartOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -23,10 +23,35 @@ function getItem(label, key, icon, children, path) {
 }
 
 const adminMenuItems = [
-  getItem("Dashboard", "dashboard", <DashboardOutlined />, null, "/admin/dashboard"),
+  getItem(
+    "Dashboard",
+    "dashboard",
+    <DashboardOutlined />,
+    null,
+    "/admin/dashboard"
+  ),
+  getItem(
+    "Car Management",
+    "car-management",
+    <ShopOutlined />,
+    null,
+    "/admin/car-management"
+  ),
   getItem("Reporting & Analysis", "reports", <BarChartOutlined />, [
-    getItem("Sales by region", "sales-by-region", <LineChartOutlined />, null, "/admin/sales-by-region"),
-    getItem("Sales by dealer", "sales-by-dealer", <PieChartOutlined />, null, "/admin/sales-by-dealer"),
+    getItem(
+      "Sales by region",
+      "sales-by-region",
+      <LineChartOutlined />,
+      null,
+      "/admin/sales-by-region"
+    ),
+    getItem(
+      "Sales by dealer",
+      "sales-by-dealer",
+      <PieChartOutlined />,
+      null,
+      "/admin/sales-by-dealer"
+    ),
     getItem(
       "Inventory & Consumption",
       "inventory-consumption",
@@ -34,14 +59,28 @@ const adminMenuItems = [
       null,
       "/admin/inventory-consumption"
     ),
-    getItem("Summary report", "summary-reports", <BarChartOutlined />, null, "/admin/summary-reports"),
+    getItem(
+      "Summary report",
+      "summary-reports",
+      <BarChartOutlined />,
+      null,
+      "/admin/summary-reports"
+    ),
   ]),
-  getItem("EVM Staff Management", "staff-management", <TeamOutlined />, null, "/admin/staff-management"),
+  getItem(
+    "EVM Staff Management",
+    "staff-management",
+    <TeamOutlined />,
+    null,
+    "/admin/staff-management"
+  ),
 ];
 
 const Admin = ({ children }) => {
   const [current, setCurrent] = useState("dashboard");
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, userDetail } = useAuthen();
 
   const handleLogout = async () => {
@@ -65,12 +104,35 @@ const Admin = ({ children }) => {
 
     const menuItem = findMenuItem(adminMenuItems, key);
     if (menuItem && menuItem.path) {
+      setCurrent(key);
       navigate(menuItem.path);
     }
   };
 
+  // Update selected menu item based on current URL path
+  useEffect(() => {
+    const findMenuKeyByPath = (items, path) => {
+      for (const item of items) {
+        if (item.path === path) {
+          return item.key;
+        }
+        if (item.children) {
+          const found = findMenuKeyByPath(item.children, path);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const currentPath = location.pathname;
+    const menuKey = findMenuKeyByPath(adminMenuItems, currentPath);
+    if (menuKey) {
+      setCurrent(menuKey);
+    }
+  }, [location.pathname]);
+
   const user = {
-    name:  userDetail?.userName || "Admin User",
+    name: userDetail?.userName || "Admin User",
     avatar: userDetail?.avatar || "https://i.pravatar.cc/150?img=3",
   };
 
@@ -101,6 +163,8 @@ const Admin = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -127,7 +191,7 @@ const Admin = ({ children }) => {
         />
       </Sider>
 
-      <Layout style={{ marginLeft: 250 }}>
+      <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
         <Header
           className="sticky top-0 z-50 shadow-md flex items-center justify-between px-6"
           style={{
@@ -152,7 +216,7 @@ const Admin = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src={user?.avatar}
+                    icon={<UserOutlined />}
                     className="border-2 border-white"
                   />
                   <span className="text-black font-medium">{user?.name}</span>

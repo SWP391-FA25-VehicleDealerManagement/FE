@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DesktopOutlined,
@@ -11,7 +11,7 @@ import {
   SettingOutlined,
   CarOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -41,7 +41,9 @@ const menuItems = [
 
 const DealerStaff = ({ children }) => {
   const [current, setCurrent] = useState("1");
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, userDetail } = useAuthen();
 
   const handleLogout = async () => {
@@ -97,9 +99,32 @@ const DealerStaff = ({ children }) => {
 
     const menuItem = findMenuItem(menuItems, key);
     if (menuItem && menuItem.path) {
+      setCurrent(key);
       navigate(menuItem.path);
     }
   };
+  
+  // Update selected menu item based on current URL path
+  useEffect(() => {
+    const findMenuKeyByPath = (items, path) => {
+      for (const item of items) {
+        if (item.path === path) {
+          return item.key;
+        }
+        if (item.children) {
+          const found = findMenuKeyByPath(item.children, path);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const currentPath = location.pathname;
+    const menuKey = findMenuKeyByPath(menuItems, currentPath);
+    if (menuKey) {
+      setCurrent(menuKey);
+    }
+  }, [location.pathname]);
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -107,6 +132,8 @@ const DealerStaff = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -117,9 +144,6 @@ const DealerStaff = ({ children }) => {
         }}
         onBreakpoint={(broken) => {
           console.log(broken);
-        }}
-        onCollapse={(collapsed, type) => {
-          console.log(collapsed, type);
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
@@ -139,7 +163,7 @@ const DealerStaff = ({ children }) => {
         />
       </Sider>
 
-      <Layout style={{ marginLeft: 250 }}>
+      <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
         <Header
           className="sticky top-0 z-50 shadow-md flex items-center justify-between px-6"
           style={{
@@ -168,7 +192,7 @@ const DealerStaff = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src={userDetail?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=admin"}
+                    icon={<UserOutlined />}
                     className="border-2 border-white"
                   />
                   <span className="text-black font-medium">{ userDetail?.userName || "Dealer Staff"}</span>

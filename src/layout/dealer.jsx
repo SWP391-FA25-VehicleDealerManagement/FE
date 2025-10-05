@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DesktopOutlined,
@@ -11,7 +11,7 @@ import {
   SettingOutlined,
   CarOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -25,23 +25,19 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem("Dashboard", "1", <PieChartOutlined />, null, "/dealer/dashboard"),
-  getItem("Vehicle Management", "2", <CarOutlined />, null, "/dealer/vehicle-management"),
+  getItem("Dashboard", "1", <PieChartOutlined />, null, "/dealer-manager/dashboard"),
+  getItem("Vehicle Management", "2", <CarOutlined />, null, "/dealer-manager/vehicle-management"),
   getItem("User Management", "sub1", <UserOutlined />, [
-    getItem("Customers", "3", null, null, "/dealer/customers"),
-    getItem("Staff", "4", null, null, "/dealer/staff"),
-    getItem("Dealers", "5", null, null, "/dealer/dealers"),
+    getItem("Customers", "3", null, null, "/dealer-manager/customers"),
+    getItem("Staff", "4", null, null, "/dealer-manager/staff"),
   ]),
-  getItem("Reports", "sub2", <TeamOutlined />, [
-    getItem("Sales Report", "6", null, null, "/dealer/sales-report"),
-    getItem("Inventory Report", "8", null, null, "/dealer/inventory-report"),
-  ]),
-  getItem("Files", "9", <FileOutlined />, null, "/dealer/files"),
 ];
 
 const Dealer = ({ children }) => {
   const [current, setCurrent] = useState("1");
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, userDetail } = useAuthen();
 
   const handleLogout = async () => {
@@ -58,13 +54,8 @@ const Dealer = ({ children }) => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile Settings",
+      label: "Profile",
       onClick: handleProfileSettings,
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Account Settings",
     },
     {
       type: "divider",
@@ -97,9 +88,32 @@ const Dealer = ({ children }) => {
 
     const menuItem = findMenuItem(menuItems, key);
     if (menuItem && menuItem.path) {
+      setCurrent(key);
       navigate(menuItem.path);
     }
   };
+  
+  // Update selected menu item based on current URL path
+  useEffect(() => {
+    const findMenuKeyByPath = (items, path) => {
+      for (const item of items) {
+        if (item.path === path) {
+          return item.key;
+        }
+        if (item.children) {
+          const found = findMenuKeyByPath(item.children, path);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const currentPath = location.pathname;
+    const menuKey = findMenuKeyByPath(menuItems, currentPath);
+    if (menuKey) {
+      setCurrent(menuKey);
+    }
+  }, [location.pathname]);
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -107,6 +121,8 @@ const Dealer = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -117,9 +133,6 @@ const Dealer = ({ children }) => {
         }}
         onBreakpoint={(broken) => {
           console.log(broken);
-        }}
-        onCollapse={(collapsed, type) => {
-          console.log(collapsed, type);
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
@@ -139,7 +152,7 @@ const Dealer = ({ children }) => {
         />
       </Sider>
 
-      <Layout style={{ marginLeft: 250 }}>
+      <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
         <Header
           className="sticky top-0 z-50 shadow-md flex items-center justify-between px-6"
           style={{
@@ -168,8 +181,7 @@ const Dealer = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src={userDetail?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=admin"}
-                    className="border-2 border-white"
+                    icon={<UserOutlined />}
                   />
                   <span className="text-black font-medium">{userDetail?.userName|| "Dealer Manager"}</span>
                   <DownOutlined className="text-black text-xs" />
