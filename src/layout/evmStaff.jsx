@@ -26,56 +26,56 @@ function getItem(label, key, icon, children, path) {
 }
 
 const adminMenuItems = [
-  getItem("Dealer Management", "9", <ShopOutlined />, [
+  getItem("Quản lý đại lý", "9", <ShopOutlined />, [
     getItem(
-      "Dealer List",
+      "Danh sách đại lý",
       "10",
       <ContactsOutlined />,
       null,
       "/evm-staff/dealer-list"
     ),
     getItem(
-      "Contracts & Targets",
+      "Hợp đồng & Mục tiêu",
       "11",
       <FileTextOutlined />,
       null,
       "/evm-staff/contracts-targets"
     ),
-    getItem("Debts", "12", <DollarOutlined />, null, "/evm-staff/debts"),
+    getItem("Công nợ", "12", <DollarOutlined />, null, "/evm-staff/debts"),
   ]),
-  getItem("Product Management", "2", <CarOutlined />, [
+  getItem("Quản lý sản phẩm", "2", <CarOutlined />, [
     getItem(
-      "Vehicle-catalog",
+      "Danh mục xe",
       "3",
       <CarOutlined />,
       null,
       "/evm-staff/vehicle-catalog"
     ),
     getItem(
-      "Inventory Management",
+      "Quản lý kho hàng",
       "4",
       <StockOutlined />,
       null,
       "/evm-staff/inventory-management"
     ),
     getItem(
-      "Vehicle Allocation",
+      "Phân bổ xe",
       "5",
       <ShopOutlined />,
       null,
       "/evm-staff/vehicle-allocation"
     ),
   ]),
-  getItem("Promotion Management", "6", <TagOutlined />, [
+  getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
     getItem(
-      "Promotion List",
+      "Danh sách khuyến mãi",
       "7",
       <ContactsOutlined />,
       null,
       "/evm-staff/promotion-list"
     ),
     getItem(
-      "Promotion For Dealer",
+      "Khuyến mãi cho đại lý",
       "8",
       <FileTextOutlined />,
       null,
@@ -127,7 +127,8 @@ const EvmStaff = ({ children }) => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile",
+      label: "Hồ sơ cá nhân",
+      onClick: () => navigate("/evm-staff/profile"),
     },
     {
       type: "divider",
@@ -139,7 +140,7 @@ const EvmStaff = ({ children }) => {
           <LogoutOutlined />
         </div>
       ),
-      label: <div className="text-red-500">Logout</div>,
+      label: <div className="text-red-500">Đăng xuất</div>,
       onClick: handleLogout,
     },
   ];
@@ -188,7 +189,7 @@ const EvmStaff = ({ children }) => {
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
-          <div className="text-xl font-bold text-blue-600">EVM System</div>
+          <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
           mode="inline"
@@ -231,7 +232,6 @@ const EvmStaff = ({ children }) => {
                     size={32}
                     icon={<UserOutlined />}
                     className="border-2 border-white"
-                    style={{backgroundColor: "#2c72c6"}}
                   />
                   <span className="text-black font-medium">{user?.name}</span>
                   <DownOutlined className="text-black text-xs" />
@@ -258,7 +258,7 @@ const EvmStaff = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} EVM System. All rights reserved.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
             </span>
           </div>
         </Footer>

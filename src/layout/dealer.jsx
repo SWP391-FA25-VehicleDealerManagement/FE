@@ -25,11 +25,11 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem("Dashboard", "1", <PieChartOutlined />, null, "/dealer-manager/dashboard"),
-  getItem("Vehicle Management", "2", <CarOutlined />, null, "/dealer-manager/vehicle-management"),
-  getItem("User Management", "sub1", <UserOutlined />, [
-    getItem("Customers", "3", null, null, "/dealer-manager/customers"),
-    getItem("Staff", "4", null, null, "/dealer-manager/staff"),
+  getItem("Tổng quan", "1", <PieChartOutlined />, null, "/dealer-manager/dashboard"),
+  getItem("Quản lý xe", "2", <CarOutlined />, null, "/dealer-manager/vehicle-management"),
+  getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
+    getItem("Khách hàng", "3", null, null, "/dealer-manager/customers"),
+    getItem("Nhân viên", "4", null, null, "/dealer-manager/staff"),
   ]),
 ];
 
@@ -46,15 +46,14 @@ const Dealer = ({ children }) => {
   };
 
   const handleProfileSettings = () => {
-    // Xử lý settings
-    console.log("Opening profile settings...");
+    navigate("/dealer-manager/profile");
   };
 
   const userMenuItems = [
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile",
+      label: "Hồ sơ cá nhân",
       onClick: handleProfileSettings,
     },
     {
@@ -67,7 +66,7 @@ const Dealer = ({ children }) => {
           <LogoutOutlined />
         </div>
       ),
-      label: <div className="text-red-500">Logout</div>,
+      label: <div className="text-red-500">Đăng xuất</div>,
       onClick: handleLogout,
     },
   ];
@@ -136,7 +135,7 @@ const Dealer = ({ children }) => {
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
-          <div className="text-xl font-bold text-blue-600">EVM System</div>
+          <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
           mode="inline"
@@ -163,7 +162,7 @@ const Dealer = ({ children }) => {
         >
           <div className="flex items-center">
             <h2 className="text-white text-lg font-semibold m-0">
-              Vehicle Management Dashboard
+              Bảng điều khiển quản lý xe
             </h2>
           </div>
 
@@ -182,6 +181,7 @@ const Dealer = ({ children }) => {
                   <Avatar
                     size={32}
                     icon={<UserOutlined />}
+                    className="border-2 border-white"
                   />
                   <span className="text-black font-medium">{userDetail?.userName|| "Dealer Manager"}</span>
                   <DownOutlined className="text-black text-xs" />
@@ -214,7 +214,7 @@ const Dealer = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-             © {new Date().getFullYear()} EVM System. All rights reserved.
+             © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
             </span>
           </div>
         </Footer>

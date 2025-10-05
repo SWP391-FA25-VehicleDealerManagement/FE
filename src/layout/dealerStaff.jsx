@@ -25,18 +25,18 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem("Dashboard", "1", <PieChartOutlined />, null, "/dealer-staff/dashboard"),
-  getItem("Vehicle Management", "2", <CarOutlined />, null, "/dealer-staff/vehicle-management"),
-  getItem("User Management", "sub1", <UserOutlined />, [
-    getItem("Customers", "3", null, null, "/dealer-staff/customers"),
-    getItem("Staff", "4", null, null, "/dealer-staff/staff"),
-    getItem("Dealers", "5", null, null, "/dealer-staff/dealers"),
+  getItem("Tổng quan", "1", <PieChartOutlined />, null, "/dealer-staff/dashboard"),
+  getItem("Quản lý xe", "2", <CarOutlined />, null, "/dealer-staff/vehicle-management"),
+  getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
+    getItem("Khách hàng", "3", null, null, "/dealer-staff/customers"),
+    getItem("Nhân viên", "4", null, null, "/dealer-staff/staff"),
+    getItem("Đại lý", "5", null, null, "/dealer-staff/dealers"),
   ]),
-  getItem("Reports", "sub2", <TeamOutlined />, [
-    getItem("Sales Report", "6", null, null, "/dealer-staff/sales-report"),
-    getItem("Inventory Report", "8", null, null, "/dealer-staff/inventory-report"),
+  getItem("Báo cáo", "sub2", <TeamOutlined />, [
+    getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),
+    getItem("Báo cáo kho", "8", null, null, "/dealer-staff/inventory-report"),
   ]),
-  getItem("Files", "9", <FileOutlined />, null, "/dealer-staff/files"),
+  getItem("Tập tin", "9", <FileOutlined />, null, "/dealer-staff/files"),
 ];
 
 const DealerStaff = ({ children }) => {
@@ -52,21 +52,15 @@ const DealerStaff = ({ children }) => {
   };
 
   const handleProfileSettings = () => {
-    // Xử lý settings
-    console.log("Opening profile settings...");
+    navigate("/dealer-staff/profile");
   };
 
   const userMenuItems = [
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile Settings",
+      label: "Hồ sơ cá nhân",
       onClick: handleProfileSettings,
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Account Settings",
     },
     {
       type: "divider",
@@ -78,7 +72,7 @@ const DealerStaff = ({ children }) => {
           <LogoutOutlined />
         </div>
       ),
-      label: <div className="text-red-500">Logout</div>,
+      label: <div className="text-red-500">Đăng xuất</div>,
       onClick: handleLogout,
     },
   ];
@@ -147,7 +141,7 @@ const DealerStaff = ({ children }) => {
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
-          <div className="text-xl font-bold text-blue-600">EVM System</div>
+          <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
           mode="inline"
@@ -174,7 +168,7 @@ const DealerStaff = ({ children }) => {
         >
           <div className="flex items-center">
             <h2 className="text-white text-lg font-semibold m-0">
-              Vehicle Management Dashboard
+              Bảng điều khiển quản lý xe
             </h2>
           </div>
 
@@ -226,7 +220,7 @@ const DealerStaff = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-             © {new Date().getFullYear()} EVM System. All rights reserved.
+             © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
             </span>
           </div>
         </Footer>

@@ -24,43 +24,43 @@ function getItem(label, key, icon, children, path) {
 
 const adminMenuItems = [
   getItem(
-    "Dashboard",
+    "Tổng quan",
     "dashboard",
     <DashboardOutlined />,
     null,
     "/admin/dashboard"
   ),
   getItem(
-    "Car Management",
+    "Quản lý xe",
     "car-management",
     <ShopOutlined />,
     null,
     "/admin/car-management"
   ),
-  getItem("Reporting & Analysis", "reports", <BarChartOutlined />, [
+  getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
     getItem(
-      "Sales by region",
+      "Doanh số theo vùng",
       "sales-by-region",
       <LineChartOutlined />,
       null,
       "/admin/sales-by-region"
     ),
     getItem(
-      "Sales by dealer",
+      "Doanh số theo đại lý",
       "sales-by-dealer",
       <PieChartOutlined />,
       null,
       "/admin/sales-by-dealer"
     ),
     getItem(
-      "Inventory & Consumption",
+      "Kho hàng & Tiêu thụ",
       "inventory-consumption",
       <FileTextOutlined />,
       null,
       "/admin/inventory-consumption"
     ),
     getItem(
-      "Summary report",
+      "Báo cáo tổng hợp",
       "summary-reports",
       <BarChartOutlined />,
       null,
@@ -68,7 +68,7 @@ const adminMenuItems = [
     ),
   ]),
   getItem(
-    "EVM Staff Management",
+    "Quản lý nhân viên EVM",
     "staff-management",
     <TeamOutlined />,
     null,
@@ -140,7 +140,8 @@ const Admin = ({ children }) => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile",
+      label: "Hồ sơ cá nhân",
+      onClick: () => navigate("/admin/profile"),
     },
     {
       type: "divider",
@@ -152,7 +153,7 @@ const Admin = ({ children }) => {
           <LogoutOutlined />
         </div>
       ),
-      label: <div className="text-red-500">Logout</div>,
+      label: <div className="text-red-500">Đăng xuất</div>,
       onClick: handleLogout,
     },
   ];
@@ -175,7 +176,7 @@ const Admin = ({ children }) => {
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
-          <div className="text-xl font-bold text-blue-600">EVM System</div>
+          <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
           mode="inline"
@@ -244,7 +245,7 @@ const Admin = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} EVM System. All rights reserved.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
             </span>
           </div>
         </Footer>

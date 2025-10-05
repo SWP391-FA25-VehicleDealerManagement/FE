@@ -31,6 +31,9 @@ const EVMDashboard = lazy(() =>
 );
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
 
+//User Profile
+const UserProfilePage = lazy(() => import("../page/profile/userProfilePage.jsx"));
+
 //Dealer Staff
 
 const Routes = () => {
@@ -101,6 +104,7 @@ const Routes = () => {
       ),
       children: [
         { path: "dashboard", element: <AdminDashboard /> },
+        { path: "profile", element: <UserProfilePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -122,6 +126,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <EVMDashboard /> },
         { path: "dealer-list", element: <DealerList /> },
+        { path: "profile", element: <UserProfilePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -143,6 +148,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerList /> },
+        { path: "profile", element: <UserProfilePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -164,6 +170,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerList /> },
+        { path: "profile", element: <UserProfilePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

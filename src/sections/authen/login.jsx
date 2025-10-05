@@ -172,13 +172,6 @@ const Login = () => {
                 />
               </Form.Item>
 
-              <div className="flex justify-between items-center mb-4">
-                <Checkbox className="text-gray-600">Remember me</Checkbox>
-                <a href="#" className="text-blue-600 hover:text-blue-800 text-sm font-semibold">
-                  Forgot password?
-                </a>
-              </div>
-
               <Form.Item>
                 <Button
                   type="primary"
