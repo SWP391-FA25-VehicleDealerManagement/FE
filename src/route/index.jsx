@@ -19,6 +19,8 @@ const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
 const AdminDashboard = lazy(() =>
   import("../page/admin/adminDashboardPage.jsx")
 );
+const EVMStaffPage = lazy(() => import("../page/admin/evmStaffPage.jsx"));
+
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
@@ -105,6 +107,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <AdminDashboard /> },
         { path: "profile", element: <UserProfilePage /> },
+        { path: "staff-management", element: <EVMStaffPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
