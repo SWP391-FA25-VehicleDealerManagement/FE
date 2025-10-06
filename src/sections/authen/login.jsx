@@ -50,14 +50,14 @@ const Login = () => {
       console.log("Login result:", result);
       
       if (result.success) {
-        toast.success("Welcome back to EVM system!", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
+          toast.success("Chào mừng bạn trở lại hệ thống EVM!", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         
         // Get the role from the store after successful login
         const currentRole = role;
@@ -80,7 +80,7 @@ const Login = () => {
             navigate("/");
         }
       } else {
-        toast.error("Invalid username or password. Please try again.", {
+  toast.error("Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -91,7 +91,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error(error.response.data.message || "An error occurred during login. Please try again later.", {
+  toast.error(error.response.data.message || "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -104,38 +104,38 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-r from-blue-900 to-blue-700">
-      {/* Left side - Car image and logo */}
+      {/* Bên trái - Ảnh xe và logo */}
       <div className="hidden lg:flex lg:flex-1 flex-col justify-center items-center relative p-8">
         <div className="flex flex-col items-center justify-center h-full">
           <img 
             src={carImage} 
-            alt="Vinfast Vehicle" 
+            alt="Xe Vinfast" 
             className="max-w-full max-h-[80%] object-contain z-10" 
           />
           <div className="text-white text-center mt-8 z-10">
-            <h2 className="text-3xl font-bold mb-2">Electric Vehicle Management System</h2>
-            <p className="text-xl opacity-80">Efficient. Sustainable. Connected.</p>
+            <h2 className="text-3xl font-bold mb-2">Hệ thống quản lý xe điện VinFast</h2>
+            <p className="text-xl opacity-80">Hiệu quả. Bền vững. Kết nối.</p>
           </div>
         </div>
-        {/* Decorative elements */}
+        {/* Các phần trang trí */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute h-40 w-40 rounded-full bg-blue-400 top-20 left-20"></div>
           <div className="absolute h-60 w-60 rounded-full bg-blue-300 bottom-20 right-20"></div>
         </div>
       </div>
       
-      {/* Right side - Login form */}
+      {/* Bên phải - Form đăng nhập */}
       <div className="w-full lg:w-1/2 flex justify-center items-center p-4">
         <Card className="w-full max-w-md rounded-xl shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
           <div className="text-center mb-8">
             <img 
               src={logoImage} 
-              alt="Vinfast Logo" 
+              alt="Logo Vinfast" 
               className="h-12 mx-auto mb-4 lg:hidden" 
             />
-            <Title level={2} className="text-blue-800 font-bold">Welcome Back</Title>
+            <Title level={2} className="text-blue-800 font-bold">Chào mừng trở lại</Title>
             <p className="text-gray-600 mt-2">
-              Sign in to access your EVM dashboard
+              Đăng nhập để truy cập bảng điều khiển EVM
             </p>
           </div>
 
@@ -149,12 +149,12 @@ const Login = () => {
               <Form.Item
                 name="username"
                 rules={[
-                  { required: true, message: "Please input your username!" },
+                  { required: true, message: "Vui lòng nhập tên đăng nhập!" },
                 ]}
               >
                 <Input 
                   prefix={<UserOutlined className="text-gray-400" />} 
-                  placeholder="Username" 
+                  placeholder="Tên đăng nhập" 
                   className="rounded-lg py-2" 
                 />
               </Form.Item>
@@ -162,12 +162,12 @@ const Login = () => {
               <Form.Item
                 name="password"
                 rules={[
-                  { required: true, message: "Please input your password!" },
+                  { required: true, message: "Vui lòng nhập mật khẩu!" },
                 ]}
               >
                 <Input.Password
                   prefix={<LockOutlined className="text-gray-400" />}
-                  placeholder="Password"
+                  placeholder="Mật khẩu"
                   className="rounded-lg py-2"
                 />
               </Form.Item>
@@ -179,7 +179,7 @@ const Login = () => {
                   className="w-full h-12 text-base rounded-lg bg-blue-700 hover:bg-blue-800 border-0 font-medium"
                   loading={isLoading}
                 >
-                  Sign In
+                  Đăng nhập
                 </Button>
               </Form.Item>
             </Form>
@@ -187,7 +187,7 @@ const Login = () => {
           
           <div className="text-center mt-4">
             <p className="text-gray-500 text-sm">
-              Need help? Contact your system administrator
+              Cần hỗ trợ? Liên hệ quản trị viên hệ thống
             </p>
           </div>
         </Card>

@@ -20,7 +20,7 @@ const UserProfile = () => {
     
     // Set form initial values
     form.setFieldsValue({
-      userName: user.fullName || '',
+      username: user.userName || '',
       email: user.email || '',
       phone: user.phone || '',
     });
@@ -36,30 +36,31 @@ const UserProfile = () => {
     localStorage.setItem('user', JSON.stringify(updatedUser));
     setUserData(updatedUser);
     setEditMode(false);
-    message.success('Profile updated successfully');
+    message.success('Cập nhật hồ sơ thành công');
   };
 
   const handlePasswordChange = (values) => {
     // In a real app, this would call an API
-    message.success('Password changed successfully');
+    message.success('Thay đổi mật khẩu thành công');
+  };
+
+  // Định nghĩa map ở phạm vi component để có thể sử dụng ở nhiều nơi
+  const roleColorMap = {
+    admin: 'purple',
+    'dealer_manager': 'blue',
+    'dealer_staff': 'cyan',
+    'evm_staff': 'green',
+  };
+
+  const roleLabelMap = {
+    admin: 'Quản trị viên',
+    'dealer_manager': 'Quản lý Đại lý',
+    'dealer_staff': 'Nhân viên Đại lý',
+    'evm_staff': 'Nhân viên EVM',
   };
 
   const getUserRoleBadge = () => {
     if (!userData || !userData.role) return null;
-    
-    const roleColorMap = {
-      admin: 'purple',
-      'dealer_manager': 'blue',
-      'dealer_staff': 'cyan',
-      'evm_staff': 'green',
-    };
-
-    const roleLabelMap = {
-      admin: 'Administrator',
-      'dealer_manager': 'Dealer Manager',
-      'dealer_staff': 'Dealer Staff',
-      'evm_staff': 'EVM Staff',
-    };
 
     const roleLowerCase = userData.role.toLowerCase();
     
@@ -71,7 +72,7 @@ const UserProfile = () => {
   };
 
   return (
-    <div className="fade-in p-6">
+    <div className="fade-in">
       <Card loading={loading} bordered={false} className="shadow-md">
         <div className="flex flex-col md:flex-row items-center md:items-start">
           <div className="mb-4 md:mb-0 md:mr-8 text-center">
@@ -86,7 +87,7 @@ const UserProfile = () => {
                 onClick={toggleEditMode}
                 className="mt-4"
               >
-                Edit Profile
+                Chỉnh sửa hồ sơ
               </Button>
             )}
           </div>
@@ -97,9 +98,9 @@ const UserProfile = () => {
                 <Row gutter={16}>
                   <Col xs={24} md={12}>
                     <Form.Item
-                      label="Full Name"
-                      name="userName"
-                      rules={[{ required: true, message: 'Please enter your name' }]}
+                      label="Họ và tên"
+                      name="username"
+                      rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
                     >
                       <Input prefix={<UserOutlined />} />
                     </Form.Item>
@@ -109,8 +110,8 @@ const UserProfile = () => {
                       label="Email"
                       name="email"
                       rules={[
-                        { required: true, message: 'Please enter your email' },
-                        { type: 'email', message: 'Please enter a valid email' }
+                        { required: true, message: 'Vui lòng nhập email' },
+                        { type: 'email', message: 'Vui lòng nhập email hợp lệ' }
                       ]}
                     >
                       <Input prefix={<MailOutlined />} />
@@ -120,9 +121,9 @@ const UserProfile = () => {
                 <Row gutter={16}>
                   <Col xs={24} md={12}>
                     <Form.Item
-                      label="Phone"
+                      label="Số điện thoại"
                       name="phone"
-                      rules={[{ required: true, message: 'Please enter your phone number' }]}
+                      rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
                     >
                       <Input prefix={<PhoneOutlined />} />
                     </Form.Item>
@@ -130,10 +131,10 @@ const UserProfile = () => {
                 </Row>
                 <div className="flex justify-end mt-4">
                   <Button className="mr-2" onClick={() => setEditMode(false)}>
-                    Cancel
+                    Hủy
                   </Button>
                   <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
-                    Save Changes
+                    Lưu thay đổi
                   </Button>
                 </div>
               </Form>
@@ -153,16 +154,16 @@ const UserProfile = () => {
                   <div>
                     <Text type="secondary">
                       <PhoneOutlined className="mr-2" />
-                      Phone
+                      Số điện thoại
                     </Text>
                     <div>{userData?.phone || 'N/A'}</div>
                   </div>
                   <div>
                     <Text type="secondary">
                       <IdcardOutlined className="mr-2" />
-                      Position
+                      Chức vụ
                     </Text>
-                    <div>{userData?.role?.toLowerCase() || 'N/A'}</div>
+                    <div>{userData?.role ? roleLabelMap[userData.role.toLowerCase()] || userData.role : 'N/A'}</div>
                   </div>
                 </div>
               </>
@@ -173,37 +174,37 @@ const UserProfile = () => {
         <Divider />
 
         <Tabs defaultActiveKey="security">
-          <TabPane tab="Security" key="security">
-            <Card title="Change Password" bordered={false}>
+          <TabPane tab="Bảo mật" key="security">
+            <Card title="Thay đổi mật khẩu" bordered={false}>
               <Form layout="vertical" onFinish={handlePasswordChange}>
                 <Form.Item
-                  label="Current Password"
+                  label="Mật khẩu hiện tại"
                   name="currentPassword"
-                  rules={[{ required: true, message: 'Please enter your current password' }]}
+                  rules={[{ required: true, message: 'Vui lòng nhập mật khẩu hiện tại' }]}
                 >
                   <Input.Password prefix={<LockOutlined />} />
                 </Form.Item>
                 <Form.Item
-                  label="New Password"
+                  label="Mật khẩu mới"
                   name="newPassword"
                   rules={[
-                    { required: true, message: 'Please enter your new password' },
-                    { min: 8, message: 'Password must be at least 8 characters' }
+                    { required: true, message: 'Vui lòng nhập mật khẩu mới' },
+                    { min: 8, message: 'Mật khẩu phải có ít nhất 8 ký tự' }
                   ]}
                 >
                   <Input.Password prefix={<LockOutlined />} />
                 </Form.Item>
                 <Form.Item
-                  label="Confirm New Password"
+                  label="Xác nhận mật khẩu mới"
                   name="confirmPassword"
                   rules={[
-                    { required: true, message: 'Please confirm your new password' },
+                    { required: true, message: 'Vui lòng xác nhận mật khẩu mới' },
                     ({ getFieldValue }) => ({
                       validator(_, value) {
                         if (!value || getFieldValue('newPassword') === value) {
                           return Promise.resolve();
                         }
-                        return Promise.reject(new Error('The two passwords do not match'));
+                        return Promise.reject(new Error('Hai mật khẩu không khớp nhau'));
                       },
                     }),
                   ]}
@@ -211,7 +212,7 @@ const UserProfile = () => {
                   <Input.Password prefix={<LockOutlined />} />
                 </Form.Item>
                 <Button type="primary" htmlType="submit">
-                  Update Password
+                  Cập nhật mật khẩu
                 </Button>
               </Form>
             </Card>
