@@ -8,7 +8,7 @@ const axiosClient = axios.create({
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
-    const accessToken = Cookies.get("__token");
+    const accessToken = Cookies.get("token");
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import "./App.css";
 import Routes from "./route";
 import useAuthen from "./hooks/useAuthen";
-import { ConfigProvider } from "antd";
+import { ToastContainer } from "react-toastify";
 function App() {
   const { initAuth } = useAuthen();
 
@@ -11,9 +11,10 @@ function App() {
   }, [initAuth]);
 
   return (
-    <ConfigProvider>
+    <>
       <Routes />
-    </ConfigProvider>
+      <ToastContainer />
+    </>
   );
 }
 

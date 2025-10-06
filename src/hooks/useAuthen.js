@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import Cookies from "js-cookie";
-import { notification } from "antd";
 import { login, logout as logoutAPI } from "../api/authen.js";
 
 const useAuthen = create((set, get) => ({
@@ -18,16 +17,6 @@ const useAuthen = create((set, get) => ({
         const user = response.data.data?.user;
         const accessToken = response.data.data?.accessToken;
 
-        if (!user || !user.role) {
-          set({ isLoading: false });
-          notification.error({
-            message: "Login Failed",
-            description: "Invalid response format from server",
-            duration: 1,
-          });
-          return false;
-        }
-
         // Save to storage
         Cookies.set("token", accessToken);
         localStorage.setItem("isAuthenticated", "true");
@@ -42,33 +31,14 @@ const useAuthen = create((set, get) => ({
           isAuthenticated: true,
           isInitialized: true,
         });
-
-        notification.success({
-          message: "Login Successful",
-          description: response.data.message || "Login successful",
-          duration: 1,
-        });
-
         return { success: true, role: user.role };
       }
 
       set({ isLoading: false, isInitialized: true });
-      notification.error({
-        message: "Login Failed",
-        description: "Invalid response format from server",
-        duration: 3,
-        placement: "topRight",
-      });
-      return { success: false };
+      return { success: false , response: response };
     } catch (err) {
       console.log("Login error", err);
       set({ isLoading: false, isInitialized: true });
-      notification.error({
-        message: "Login Failed",
-        description:
-          err.response?.data?.message || "Invalid credentials or server error",
-        duration: 1,
-      });
       return { success: false };
     }
   },

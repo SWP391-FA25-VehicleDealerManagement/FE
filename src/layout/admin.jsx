@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Dropdown, Avatar, Button, Space } from "antd";
 import {
   DashboardOutlined,
@@ -13,7 +13,7 @@ import {
   PieChartOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -23,25 +23,64 @@ function getItem(label, key, icon, children, path) {
 }
 
 const adminMenuItems = [
-  getItem("Dashboard", "dashboard", <DashboardOutlined />, null, "/admin/dashboard"),
-  getItem("Reporting & Analysis", "reports", <BarChartOutlined />, [
-    getItem("Sales by region", "sales-by-region", <LineChartOutlined />, null, "/admin/sales-by-region"),
-    getItem("Sales by dealer", "sales-by-dealer", <PieChartOutlined />, null, "/admin/sales-by-dealer"),
+  getItem(
+    "Tổng quan",
+    "dashboard",
+    <DashboardOutlined />,
+    null,
+    "/admin/dashboard"
+  ),
+  getItem(
+    "Quản lý xe",
+    "car-management",
+    <ShopOutlined />,
+    null,
+    "/admin/car-management"
+  ),
+  getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
     getItem(
-      "Inventory & Consumption",
+      "Doanh số theo vùng",
+      "sales-by-region",
+      <LineChartOutlined />,
+      null,
+      "/admin/sales-by-region"
+    ),
+    getItem(
+      "Doanh số theo đại lý",
+      "sales-by-dealer",
+      <PieChartOutlined />,
+      null,
+      "/admin/sales-by-dealer"
+    ),
+    getItem(
+      "Kho hàng & Tiêu thụ",
       "inventory-consumption",
       <FileTextOutlined />,
       null,
       "/admin/inventory-consumption"
     ),
-    getItem("Summary report", "summary-reports", <BarChartOutlined />, null, "/admin/summary-reports"),
+    getItem(
+      "Báo cáo tổng hợp",
+      "summary-reports",
+      <BarChartOutlined />,
+      null,
+      "/admin/summary-reports"
+    ),
   ]),
-  getItem("EVM Staff Management", "staff-management", <TeamOutlined />, null, "/admin/staff-management"),
+  getItem(
+    "Quản lý nhân viên EVM",
+    "staff-management",
+    <TeamOutlined />,
+    null,
+    "/admin/staff-management"
+  ),
 ];
 
 const Admin = ({ children }) => {
   const [current, setCurrent] = useState("dashboard");
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, userDetail } = useAuthen();
 
   const handleLogout = async () => {
@@ -65,12 +104,35 @@ const Admin = ({ children }) => {
 
     const menuItem = findMenuItem(adminMenuItems, key);
     if (menuItem && menuItem.path) {
+      setCurrent(key);
       navigate(menuItem.path);
     }
   };
 
+  // Update selected menu item based on current URL path
+  useEffect(() => {
+    const findMenuKeyByPath = (items, path) => {
+      for (const item of items) {
+        if (item.path === path) {
+          return item.key;
+        }
+        if (item.children) {
+          const found = findMenuKeyByPath(item.children, path);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const currentPath = location.pathname;
+    const menuKey = findMenuKeyByPath(adminMenuItems, currentPath);
+    if (menuKey) {
+      setCurrent(menuKey);
+    }
+  }, [location.pathname]);
+
   const user = {
-    name:  userDetail?.userName || "Admin User",
+    name: userDetail?.userName || "Admin User",
     avatar: userDetail?.avatar || "https://i.pravatar.cc/150?img=3",
   };
 
@@ -78,7 +140,8 @@ const Admin = ({ children }) => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile",
+      label: "Hồ sơ cá nhân",
+      onClick: () => navigate("/admin/profile"),
     },
     {
       type: "divider",
@@ -90,7 +153,7 @@ const Admin = ({ children }) => {
           <LogoutOutlined />
         </div>
       ),
-      label: <div className="text-red-500">Logout</div>,
+      label: <div className="text-red-500">Đăng xuất</div>,
       onClick: handleLogout,
     },
   ];
@@ -101,6 +164,8 @@ const Admin = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
         className="shadow-lg"
         style={{
           position: "fixed",
@@ -111,7 +176,7 @@ const Admin = ({ children }) => {
         }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
-          <div className="text-xl font-bold text-blue-600">EVM System</div>
+          <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
           mode="inline"
@@ -127,7 +192,7 @@ const Admin = ({ children }) => {
         />
       </Sider>
 
-      <Layout style={{ marginLeft: 250 }}>
+      <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
         <Header
           className="sticky top-0 z-50 shadow-md flex items-center justify-between px-6"
           style={{
@@ -152,7 +217,7 @@ const Admin = ({ children }) => {
                 <Space>
                   <Avatar
                     size={32}
-                    src={user?.avatar}
+                    icon={<UserOutlined />}
                     className="border-2 border-white"
                   />
                   <span className="text-black font-medium">{user?.name}</span>
@@ -180,7 +245,7 @@ const Admin = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} EVM System. All rights reserved.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
             </span>
           </div>
         </Footer>
