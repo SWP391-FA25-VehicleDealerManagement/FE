@@ -28,11 +28,11 @@ const DealerDashboard = lazy(() =>
 );
 
 //EVM Staff
-const EVMDashboard = lazy(() =>
-  import("../sections/evm/dashboard/evmdashboard.jsx")
-);
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
 const DealerDetailPage = lazy(() => import("../page/evm/dealerDetailPage.jsx"));
+const EVMVehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
+const EVMVehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
+const VehicleInventoryPage = lazy(() => import("../page/evm/vehicleInventoryPage.jsx"));
 
 //User Profile
 const UserProfilePage = lazy(() => import("../page/profile/userProfilePage.jsx"));
@@ -132,6 +132,9 @@ const Routes = () => {
         { path: "dealer-list", element: <DealerList /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
+        { path: "vehicles", element: <EVMVehicleList /> },
+        { path: "vehicles/:vehicleId", element: <EVMVehicleDetail /> },
+        { path: "inventory", element: <VehicleInventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
