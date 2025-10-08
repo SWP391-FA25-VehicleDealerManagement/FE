@@ -18,13 +18,13 @@ const Error = () => {
         navigate('/admin/dashboard', { replace: true });
         break;
       case 'DEALER_MANAGER':
-        navigate('/dealer/dashboard', { replace: true });
+        navigate('/dealer-manager/dashboard', { replace: true });
         break;
       case 'DEALER_STAFF':
         navigate('/dealer-staff/dashboard', { replace: true });
         break;
       case 'EVM_STAFF':
-        navigate('/evm/dashboard', { replace: true });
+        navigate('/evm-staff/dealer-list', { replace: true });
         break;
       default:
         navigate('/', { replace: true });

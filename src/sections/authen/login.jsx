@@ -12,9 +12,9 @@ import {
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuthen";
-import { toast } from 'react-toastify';
-import logoImage from '../../assets/image/logo/vinfast-logo-mcmp0Am5-removebg-preview.png';
-import carImage from '../../assets/image/car/Group14308.png';
+import { toast } from "react-toastify";
+import logoImage from "../../assets/image/logo/vinfast-logo-mcmp0Am5-removebg-preview.png";
+import carImage from "../../assets/image/car/Group14308.png";
 
 const { Title } = Typography;
 
@@ -24,7 +24,7 @@ const Login = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && role.toLowerCase()) {
+    if (isAuthenticated && role && role.toLowerCase()) {
       switch (role.toLowerCase()) {
         case "admin":
           navigate("/admin/dashboard");
@@ -48,39 +48,9 @@ const Login = () => {
     try {
       const result = await login(values);
       console.log("Login result:", result);
-      
-      if (result.success) {
-          toast.success("Chào mừng bạn trở lại hệ thống EVM!", {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-        
-        // Get the role from the store after successful login
-        const currentRole = role;
 
-        // Redirect based on user role
-        switch (currentRole) {
-          case "ADMIN":
-            navigate("/admin/dashboard");
-            break;
-          case "EVM_STAFF":
-            navigate("/evm-staff/dealer-list");
-            break;
-          case "DEALER_MANAGER":
-            navigate("/dealer-manager/dashboard");
-            break;
-          case "DEALER_STAFF":
-            navigate("/dealer-staff/customer-list");
-            break;
-          default:
-            navigate("/");
-        }
-      } else {
-  toast.error("Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.", {
+      if (result.success) {
+        toast.success("Chào mừng bạn trở lại hệ thống EVM!", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -88,17 +58,54 @@ const Login = () => {
           pauseOnHover: true,
           draggable: true,
         });
+
+        // Get the role from the store after successful login and convert to lowercase if it exists
+        const currentRole = role;
+
+        // Redirect based on user role
+        switch (currentRole) {
+          case "admin":
+            navigate("/admin/dashboard");
+            break;
+          case "evm_staff":
+            navigate("/evm-staff/dealer-list");
+            break;
+          case "dealer_manager":
+            navigate("/dealer-manager/dashboard");
+            break;
+          case "dealer_staff":
+            navigate("/dealer-staff/customer-list");
+            break;
+          default:
+            navigate("/");
+        }
+      } else {
+        toast.error(
+          "Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.",
+          {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          }
+        );
       }
     } catch (error) {
       console.error("Login error:", error);
-  toast.error(error.response.data.message || "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error(
+        error.response.data.message ||
+          "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.",
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
     }
   };
 
@@ -107,13 +114,15 @@ const Login = () => {
       {/* Bên trái - Ảnh xe và logo */}
       <div className="hidden lg:flex lg:flex-1 flex-col justify-center items-center relative p-8">
         <div className="flex flex-col items-center justify-center h-full">
-          <img 
-            src={carImage} 
-            alt="Xe Vinfast" 
-            className="max-w-full max-h-[80%] object-contain z-10" 
+          <img
+            src={carImage}
+            alt="Xe Vinfast"
+            className="max-w-full max-h-[80%] object-contain z-10"
           />
           <div className="text-white text-center mt-8 z-10">
-            <h2 className="text-3xl font-bold mb-2">Hệ thống quản lý xe điện VinFast</h2>
+            <h2 className="text-3xl font-bold mb-2">
+              Hệ thống quản lý xe điện VinFast
+            </h2>
             <p className="text-xl opacity-80">Hiệu quả. Bền vững. Kết nối.</p>
           </div>
         </div>
@@ -123,17 +132,19 @@ const Login = () => {
           <div className="absolute h-60 w-60 rounded-full bg-blue-300 bottom-20 right-20"></div>
         </div>
       </div>
-      
+
       {/* Bên phải - Form đăng nhập */}
       <div className="w-full lg:w-1/2 flex justify-center items-center p-4">
         <Card className="w-full max-w-md rounded-xl shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
           <div className="text-center mb-8">
-            <img 
-              src={logoImage} 
-              alt="Logo Vinfast" 
-              className="h-12 mx-auto mb-4 lg:hidden" 
+            <img
+              src={logoImage}
+              alt="Logo Vinfast"
+              className="h-12 mx-auto mb-4 lg:hidden"
             />
-            <Title level={2} className="text-blue-800 font-bold">Chào mừng trở lại</Title>
+            <Title level={2} className="text-blue-800 font-bold">
+              Chào mừng trở lại
+            </Title>
             <p className="text-gray-600 mt-2">
               Đăng nhập để truy cập bảng điều khiển EVM
             </p>
@@ -152,18 +163,16 @@ const Login = () => {
                   { required: true, message: "Vui lòng nhập tên đăng nhập!" },
                 ]}
               >
-                <Input 
-                  prefix={<UserOutlined className="text-gray-400" />} 
-                  placeholder="Tên đăng nhập" 
-                  className="rounded-lg py-2" 
+                <Input
+                  prefix={<UserOutlined className="text-gray-400" />}
+                  placeholder="Tên đăng nhập"
+                  className="rounded-lg py-2"
                 />
               </Form.Item>
 
               <Form.Item
                 name="password"
-                rules={[
-                  { required: true, message: "Vui lòng nhập mật khẩu!" },
-                ]}
+                rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
               >
                 <Input.Password
                   prefix={<LockOutlined className="text-gray-400" />}
@@ -184,7 +193,7 @@ const Login = () => {
               </Form.Item>
             </Form>
           </Spin>
-          
+
           <div className="text-center mt-4">
             <p className="text-gray-500 text-sm">
               Cần hỗ trợ? Liên hệ quản trị viên hệ thống
