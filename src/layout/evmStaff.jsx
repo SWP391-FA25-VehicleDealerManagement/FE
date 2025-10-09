@@ -49,21 +49,14 @@ const adminMenuItems = [
       "3",
       <CarOutlined />,
       null,
-      "/evm-staff/vehicle-catalog"
+      "/evm-staff/vehicles"
     ),
     getItem(
-      "Quản lý kho hàng",
+      "Quản lý kho & phân bổ xe",
       "4",
       <StockOutlined />,
       null,
-      "/evm-staff/inventory-management"
-    ),
-    getItem(
-      "Phân bổ xe",
-      "5",
-      <ShopOutlined />,
-      null,
-      "/evm-staff/vehicle-allocation"
+      "/evm-staff/inventory"
     ),
   ]),
   getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
