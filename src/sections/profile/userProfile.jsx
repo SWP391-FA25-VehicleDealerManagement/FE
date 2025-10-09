@@ -1,6 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Button, Form, Input, Row, Col, Tabs, Typography, Tag, Divider, message } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, IdcardOutlined, BankOutlined, LockOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  Avatar,
+  Button,
+  Form,
+  Input,
+  Row,
+  Col,
+  Tabs,
+  Typography,
+  Tag,
+  Divider,
+  message,
+} from "antd";
+import {
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  IdcardOutlined,
+  BankOutlined,
+  LockOutlined,
+  EditOutlined,
+  SaveOutlined,
+} from "@ant-design/icons";
+import useUserStore from "../../hooks/useUser";
+import useAuthen from "../../hooks/useAuthen";
+import { toast } from "react-toastify";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -11,61 +36,108 @@ const UserProfile = () => {
   const [editMode, setEditMode] = useState(false);
   const [form] = Form.useForm();
 
+  const { UpdateProfile, isLoading } = useUserStore();
+  const { userDetail, initAuth } = useAuthen();
+
   useEffect(() => {
-    // Get user data from localStorage
-    const user = JSON.parse(localStorage.getItem('userDetail')) || {};
-    console.log("User Data:", user);
-    setUserData(user);
-    setLoading(false);
-    
-    // Set form initial values
-    form.setFieldsValue({
-      username: user.userName || '',
-      email: user.email || '',
-      phone: user.phone || '',
-    });
-  }, [form]);
+    // Get user data from userDetail from auth store
+    if (userDetail) {
+      console.log("User Data:", userDetail);
+      setUserData(userDetail);
+      setLoading(false);
+
+      // Set form initial values
+      form.setFieldsValue({
+        fullName: userDetail.fullName || "",
+        email: userDetail.email || "",
+        phone: userDetail.phone || "",
+      });
+    } else {
+      // Fallback to localStorage if userDetail is not available
+      const user = JSON.parse(localStorage.getItem("userDetail")) || {};
+      console.log("User Data from localStorage:", user);
+      setUserData(user);
+      setLoading(false);
+
+      // Set form initial values
+      form.setFieldsValue({
+        fullName: user.fullName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [form, userDetail]);
 
   const toggleEditMode = () => {
     setEditMode(!editMode);
   };
 
-  const handleSave = (values) => {
-    // Update local storage
-    const updatedUser = { ...userData, ...values };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUserData(updatedUser);
-    setEditMode(false);
-    message.success('Cập nhật hồ sơ thành công');
+  const handleSave = async (values) => {
+    try {
+      const updateData = {
+        fullName: values.fullName,
+        email: values.email,
+        phone: values.phone,
+      };
+
+      console.log("Updating profile with data:", updateData);
+
+      const result = await UpdateProfile(updateData);
+
+      if (result && result.success) {
+        // Update local state
+        const updatedUser = { ...userData, ...result.data };
+        setUserData(updatedUser);
+
+        // Update localStorage and auth store
+        localStorage.setItem("userDetail", JSON.stringify(updatedUser));
+
+        // Re-initialize auth to update the userDetail in auth store
+        initAuth();
+
+        setEditMode(false);
+        toast.success("Cập nhật hồ sơ thành công", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error(error.response.data.message || "Có lỗi xảy ra", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    }
   };
 
   const handlePasswordChange = (values) => {
     // In a real app, this would call an API
-    message.success('Thay đổi mật khẩu thành công');
+    message.success("Thay đổi mật khẩu thành công");
   };
 
-  // Định nghĩa map ở phạm vi component để có thể sử dụng ở nhiều nơi
   const roleColorMap = {
-    admin: 'purple',
-    'dealer_manager': 'blue',
-    'dealer_staff': 'cyan',
-    'evm_staff': 'green',
+    admin: "purple",
+    dealer_manager: "blue",
+    dealer_staff: "cyan",
+    evm_staff: "green",
   };
 
   const roleLabelMap = {
-    admin: 'Quản trị viên',
-    'dealer_manager': 'Quản lý Đại lý',
-    'dealer_staff': 'Nhân viên Đại lý',
-    'evm_staff': 'Nhân viên EVM',
+    admin: "Quản trị viên",
+    dealer_manager: "Quản lý Đại lý",
+    dealer_staff: "Nhân viên Đại lý",
+    evm_staff: "Nhân viên EVM",
   };
 
   const getUserRoleBadge = () => {
     if (!userData || !userData.role) return null;
 
     const roleLowerCase = userData.role.toLowerCase();
-    
+
     return (
-      <Tag color={roleColorMap[roleLowerCase] || 'default'}>
+      <Tag color={roleColorMap[roleLowerCase] || "default"}>
         {roleLabelMap[roleLowerCase] || userData.role}
       </Tag>
     );
@@ -76,14 +148,17 @@ const UserProfile = () => {
       <Card loading={loading} bordered={false} className="shadow-md">
         <div className="flex flex-col md:flex-row items-center md:items-start">
           <div className="mb-4 md:mb-0 md:mr-8 text-center">
-            <Avatar size={120} icon={<UserOutlined />} src={userData?.avatar} className="border-2 border-blue-200" />
-            <div className="mt-4">
-              {getUserRoleBadge()}
-            </div>
+            <Avatar
+              size={120}
+              icon={<UserOutlined />}
+              src={userData?.avatar}
+              className="border-2 border-blue-200"
+            />
+            <div className="mt-4">{getUserRoleBadge()}</div>
             {!editMode && (
-              <Button 
-                type="primary" 
-                icon={<EditOutlined />} 
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
                 onClick={toggleEditMode}
                 className="mt-4"
               >
@@ -99,8 +174,10 @@ const UserProfile = () => {
                   <Col xs={24} md={12}>
                     <Form.Item
                       label="Họ và tên"
-                      name="username"
-                      rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
+                      name="fullName"
+                      rules={[
+                        { required: true, message: "Vui lòng nhập họ và tên" },
+                      ]}
                     >
                       <Input prefix={<UserOutlined />} />
                     </Form.Item>
@@ -110,8 +187,11 @@ const UserProfile = () => {
                       label="Email"
                       name="email"
                       rules={[
-                        { required: true, message: 'Vui lòng nhập email' },
-                        { type: 'email', message: 'Vui lòng nhập email hợp lệ' }
+                        { required: true, message: "Vui lòng nhập email" },
+                        {
+                          type: "email",
+                          message: "Vui lòng nhập email hợp lệ",
+                        },
                       ]}
                     >
                       <Input prefix={<MailOutlined />} />
@@ -123,7 +203,12 @@ const UserProfile = () => {
                     <Form.Item
                       label="Số điện thoại"
                       name="phone"
-                      rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập số điện thoại",
+                        },
+                      ]}
                     >
                       <Input prefix={<PhoneOutlined />} />
                     </Form.Item>
@@ -133,37 +218,52 @@ const UserProfile = () => {
                   <Button className="mr-2" onClick={() => setEditMode(false)}>
                     Hủy
                   </Button>
-                  <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SaveOutlined />}
+                    loading={isLoading}
+                  >
                     Lưu thay đổi
                   </Button>
                 </div>
               </Form>
             ) : (
               <>
-                <Title level={3}>
-                  {userData?.userName || 'User Name'}
-                </Title>
+                <Title level={3}>{userData?.userName || "User Name"}</Title>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Text type="secondary">
+                      <MailOutlined className="mr-2" />
+                      Họ và tên
+                    </Text>
+                    <div>{userData?.fullName || "N/A"}</div>
+                  </div>
                   <div>
                     <Text type="secondary">
                       <MailOutlined className="mr-2" />
                       Email
                     </Text>
-                    <div>{userData?.email || 'N/A'}</div>
+                    <div>{userData?.email || "N/A"}</div>
                   </div>
                   <div>
                     <Text type="secondary">
                       <PhoneOutlined className="mr-2" />
                       Số điện thoại
                     </Text>
-                    <div>{userData?.phone || 'N/A'}</div>
+                    <div>{userData?.phone || "N/A"}</div>
                   </div>
                   <div>
                     <Text type="secondary">
                       <IdcardOutlined className="mr-2" />
                       Chức vụ
                     </Text>
-                    <div>{userData?.role ? roleLabelMap[userData.role.toLowerCase()] || userData.role : 'N/A'}</div>
+                    <div>
+                      {userData?.role
+                        ? roleLabelMap[userData.role.toLowerCase()] ||
+                          userData.role
+                        : "N/A"}
+                    </div>
                   </div>
                 </div>
               </>
@@ -180,7 +280,12 @@ const UserProfile = () => {
                 <Form.Item
                   label="Mật khẩu hiện tại"
                   name="currentPassword"
-                  rules={[{ required: true, message: 'Vui lòng nhập mật khẩu hiện tại' }]}
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng nhập mật khẩu hiện tại",
+                    },
+                  ]}
                 >
                   <Input.Password prefix={<LockOutlined />} />
                 </Form.Item>
@@ -188,8 +293,8 @@ const UserProfile = () => {
                   label="Mật khẩu mới"
                   name="newPassword"
                   rules={[
-                    { required: true, message: 'Vui lòng nhập mật khẩu mới' },
-                    { min: 8, message: 'Mật khẩu phải có ít nhất 8 ký tự' }
+                    { required: true, message: "Vui lòng nhập mật khẩu mới" },
+                    { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự" },
                   ]}
                 >
                   <Input.Password prefix={<LockOutlined />} />
@@ -198,13 +303,18 @@ const UserProfile = () => {
                   label="Xác nhận mật khẩu mới"
                   name="confirmPassword"
                   rules={[
-                    { required: true, message: 'Vui lòng xác nhận mật khẩu mới' },
+                    {
+                      required: true,
+                      message: "Vui lòng xác nhận mật khẩu mới",
+                    },
                     ({ getFieldValue }) => ({
                       validator(_, value) {
-                        if (!value || getFieldValue('newPassword') === value) {
+                        if (!value || getFieldValue("newPassword") === value) {
                           return Promise.resolve();
                         }
-                        return Promise.reject(new Error('Hai mật khẩu không khớp nhau'));
+                        return Promise.reject(
+                          new Error("Hai mật khẩu không khớp nhau")
+                        );
                       },
                     }),
                   ]}

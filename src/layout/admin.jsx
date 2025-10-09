@@ -35,7 +35,7 @@ const adminMenuItems = [
     "car-management",
     <ShopOutlined />,
     null,
-    "/admin/car-management"
+    "/admin/vehicles"
   ),
   getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
     getItem(

@@ -19,8 +19,8 @@ const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
 const AdminDashboard = lazy(() =>
   import("../page/admin/adminDashboardPage.jsx")
 );
-const EVMStaffPage = lazy(() => import("../page/admin/evmStaffPage.jsx"));
-
+const VehicleList = lazy(() => import("../page/admin/vehicleListPage.jsx"));
+const VehicleDetail = lazy(() => import("../page/admin/vehicleDetailPage.jsx"));
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
@@ -29,10 +29,11 @@ const DealerDashboard = lazy(() =>
 const EvmStaffListPage = lazy(() => import("../page/dealer/manager/staffListPage.jsx"));
 
 //EVM Staff
-const EVMDashboard = lazy(() =>
-  import("../sections/evm/dashboard/evmdashboard.jsx")
-);
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
+const DealerDetailPage = lazy(() => import("../page/evm/dealerDetailPage.jsx"));
+const EVMVehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
+const EVMVehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
+const VehicleInventoryPage = lazy(() => import("../page/evm/vehicleInventoryPage.jsx"));
 
 //User Profile
 const UserProfilePage = lazy(() => import("../page/profile/userProfilePage.jsx"));
@@ -108,7 +109,8 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <AdminDashboard /> },
         { path: "profile", element: <UserProfilePage /> },
-        { path: "staff-management", element: <EVMStaffPage /> },
+        { path: "vehicles", element: <VehicleList /> },
+        { path: "vehicles/:vehicleId", element: <VehicleDetail /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -128,9 +130,12 @@ const Routes = () => {
         </RoleBasedRoute>
       ),
       children: [
-        { path: "dashboard", element: <EVMDashboard /> },
         { path: "dealer-list", element: <DealerList /> },
         { path: "profile", element: <UserProfilePage /> },
+        { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
+        { path: "vehicles", element: <EVMVehicleList /> },
+        { path: "vehicles/:vehicleId", element: <EVMVehicleDetail /> },
+        { path: "inventory", element: <VehicleInventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

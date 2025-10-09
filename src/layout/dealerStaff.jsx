@@ -29,14 +29,12 @@ const menuItems = [
   getItem("Quản lý xe", "2", <CarOutlined />, null, "/dealer-staff/vehicle-management"),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Khách hàng", "3", null, null, "/dealer-staff/customers"),
-    getItem("Nhân viên", "4", null, null, "/dealer-staff/staff"),
-    getItem("Đại lý", "5", null, null, "/dealer-staff/dealers"),
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
     getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),
     getItem("Báo cáo kho", "8", null, null, "/dealer-staff/inventory-report"),
+    getItem("Báo cáo công nợ", "9", null, null, "/dealer-staff/customer-debt-report"),
   ]),
-  getItem("Tập tin", "9", <FileOutlined />, null, "/dealer-staff/files"),
 ];
 
 const DealerStaff = ({ children }) => {

@@ -1,20 +1,41 @@
 import React, { useEffect, useState } from "react";
-import { Table, Input, Button, Space, Card, Typography, Spin } from "antd";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Card,
+  Typography,
+  Spin,
+  Modal,
+} from "antd";
 import {
   SearchOutlined,
   UserAddOutlined,
-  EditOutlined,
   DeleteOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
 import useDealerStore from "../../../hooks/useDealer";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import CreateDealerModal from "./createDealerModal";
 
 const { Title } = Typography;
 
 export default function DealerList() {
-  const { dealers, isLoading, fetchDealers } = useDealerStore();
+  const { dealers, isLoading, fetchDealers, deleteDealer } = useDealerStore();
   const [searchText, setSearchText] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedDealer, setSelectedDealer] = useState(null);
   const [searchedColumn, setSearchedColumn] = useState("");
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 5,
+    showSizeChanger: true,
+    pageSizeOptions: ["5", "10", "20", "50"],
+    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+  });
 
   useEffect(() => {
     fetchDealers();
@@ -31,6 +52,33 @@ export default function DealerList() {
     setSearchText("");
   };
 
+  const handleDelete = async () => {
+    if (!selectedDealer) return;
+
+    try {
+      await deleteDealer(selectedDealer.dealerId);
+      setIsModalOpen(false);
+      setSelectedDealer(null);
+      // Refetch dealers list after successful deletion
+      fetchDealers();
+    } catch (err) {
+      console.log("Error deleting dealer:", err);
+    }
+  };
+
+  const showDeleteConfirm = (dealer) => {
+    setSelectedDealer(dealer);
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setSelectedDealer(null);
+  };
+
+  const handleCreateSuccess = () => {
+    fetchDealers(); // Refresh the dealers list
+  };
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
       setSelectedKeys,
@@ -112,27 +160,21 @@ export default function DealerList() {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            size="small"
-            onClick={() => console.log("View customer:", record)}
-          >
-            Xem
-          </Button>
-          <Button
-            type="default"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => console.log("Edit customer:", record)}
-          >
-            Sửa
-          </Button>
+          <Link to={`/evm-staff/dealer-list/${record.dealerId}`}>
+            <Button
+              type="primary"
+              icon={<EyeOutlined />}
+              size="small"
+              onClick={() => console.log("View customer:", record)}
+            >
+              Xem
+            </Button>
+          </Link>
           <Button
             danger
             icon={<DeleteOutlined />}
             size="small"
-            onClick={() => console.log("Delete customer:", record)}
+            onClick={() => showDeleteConfirm(record)}
           >
             Xóa
           </Button>
@@ -148,7 +190,7 @@ export default function DealerList() {
         <Button
           type="primary"
           icon={<UserAddOutlined />}
-          onClick={() => console.log("Add new customer")}
+          onClick={() => setIsCreateModalOpen(true)}
         >
           Thêm Đại lý mới
         </Button>
@@ -163,16 +205,37 @@ export default function DealerList() {
           <Table
             columns={columns}
             dataSource={dealers}
-            rowKey="customerId"
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} mục`,
-            }}
+            rowKey="dealerId"
+            pagination={pagination}
+            onChange={(pagination) => setPagination(pagination)}
           />
         )}
       </Card>
+
+      {/* Modal xác nhận xóa */}
+      <Modal
+        title="Xác nhận xóa đại lý"
+        open={isModalOpen}
+        onOk={handleDelete}
+        onCancel={handleCancel}
+        okText="Xóa"
+        cancelText="Hủy"
+        okType="danger"
+        closable={false}
+      >
+        <p>
+          Bạn có chắc chắn muốn xóa đại lý{" "}
+          <strong>{selectedDealer?.dealerName}</strong> không?
+        </p>
+        <p>Hành động này không thể hoàn tác.</p>
+      </Modal>
+
+      {/* Modal tạo đại lý mới */}
+      <CreateDealerModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 }
