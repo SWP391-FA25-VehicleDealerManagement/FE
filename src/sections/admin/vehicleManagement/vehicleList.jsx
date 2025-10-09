@@ -264,13 +264,13 @@ export default function VehicleList() {
       sorter: (a, b) => a.price - b.price,
       render: (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price),
     },
-    {
-      title: "Đại lý",
-      dataIndex: "dealerName",
-      key: "dealerName",
-      ...getColumnSearchProps("dealerName"),
-      sorter: (a, b) => a.dealerName.localeCompare(b.dealerName),
-    },
+    // {
+    //   title: "Đại lý",
+    //   dataIndex: "dealerName",
+    //   key: "dealerName",
+    //   ...getColumnSearchProps("dealerName"),
+    //   sorter: (a, b) => a.dealerName.localeCompare(b.dealerName),
+    // },
     {
       title: "Trạng thái",
       dataIndex: "status",
@@ -300,13 +300,6 @@ export default function VehicleList() {
               Chi tiết
             </Button>
           </Link>
-          <Button
-            type="default"
-            icon={<EditOutlined />}
-            size="small"
-          >
-            Sửa
-          </Button>
           <Button
             danger
             icon={<DeleteOutlined />}

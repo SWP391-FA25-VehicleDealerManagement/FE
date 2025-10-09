@@ -235,6 +235,13 @@ const UserProfile = () => {
                   <div>
                     <Text type="secondary">
                       <MailOutlined className="mr-2" />
+                      Họ và tên
+                    </Text>
+                    <div>{userData?.fullName || "N/A"}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary">
+                      <MailOutlined className="mr-2" />
                       Email
                     </Text>
                     <div>{userData?.email || "N/A"}</div>
