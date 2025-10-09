@@ -154,9 +154,9 @@ export default function VehicleDetail() {
               <Descriptions.Item label={<><CalendarOutlined /> Năm sản xuất</>}>
                 {vehicle?.year || 'Chưa có thông tin'}
               </Descriptions.Item>
-              <Descriptions.Item label={<><ShopOutlined /> Đại lý</>}>
+              {/* <Descriptions.Item label={<><ShopOutlined /> Đại lý</>}>
                 {vehicle?.dealerName || 'Chưa có thông tin'}
-              </Descriptions.Item>
+              </Descriptions.Item> */}
               <Descriptions.Item label={<><TagOutlined /> Trạng thái</>}>
                 <Tag color={vehicle?.status === 'available' ? 'green' : 'blue'}>
                   {vehicle?.status === 'available' ? 'Còn hàng' : 'Đã bán'}
