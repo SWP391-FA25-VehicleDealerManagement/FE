@@ -44,12 +44,13 @@ const adminMenuItems = [
     getItem("Công nợ", "12", <DollarOutlined />, null, "/evm-staff/debts"),
   ]),
   getItem("Quản lý sản phẩm", "2", <CarOutlined />, [
+    getItem("Danh mục xe", "3", <CarOutlined />, null, "/evm-staff/vehicles"),
     getItem(
-      "Danh mục xe",
-      "3",
-      <CarOutlined />,
+      "Quản lý phiên bản",
+      "5",
+      <TagOutlined />,
       null,
-      "/evm-staff/vehicles"
+      "/evm-staff/vehicle-types"
     ),
     getItem(
       "Quản lý kho & phân bổ xe",
@@ -60,13 +61,6 @@ const adminMenuItems = [
     ),
   ]),
   getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
-    getItem(
-      "Danh sách khuyến mãi",
-      "7",
-      <ContactsOutlined />,
-      null,
-      "/evm-staff/promotion-list"
-    ),
     getItem(
       "Khuyến mãi cho đại lý",
       "8",
@@ -251,7 +245,8 @@ const EvmStaff = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được
+              bảo lưu.
             </span>
           </div>
         </Footer>

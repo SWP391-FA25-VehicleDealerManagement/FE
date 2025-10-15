@@ -1,7 +1,11 @@
 import axiosClient from "../config/axiosClient";
 
 const updateUser = (data) => {
-    return axiosClient.put(`/api/auth/update-user`, data);
-}
+  return axiosClient.put(`/api/auth/update-user`, data);
+};
 
-export { updateUser };
+const changePassword = (data) => {
+  return axiosClient.post(`/api/auth/change-password`, data);
+};
+
+export { updateUser, changePassword };

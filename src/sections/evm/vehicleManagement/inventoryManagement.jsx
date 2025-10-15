@@ -18,7 +18,7 @@ import {
   Form,
   InputNumber,
   DatePicker,
-  Divider
+  Divider,
 } from "antd";
 import {
   SearchOutlined,
@@ -29,10 +29,10 @@ import {
   ExportOutlined,
   ReloadOutlined,
   PlusOutlined,
-  AreaChartOutlined
+  AreaChartOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
-
+import dayjs from "dayjs";
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -170,14 +170,19 @@ export default function InventoryManagement() {
       setTimeout(() => {
         const updatedInventory = [...inventoryData];
         const itemIndex = updatedInventory.findIndex(
-          (item) => item.model === values.model && item.color === values.color && item.warehouseId === values.warehouseId
+          (item) =>
+            item.model === values.model &&
+            item.color === values.color &&
+            item.warehouseId === values.warehouseId
         );
 
         if (itemIndex >= 0) {
           // Update existing item
           updatedInventory[itemIndex].quantity += values.quantity;
           updatedInventory[itemIndex].available += values.quantity;
-          updatedInventory[itemIndex].lastUpdated = new Date().toISOString().split('T')[0];
+          updatedInventory[itemIndex].lastUpdated = new Date()
+            .toISOString()
+            .split("T")[0];
         } else {
           // Create new inventory item
           const newItem = {
@@ -188,8 +193,10 @@ export default function InventoryManagement() {
             available: values.quantity,
             allocated: 0,
             warehouseId: values.warehouseId,
-            warehouseName: warehouseData.find(w => w.id === values.warehouseId)?.name || "",
-            lastUpdated: new Date().toISOString().split('T')[0],
+            warehouseName:
+              warehouseData.find((w) => w.id === values.warehouseId)?.name ||
+              "",
+            lastUpdated: new Date().toISOString().split("T")[0],
             totalValue: values.totalValue || 0,
           };
           updatedInventory.push(newItem);
@@ -400,15 +407,16 @@ export default function InventoryManagement() {
             percent={Math.round((record.used / record.capacity) * 100)}
             size="small"
             status={
-              record.used / record.capacity > 0.9 
-              ? "exception" 
-              : record.used / record.capacity > 0.7 
-              ? "warning" 
-              : "normal"
+              record.used / record.capacity > 0.9
+                ? "exception"
+                : record.used / record.capacity > 0.7
+                ? "warning"
+                : "normal"
             }
           />
           <div className="text-xs mt-1">
-            {record.used}/{record.capacity} xe ({Math.round((record.used / record.capacity) * 100)}%)
+            {record.used}/{record.capacity} xe (
+            {Math.round((record.used / record.capacity) * 100)}%)
           </div>
         </div>
       ),
@@ -444,10 +452,7 @@ export default function InventoryManagement() {
           >
             Nhập kho mới
           </Button>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchData}
-          >
+          <Button icon={<ReloadOutlined />} onClick={fetchData}>
             Làm mới
           </Button>
         </Space>
@@ -458,7 +463,10 @@ export default function InventoryManagement() {
           <Card>
             <Statistic
               title="Tổng số lượng xe trong kho"
-              value={inventoryData.reduce((sum, item) => sum + item.quantity, 0)}
+              value={inventoryData.reduce(
+                (sum, item) => sum + item.quantity,
+                0
+              )}
               prefix={<CarOutlined />}
             />
           </Card>
@@ -467,29 +475,38 @@ export default function InventoryManagement() {
           <Card>
             <Statistic
               title="Số lượng xe sẵn có"
-              value={inventoryData.reduce((sum, item) => sum + item.available, 0)}
-              valueStyle={{ color: '#3f8600' }}
+              value={inventoryData.reduce(
+                (sum, item) => sum + item.available,
+                0
+              )}
+              valueStyle={{ color: "#3f8600" }}
               prefix={<InboxOutlined />}
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={5}>
           <Card>
             <Statistic
               title="Số lượng xe đã phân bổ"
-              value={inventoryData.reduce((sum, item) => sum + item.allocated, 0)}
-              valueStyle={{ color: '#1890ff' }}
+              value={inventoryData.reduce(
+                (sum, item) => sum + item.allocated,
+                0
+              )}
+              valueStyle={{ color: "#1890ff" }}
               prefix={<ExportOutlined />}
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={7}>
           <Card>
             <Statistic
               title="Tổng giá trị hàng tồn kho"
-              value={inventoryData.reduce((sum, item) => sum + item.totalValue, 0)}
-              precision={2}
-              valueStyle={{ color: '#cf1322' }}
+              value={inventoryData.reduce(
+                (sum, item) => sum + item.totalValue,
+                0
+              )}
+              precision={0}
+              valueStyle={{ color: "#4BBF6B" }}
               suffix="VND"
             />
           </Card>
@@ -610,9 +627,9 @@ export default function InventoryManagement() {
           <Form.Item
             name="importDate"
             label="Ngày nhập"
-            initialValue={new Date()}
+            initialValue={dayjs(new Date())}
           >
-            <DatePicker style={{ width: "100%" }} />
+            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" minDate={dayjs(new Date())} />
           </Form.Item>
 
           <Form.Item name="note" label="Ghi chú">

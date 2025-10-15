@@ -64,17 +64,17 @@ const Login = () => {
 
         // Redirect based on user role
         switch (currentRole) {
-          case "admin":
+          case "ADMIN":
             navigate("/admin/dashboard");
             break;
-          case "evm_staff":
+          case "EVM_STAFF":
             navigate("/evm-staff/dealer-list");
             break;
-          case "dealer_manager":
+          case "DEALER_MANAGER":
             navigate("/dealer-manager/dashboard");
             break;
-          case "dealer_staff":
-            navigate("/dealer-staff/customer-list");
+          case "DEALER_STAFF":
+            navigate("/dealer-staff/appointments");
             break;
           default:
             navigate("/");

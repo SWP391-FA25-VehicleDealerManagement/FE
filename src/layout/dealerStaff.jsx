@@ -25,7 +25,8 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem("Tổng quan", "1", <PieChartOutlined />, null, "/dealer-staff/dashboard"),
+  getItem("Quản lý lịch hẹn", "1", <PieChartOutlined />, null, "/dealer-staff/appointments"),
+  getItem("Quản lý đơn hàng", "5", <FileOutlined />, null, "/dealer-staff/orders"),
   getItem("Quản lý xe", "2", <CarOutlined />, null, "/dealer-staff/vehicle-management"),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Khách hàng", "3", null, null, "/dealer-staff/customers"),
