@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { updateUser } from "../api/user";
+import { updateUser, changePassword } from "../api/user";
 import { toast } from "react-toastify";
 const useUserStore = create((set) => ({
   isLoading: false,
@@ -24,6 +24,26 @@ const useUserStore = create((set) => ({
         autoClose: 3000,
         hideProgressBar: false,
       });
+      throw error;
+    }
+  },
+
+  changePassword: async (data) => {
+    try {
+      set({ isLoading: true });
+      const response = await changePassword(data);
+      set({ isLoading: false });
+      if (response && response.status === 200) {
+        return {
+          success: true,
+          status: response.status,
+          data: response.data.data || response.data,
+        };
+      }
+      return { success: false, status: response.status };
+    } catch (error) {
+      set({ isLoading: false });
+      console.error("Error changing password:", error);
       throw error;
     }
   },

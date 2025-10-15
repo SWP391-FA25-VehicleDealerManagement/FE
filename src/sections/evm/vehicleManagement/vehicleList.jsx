@@ -8,22 +8,21 @@ import {
   Typography,
   Spin,
   Tag,
-  Select
+  Select,
 } from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
   CarOutlined,
-  FilterOutlined
+  FilterOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-
+import useVehicleStore from "../../../hooks/useVehicle";
 const { Title } = Typography;
 const { Option } = Select;
 
 export default function VehicleList() {
-  const [vehicles, setVehicles] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { vehicles, isLoading, fetchVehicles } = useVehicleStore();
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
   const [pagination, setPagination] = useState({
@@ -34,66 +33,9 @@ export default function VehicleList() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
 
-  // Mock data for vehicles
-  const mockVehicles = [
-    {
-      id: "VF1001",
-      model: "VF8",
-      color: "Đen",
-      price: 1200000000,
-      year: 2023,
-      status: "available",
-      dealerId: "DL001",
-      dealerName: "Đại lý VinFast Hà Nội",
-      manufactureDate: "2023-05-12",
-    },
-    {
-      id: "VF1002",
-      model: "VF9",
-      color: "Trắng",
-      price: 1500000000,
-      year: 2023,
-      status: "sold",
-      dealerId: "DL002",
-      dealerName: "Đại lý VinFast Hồ Chí Minh",
-      manufactureDate: "2023-04-15",
-    },
-    {
-      id: "VF1003",
-      model: "VF5",
-      color: "Xanh",
-      price: 800000000,
-      year: 2023,
-      status: "available",
-      dealerId: "DL001",
-      dealerName: "Đại lý VinFast Hà Nội",
-      manufactureDate: "2023-06-20",
-    },
-    {
-      id: "VF1004",
-      model: "VF6",
-      color: "Đỏ",
-      price: 950000000,
-      year: 2023,
-      status: "available",
-      dealerId: "DL003",
-      dealerName: "Đại lý VinFast Đà Nẵng",
-      manufactureDate: "2023-07-05",
-    },
-  ];
-
   useEffect(() => {
     fetchVehicles();
-  }, []);
-
-  const fetchVehicles = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setVehicles(mockVehicles);
-      setIsLoading(false);
-    }, 1000);
-  };
+  }, [fetchVehicles]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -158,27 +100,41 @@ export default function VehicleList() {
   const columns = [
     {
       title: "Mã phương tiện",
-      dataIndex: "id",
-      key: "id",
-      ...getColumnSearchProps("id"),
-      sorter: (a, b) => a.id.localeCompare(b.id),
+      dataIndex: "vehicleId",
+      key: "vehicleId",
+      ...getColumnSearchProps("vehicleId"),
+      sorter: (a, b) => a.vehicleId - b.vehicleId,
+    },
+    {
+      title: "Tên xe",
+      dataIndex: "name",
+      key: "name",
+      ...getColumnSearchProps("name"),
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: "Model",
-      dataIndex: "model",
-      key: "model",
-      ...getColumnSearchProps("model"),
-      sorter: (a, b) => a.model.localeCompare(b.model),
+      dataIndex: "modelName",
+      key: "modelName",
+      ...getColumnSearchProps("modelName"),
+      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
+    },
+    {
+      title: "Phiên bản",
+      dataIndex: "variantName",
+      key: "variantName",
+      ...getColumnSearchProps("variantName"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
       filters: [
+        { text: "Black", value: "Black" },
+        { text: "White", value: "White" },
+        { text: "Red", value: "Red" },
+        { text: "Green", value: "Green" },
         { text: "Đen", value: "Đen" },
-        { text: "Trắng", value: "Trắng" },
-        { text: "Đỏ", value: "Đỏ" },
-        { text: "Xanh", value: "Xanh" },
       ],
       onFilter: (value, record) => record.color === value,
       render: (text) => <span>{text}</span>,
@@ -187,41 +143,37 @@ export default function VehicleList() {
       title: "Giá (VNĐ)",
       dataIndex: "price",
       key: "price",
-      sorter: (a, b) => a.price - b.price,
-      render: (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price),
+      sorter: (a, b) => {
+        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, '')) : 0;
+        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, '')) : 0;
+        return priceA - priceB;
+      },
+      render: (price) => price || "N/A",
+    },
+    {
+      title: "Tồn kho",
+      dataIndex: "stock",
+      key: "stock",
+      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
+      render: (stock) => (
+        <Tag color={stock > 0 ? "green" : "red"}>
+          {stock !== null ? stock : "N/A"}
+        </Tag>
+      ),
     },
     {
       title: "Đại lý",
       dataIndex: "dealerName",
       key: "dealerName",
       ...getColumnSearchProps("dealerName"),
-      sorter: (a, b) => a.dealerName.localeCompare(b.dealerName),
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      filters: [
-        { text: "Còn hàng", value: "available" },
-        { text: "Đã bán", value: "sold" },
-      ],
-      onFilter: (value, record) => record.status === value,
-      render: (status) => (
-        <Tag color={status === "available" ? "green" : "blue"}>
-          {status === "available" ? "Còn hàng" : "Đã bán"}
-        </Tag>
-      ),
+      render: (dealerName) => dealerName || "Chưa phân bổ",
     },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <Link to={`/evm-staff/vehicles/${record.id}`}>
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            size="small"
-          >
+        <Link to={`/evm-staff/vehicles/${record.vehicleId}`}>
+          <Button type="primary" icon={<EyeOutlined />} size="small">
             Xem chi tiết
           </Button>
         </Link>
@@ -235,28 +187,6 @@ export default function VehicleList() {
         <Title level={2} className="flex items-center">
           <CarOutlined style={{ marginRight: 8 }} /> Danh sách phương tiện
         </Title>
-        <Space>
-          <Select 
-            placeholder="Lọc theo model"
-            style={{ width: 150 }}
-            allowClear
-          >
-            <Option value="VF5">VF5</Option>
-            <Option value="VF6">VF6</Option>
-            <Option value="VF7">VF7</Option>
-            <Option value="VF8">VF8</Option>
-            <Option value="VF9">VF9</Option>
-          </Select>
-          <Select 
-            placeholder="Lọc theo đại lý"
-            style={{ width: 200 }}
-            allowClear
-          >
-            <Option value="DL001">Đại lý VinFast Hà Nội</Option>
-            <Option value="DL002">Đại lý VinFast Hồ Chí Minh</Option>
-            <Option value="DL003">Đại lý VinFast Đà Nẵng</Option>
-          </Select>
-        </Space>
       </div>
 
       <Card>
@@ -268,7 +198,7 @@ export default function VehicleList() {
           <Table
             columns={columns}
             dataSource={vehicles}
-            rowKey="id"
+            rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
           />

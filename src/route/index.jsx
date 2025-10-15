@@ -21,6 +21,8 @@ const AdminDashboard = lazy(() =>
 );
 const VehicleList = lazy(() => import("../page/admin/vehicleListPage.jsx"));
 const VehicleDetail = lazy(() => import("../page/admin/vehicleDetailPage.jsx"));
+const VehicleTypeList = lazy(() => import("../page/admin/vehicleTypeListPage.jsx"));
+const VehicleTypeDetail = lazy(() => import("../page/admin/vehicleTypeDetailPage.jsx"));
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
@@ -34,6 +36,10 @@ const DealerDetailPage = lazy(() => import("../page/evm/dealerDetailPage.jsx"));
 const EVMVehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
 const EVMVehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
 const VehicleInventoryPage = lazy(() => import("../page/evm/vehicleInventoryPage.jsx"));
+const EVMVehicleTypeList = lazy(() => import("../page/evm/vehicleTypeListPage.jsx"));
+const EVMVehicleTypeDetail = lazy(() => import("../page/evm/vehicleTypeDetailPage.jsx"));
+const ContractsTargetsPage = lazy(() => import("../page/evm/contractsTargetsPage.jsx"));
+const DealerDebtsPage = lazy(() => import("../page/evm/dealerDebtsPage.jsx"));
 
 //User Profile
 const UserProfilePage = lazy(() => import("../page/profile/userProfilePage.jsx"));
@@ -111,6 +117,8 @@ const Routes = () => {
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleList /> },
         { path: "vehicles/:vehicleId", element: <VehicleDetail /> },
+        { path: "vehicle-types", element: <VehicleTypeList /> },
+        { path: "vehicle-types/:variantId", element: <VehicleTypeDetail /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -133,9 +141,13 @@ const Routes = () => {
         { path: "dealer-list", element: <DealerList /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
+        { path: "contracts-targets", element: <ContractsTargetsPage /> },
+        { path: "debts", element: <DealerDebtsPage /> },
         { path: "vehicles", element: <EVMVehicleList /> },
         { path: "vehicles/:vehicleId", element: <EVMVehicleDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
+        { path: "vehicle-types", element: <EVMVehicleTypeList /> },
+        { path: "vehicle-types/:variantId", element: <EVMVehicleTypeDetail /> },
         { path: "*", element: <Error404 /> },
       ],
     },
