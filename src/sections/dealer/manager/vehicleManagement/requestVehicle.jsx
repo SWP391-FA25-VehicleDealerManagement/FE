@@ -22,6 +22,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useVehicleStore from "../../../../hooks/useVehicle";
+import useAuthen from "../../../../hooks/useAuthen";
+import useDealerRequest from "../../../../hooks/useDealerRequest";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -29,6 +31,8 @@ const { Option } = Select;
 export default function RequestVehicle() {
   const navigate = useNavigate();
   const { vehicles, isLoading, fetchVehicles } = useVehicleStore();
+  const { userDetail } = useAuthen();
+  const { createRequestVehicle } = useDealerRequest();
   const [searchText, setSearchText] = useState("");
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -74,9 +78,9 @@ export default function RequestVehicle() {
     try {
       const values = await form.validateFields();
       
-      // Lấy dealerId từ localStorage
-      const userDetail = JSON.parse(localStorage.getItem("userDetail"));
-      const dealerId = userDetail?.dealerId;
+      // Lấy dealerId và userId từ userDetail
+      const dealerId = userDetail?.dealer?.dealerId;
+      const userId = userDetail?.userId;
 
       if (!dealerId) {
         toast.error("Không tìm thấy thông tin đại lý", {
@@ -86,29 +90,76 @@ export default function RequestVehicle() {
         return;
       }
 
-      const orderData = {
-        vehicleId: selectedVehicle.vehicleId,
+      if (!userId) {
+        toast.error("Không tìm thấy thông tin người dùng", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Lấy variantId từ vehicle (cần có trong vehicle object)
+      const variantId = selectedVehicle?.variantId;
+      
+      if (!variantId) {
+        toast.error("Không tìm thấy thông tin phiên bản xe", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Parse price từ string sang number (loại bỏ ký tự không phải số)
+      const priceString = selectedVehicle?.price || "0";
+      const unitPrice = parseFloat(priceString.replace(/[^0-9.]/g, "")) || 0;
+
+      // Tạo request data theo đúng format API
+      const requestData = {
         dealerId: dealerId,
-        quantity: values.quantity,
-        color: values.color,
+        userId: userId,
+        requiredDate: new Date().toISOString(), // Ngày yêu cầu hiện tại
+        priority: "NORMAL", // Hoặc lấy từ form nếu có
         notes: values.notes || "",
+        requestDetails: [
+          {
+            variantId: variantId,
+            quantity: values.quantity,
+            unitPrice: unitPrice,
+            notes: values.notes || ""
+          }
+        ]
       };
 
-      // TODO: Gọi API đặt xe ở đây
-      console.log("Order data:", orderData);
+      console.log("Request data:", requestData);
 
-      toast.success(`Đã gửi yêu cầu đặt ${values.quantity} xe ${selectedVehicle.name}`, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      // Gọi API tạo dealer request
+      const response = await createRequestVehicle(requestData);
 
-      setIsOrderModalOpen(false);
-      setSelectedVehicle(null);
-      form.resetFields();
+      if (response && response.data) {
+        toast.success(
+          `Đã gửi yêu cầu đặt ${values.quantity} xe ${selectedVehicle.name} thành công!`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+          }
+        );
+
+        setIsOrderModalOpen(false);
+        setSelectedVehicle(null);
+        form.resetFields();
+      } else {
+        throw new Error("Phản hồi từ server không hợp lệ");
+      }
     } catch (error) {
       console.error("Error ordering vehicle:", error);
-      toast.error("Không thể gửi yêu cầu đặt xe", {
+      
+      // Xử lý error message từ API
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Không thể gửi yêu cầu đặt xe";
+      
+      toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
       });

@@ -49,8 +49,18 @@ const menuItems = [
     ),
   ]),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
-    getItem("Khách hàng", "3", null, null, "/dealer-manager/customers"),
-    getItem("Nhân viên", "4", null, null, "/dealer-manager/staff"),
+    getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
+  ]),
+  getItem("Báo cáo", "sub2", <TeamOutlined />, [
+    getItem("Báo cáo bán hàng", "4", null, null, "/dealer-manager/sales-report"),
+    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory-report"),
+    getItem(
+      "Báo cáo công nợ",
+      "6",
+      null,
+      null,
+      "/dealer-manager/customer-debt-report"
+    ),
   ]),
 ];
 

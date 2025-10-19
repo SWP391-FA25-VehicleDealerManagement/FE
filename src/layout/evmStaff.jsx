@@ -15,6 +15,8 @@ import {
   DollarOutlined,
   ContactsOutlined,
   BankOutlined,
+  SwapOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
@@ -60,13 +62,22 @@ const adminMenuItems = [
       "/evm-staff/vehicle-types"
     ),
   ]),
-  getItem(
-    "Quản lý kho & phân bổ xe",
-    "4",
-    <StockOutlined />,
-    null,
-    "/evm-staff/inventory"
-  ),
+  getItem("Quản lý kho", "4", <StockOutlined />, [
+    getItem(
+      "Kho hàng",
+      "4-1",
+      <InboxOutlined />,
+      null,
+      "/evm-staff/inventory"
+    ),
+    getItem(
+      "Phân bổ cho đại lý",
+      "4-2",
+      <SwapOutlined />,
+      null,
+      "/evm-staff/allocate-inventory"
+    ),
+  ]),
   getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
     getItem(
       "Khuyến mãi cho đại lý",

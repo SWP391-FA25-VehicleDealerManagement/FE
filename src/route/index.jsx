@@ -43,6 +43,9 @@ const DealerDetailPage = lazy(() => import("../page/evm/dealerDetailPage.jsx"));
 const VehicleInventoryPage = lazy(() =>
   import("../page/evm/vehicleInventoryPage.jsx")
 );
+const AllocateInventoryPage = lazy(() =>
+  import("../page/evm/allocateInventoryPage.jsx")
+);
 const ContractsTargetsPage = lazy(() =>
   import("../page/evm/contractsTargetsPage.jsx")
 );
@@ -102,7 +105,7 @@ const Routes = () => {
         case "DEALER_MANAGER":
           return <Navigate to="/dealer-manager/dashboard" replace />;
         case "DEALER_STAFF":
-          return <Navigate to="/dealer-staff/customer-list" replace />;
+          return <Navigate to="/dealer-staff/appointments" replace />;
         default:
           return <Navigate to="/403" replace />;
       }
@@ -169,6 +172,7 @@ const Routes = () => {
         { path: "vehicle-models", element: <VehicleModelList /> },
         { path: "vehicle-models/:id", element: <VehicleModelDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
+        { path: "allocate-inventory", element: <AllocateInventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

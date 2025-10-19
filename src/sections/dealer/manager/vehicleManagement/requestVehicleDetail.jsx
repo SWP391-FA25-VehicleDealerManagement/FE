@@ -33,6 +33,7 @@ import {
 import { toast } from "react-toastify";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
+import useDealerRequest from "../../../../hooks/useDealerRequest";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -42,6 +43,7 @@ export default function RequestVehicleDetail() {
   const navigate = useNavigate();
   const { fetchVehicleById, isLoading } = useVehicleStore();
   const { userDetail } = useAuthen();
+  const { createRequestVehicle } = useDealerRequest();
   const [vehicle, setVehicle] = useState(null);
   const [activeTab, setActiveTab] = useState("1");
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -73,7 +75,9 @@ export default function RequestVehicleDetail() {
     try {
       const values = await form.validateFields();
       
+      // Lấy dealerId và userId từ userDetail
       const dealerId = userDetail?.dealer?.dealerId;
+      const userId = userDetail?.userId;
 
       if (!dealerId) {
         toast.error("Không tìm thấy thông tin đại lý", {
@@ -83,29 +87,78 @@ export default function RequestVehicleDetail() {
         return;
       }
 
-      const orderData = {
-        vehicleId: vehicle.vehicleId,
+      if (!userId) {
+        toast.error("Không tìm thấy thông tin người dùng", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Lấy variantId từ vehicle
+      const variantId = vehicle?.vehicleDetails.variantId;
+      
+      if (!variantId) {
+        toast.error("Không tìm thấy thông tin phiên bản xe", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Parse price từ string sang number
+      const priceString = vehicle?.price || "0";
+      const unitPrice = parseFloat(priceString.replace(/[^0-9.]/g, "")) || 0;
+
+      // Tạo request data theo đúng format API
+      const requestData = {
         dealerId: dealerId,
-        quantity: values.quantity,
-        color: values.color,
+        userId: userId,
+        requiredDate: new Date().toISOString(),
+        priority: "NORMAL",
         notes: values.notes || "",
+        requestDetails: [
+          {
+            variantId: variantId,
+            quantity: values.quantity,
+            unitPrice: unitPrice,
+            notes: values.notes || ""
+          }
+        ]
       };
 
-      // TODO: Gọi API đặt xe ở đây
-      console.log("Order data:", orderData);
+      console.log("Request data:", requestData);
 
-      toast.success(`Đã gửi yêu cầu đặt ${values.quantity} xe ${vehicle.name}`, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      // Gọi API tạo dealer request
+      const response = await createRequestVehicle(requestData);
 
-      setIsOrderModalOpen(false);
-      setSelectedColor("#000000");
-      form.resetFields();
+      if (response && response.data) {
+        toast.success(
+          `Đã gửi yêu cầu đặt ${values.quantity} xe ${vehicle.name} thành công!`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+          }
+        );
+
+        setIsOrderModalOpen(false);
+        setSelectedColor("#000000");
+        form.resetFields();
+        
+        // Có thể navigate về trang danh sách request
+        // navigate("/dealer-manager/vehicle-requests");
+      } else {
+        throw new Error("Phản hồi từ server không hợp lệ");
+      }
     } catch (error) {
       console.error("Error ordering vehicle:", error);
-      toast.error("Không thể gửi yêu cầu đặt xe", {
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Không thể gửi yêu cầu đặt xe";
+      
+      toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
       });
