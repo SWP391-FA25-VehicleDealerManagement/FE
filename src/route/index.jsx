@@ -214,6 +214,8 @@ const Routes = () => {
         { path: "request-list", element: <RequestListPage /> },
         { path: "request-list/:id", element: <RequestDetailPage /> },
         { path: "*", element: <Error404 /> },
+        { path: "staff", element: <EvmStaffListPage />
+        }
       ],
     },
 
