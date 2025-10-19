@@ -37,7 +37,6 @@ export default function VehicleEditModal({
         name: vehicle.name,
         color: vehicle.color,
         price: vehicle.price,
-        stock: vehicle.stock,
         variantId: vehicle.variantId,
         dealerId: vehicle.dealerId,
         description: vehicle.description,
@@ -210,18 +209,6 @@ export default function VehicleEditModal({
               <Input placeholder="Nhập giá" />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="stock" label="Tồn kho">
-              <InputNumber
-                style={{ width: "100%" }}
-                placeholder="Nhập số lượng"
-                min={0}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="variantId" label="Phiên bản">
               <Select

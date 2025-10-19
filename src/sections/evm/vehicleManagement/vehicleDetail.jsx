@@ -111,7 +111,6 @@ export default function VehicleDetail() {
       price: cleanPrice,
       name: values.name || "",
       dealerId: values.dealerId || 0,
-      stock: values.stock || 0,
       vehicleName: values.name || "",
       description: values.description || "",
     };
@@ -360,7 +359,7 @@ export default function VehicleDetail() {
               >
                 {vehicle?.price || "Liên hệ"}
               </Descriptions.Item>
-              <Descriptions.Item
+              {/* <Descriptions.Item
                 label={
                   <span
                     style={{
@@ -393,7 +392,7 @@ export default function VehicleDetail() {
                 <Tag color={vehicle?.stock > 0 ? "green" : "red"}>
                   {vehicle?.stock !== null ? vehicle?.stock : "N/A"}
                 </Tag>
-              </Descriptions.Item>
+              </Descriptions.Item> */}
             </Descriptions>
           </Card>
         </Col>
@@ -424,14 +423,14 @@ export default function VehicleDetail() {
                   <Descriptions.Item label="Giá">
                     {vehicle?.price || "Liên hệ"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Tồn kho">
+                  {/* <Descriptions.Item label="Tồn kho">
                     <Tag color={vehicle?.stock > 0 ? "green" : "red"}>
                       {vehicle?.stock !== null ? vehicle?.stock : "N/A"}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Đại lý">
                     {vehicle?.dealerName || "Chưa phân bổ"}
-                  </Descriptions.Item>
+                  </Descriptions.Item> */}
                   <Descriptions.Item label="Mô tả model" span={2}>
                     {vehicle?.modelDescription || "Chưa có mô tả"}
                   </Descriptions.Item>

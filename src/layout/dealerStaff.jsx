@@ -8,7 +8,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   DownOutlined,
-  SettingOutlined,
+  InboxOutlined,
   CarOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
@@ -44,7 +44,14 @@ const menuItems = [
     "2",
     <CarOutlined />,
     null,
-    "/dealer-staff/vehicle-management"
+    "/dealer-staff/vehicles"
+  ),
+  getItem(
+    "Quản lý kho",
+    "sub3",
+    <InboxOutlined />,
+    null,
+    "/dealer-staff/inventory"
   ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Khách hàng", "3", null, null, "/dealer-staff/customer-list"),
@@ -109,7 +116,6 @@ const DealerStaff = ({ children }) => {
     },
   ];
 
- 
   const renderMenuItems = (items) => {
     return items.map((item) => {
       if (item.children && item.children.length > 0) {

@@ -36,6 +36,12 @@ const RequestVehiclePage = lazy(() =>
 const RequestVehicleDetailPage = lazy(() =>
   import("../page/dealer/manager/requestVehicleDetailPage.jsx")
 );
+const RequestListPage = lazy(() =>
+  import("../sections/dealer/manager/vehicleManagement/requestList.jsx")
+);
+const RequestDetailPage = lazy(() =>
+  import("../sections/dealer/manager/vehicleManagement/requestDetail.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -71,6 +77,12 @@ const UserProfilePage = lazy(() =>
 );
 
 //Dealer Staff
+const DealerStaffVehicleListPage = lazy(() =>
+  import("../page/dealer/staff/vehicleListPage.jsx")
+);
+const DealerStaffVehicleDetailPage = lazy(() =>
+  import("../page/dealer/staff/vehicleDetail.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -199,6 +211,8 @@ const Routes = () => {
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
         { path: "vehicle-requests", element: <RequestVehiclePage /> },
         { path: "vehicle-requests/:id", element: <RequestVehicleDetailPage /> },
+        { path: "request-list", element: <RequestListPage /> },
+        { path: "request-list/:id", element: <RequestDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -221,6 +235,8 @@ const Routes = () => {
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerList /> },
         { path: "profile", element: <UserProfilePage /> },
+        { path: "vehicles", element: <DealerStaffVehicleListPage /> },
+        { path: "vehicles/:vehicleId", element: <DealerStaffVehicleDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

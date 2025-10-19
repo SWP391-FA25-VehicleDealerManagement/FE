@@ -226,24 +226,24 @@ export default function VehicleList() {
       },
       render: (price) => price || "N/A",
     },
-    {
-      title: "Tồn kho",
-      dataIndex: "stock",
-      key: "stock",
-      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
-      render: (stock) => (
-        <Tag color={stock > 0 ? "green" : "red"}>
-          {stock !== null ? stock : "N/A"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Đại lý",
-      dataIndex: "dealerName",
-      key: "dealerName",
-      ...getColumnSearchProps("dealerName"),
-      render: (dealerName) => dealerName || "Chưa phân bổ",
-    },
+    // {
+    //   title: "Tồn kho",
+    //   dataIndex: "stock",
+    //   key: "stock",
+    //   sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
+    //   render: (stock) => (
+    //     <Tag color={stock > 0 ? "green" : "red"}>
+    //       {stock !== null ? stock : "N/A"}
+    //     </Tag>
+    //   ),
+    // },
+    // {
+    //   title: "Đại lý",
+    //   dataIndex: "dealerName",
+    //   key: "dealerName",
+    //   ...getColumnSearchProps("dealerName"),
+    //   render: (dealerName) => dealerName || "Chưa phân bổ",
+    // },
     {
       title: "Thao tác",
       key: "action",

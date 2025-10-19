@@ -47,12 +47,25 @@ const menuItems = [
       null,
       "/dealer-manager/vehicle-requests"
     ),
+    getItem(
+      "Danh mục đơn yêu cầu xe",
+      "request-management",
+      null,
+      null,
+      "/dealer-manager/request-list"
+    ),
   ]),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
-    getItem("Báo cáo bán hàng", "4", null, null, "/dealer-manager/sales-report"),
+    getItem(
+      "Báo cáo bán hàng",
+      "4",
+      null,
+      null,
+      "/dealer-manager/sales-report"
+    ),
     getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory-report"),
     getItem(
       "Báo cáo công nợ",
