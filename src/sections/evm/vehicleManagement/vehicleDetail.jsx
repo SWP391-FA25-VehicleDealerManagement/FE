@@ -18,6 +18,7 @@ import { toast } from "react-toastify";
 import useVehicleStore from "../../../hooks/useVehicle";
 import useDealerStore from "../../../hooks/useDealer";
 import useVariantStore from "../../../hooks/useVariant";
+import VehicleEditModal from "./vehicleEditModal";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -25,7 +26,7 @@ const { Option } = Select;
 
 export default function VehicleDetail() {
   const { vehicleId } = useParams();
-  const { vehicles, isLoading, fetchVehicles, updateVehicle } = useVehicleStore();
+  const { fetchVehicleById, isLoading, updateVehicle } = useVehicleStore();
   const { dealers, fetchDealers } = useDealerStore();
   const { variants, fetchVariants } = useVariantStore();
   const [vehicle, setVehicle] = useState(null);
@@ -35,17 +36,16 @@ export default function VehicleDetail() {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    fetchVehicles();
+    const loadData = async () => {
+      if (vehicleId) {
+        const vehicleData = await fetchVehicleById(vehicleId);
+        setVehicle(vehicleData);
+      }
+    };
+    loadData();
     fetchDealers();
     fetchVariants();
-  }, [fetchVehicles, fetchDealers, fetchVariants]);
-
-  useEffect(() => {
-    if (vehicles.length > 0 && vehicleId) {
-      const foundVehicle = vehicles.find(v => v.vehicleId === parseInt(vehicleId));
-      setVehicle(foundVehicle);
-    }
-  }, [vehicles, vehicleId]);
+  }, [vehicleId, fetchVehicleById, fetchDealers, fetchVariants]);
 
   const showDeleteModal = () => {
     setIsDeleteModalOpen(true);
@@ -56,24 +56,11 @@ export default function VehicleDetail() {
   };
 
   const showEditModal = () => {
-    form.setFieldsValue({
-      name: vehicle?.name,
-      color: vehicle?.color,
-      image: vehicle?.image,
-      price: vehicle?.price,
-      stock: vehicle?.stock,
-      dealerId: vehicle?.dealerId,
-      variantId: vehicle?.variantId,
-      vehicleName: vehicle?.vehicleName || vehicle?.name,
-      vehicleType: vehicle?.vehicleType || vehicle?.modelName,
-      description: vehicle?.description || vehicle?.modelDescription,
-    });
     setIsEditModalOpen(true);
   };
 
   const handleEditCancel = () => {
     setIsEditModalOpen(false);
-    form.resetFields();
   };
 
   const handleUpdateSubmit = async () => {
@@ -92,7 +79,9 @@ export default function VehicleDetail() {
         
         setIsEditModalOpen(false);
         form.resetFields();
-        fetchVehicles();
+        // Refresh vehicle data
+        const vehicleData = await fetchVehicleById(vehicleId);
+        setVehicle(vehicleData);
       }
     } catch (error) {
       console.error("Error updating vehicle:", error);
@@ -116,7 +105,7 @@ export default function VehicleDetail() {
       });
       
       // Redirect to vehicle list page
-      window.location.href = '/admin/vehicles';
+      window.location.href = '/evm-staff/vehicles';
     } catch (error) {
       console.error("Error deleting vehicle:", error);
       toast.error("Xóa phương tiện thất bại", {
@@ -222,7 +211,8 @@ export default function VehicleDetail() {
                 tab="Thông tin chi tiết"
                 key="1"
               >
-                <Descriptions title="Thông tin phương tiện" bordered column={2}>
+                {/* Thông tin cơ bản */}
+                <Descriptions title="Thông tin cơ bản" bordered column={2} style={{ marginBottom: 24 }}>
                   <Descriptions.Item label="Tên xe" span={2}>{vehicle?.name}</Descriptions.Item>
                   <Descriptions.Item label="Model">{vehicle?.modelName}</Descriptions.Item>
                   <Descriptions.Item label="Phiên bản">{vehicle?.variantName}</Descriptions.Item>
@@ -238,51 +228,151 @@ export default function VehicleDetail() {
                     {vehicle?.modelDescription || 'Chưa có mô tả'}
                   </Descriptions.Item>
                 </Descriptions>
+
+                {/* Kích thước & Trọng lượng */}
+                <Descriptions title="Kích thước & Trọng lượng" bordered column={2} style={{ marginBottom: 24 }}>
+                  <Descriptions.Item label="Kích thước (DxRxC)" span={2}>
+                    {vehicle?.vehicleDetails?.dimensionsMm || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Chiều dài cơ sở">
+                    {vehicle?.vehicleDetails?.wheelbaseMm ? `${vehicle.vehicleDetails.wheelbaseMm} mm` : 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Khoảng sáng gầm">
+                    {vehicle?.vehicleDetails?.groundClearanceMm ? `${vehicle.vehicleDetails.groundClearanceMm} mm` : 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Trọng lượng">
+                    {vehicle?.vehicleDetails?.curbWeightKg ? `${vehicle.vehicleDetails.curbWeightKg} kg` : 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Số chỗ ngồi">
+                    {vehicle?.vehicleDetails?.seatingCapacity || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Dung tích cốp" span={2}>
+                    {vehicle?.vehicleDetails?.trunkCapacityLiters ? `${vehicle.vehicleDetails.trunkCapacityLiters} lít` : 'N/A'}
+                  </Descriptions.Item>
+                </Descriptions>
+
+                {/* Động cơ & Hiệu suất */}
+                <Descriptions title="Động cơ & Hiệu suất" bordered column={2} style={{ marginBottom: 24 }}>
+                  <Descriptions.Item label="Loại động cơ" span={2}>
+                    {vehicle?.vehicleDetails?.engineType || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Công suất tối đa">
+                    {vehicle?.vehicleDetails?.maxPower || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mô-men xoắn tối đa">
+                    {vehicle?.vehicleDetails?.maxTorque || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Tốc độ tối đa">
+                    {vehicle?.vehicleDetails?.topSpeedKmh ? `${vehicle.vehicleDetails.topSpeedKmh} km/h` : 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hệ dẫn động">
+                    {vehicle?.vehicleDetails?.drivetrain || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Chế độ lái" span={2}>
+                    {vehicle?.vehicleDetails?.driveModes || 'N/A'}
+                  </Descriptions.Item>
+                  
+                  {/* Battery Info - Only show if exists */}
+                  {(vehicle?.vehicleDetails?.batteryCapacityKwh || 
+                    vehicle?.vehicleDetails?.rangePerChargeKm || 
+                    vehicle?.vehicleDetails?.chargingTime) && (
+                    <>
+                      <Descriptions.Item label="Dung lượng pin">
+                        {vehicle?.vehicleDetails?.batteryCapacityKwh ? `${vehicle.vehicleDetails.batteryCapacityKwh} kWh` : 'N/A'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Phạm vi hoạt động">
+                        {vehicle?.vehicleDetails?.rangePerChargeKm ? `${vehicle.vehicleDetails.rangePerChargeKm} km` : 'N/A'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Thời gian sạc" span={2}>
+                        {vehicle?.vehicleDetails?.chargingTime || 'N/A'}
+                      </Descriptions.Item>
+                    </>
+                  )}
+                </Descriptions>
+
+                {/* Ngoại thất & Nội thất */}
+                <Descriptions title="Ngoại thất & Nội thất" bordered column={1} style={{ marginBottom: 24 }}>
+                  <Descriptions.Item label="Tính năng ngoại thất">
+                    {vehicle?.vehicleDetails?.exteriorFeatures || 'Chưa có thông tin'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Tính năng nội thất">
+                    {vehicle?.vehicleDetails?.interiorFeatures || 'Chưa có thông tin'}
+                  </Descriptions.Item>
+                </Descriptions>
+
+                {/* An toàn */}
+                <Descriptions title="Hệ thống an toàn" bordered column={2}>
+                  <Descriptions.Item label="Túi khí">
+                    {vehicle?.vehicleDetails?.airbags || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hệ thống phanh">
+                    {vehicle?.vehicleDetails?.brakingSystem || 'N/A'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Kiểm soát ổn định (ESC)">
+                    <Tag color={vehicle?.vehicleDetails?.hasEsc ? "green" : "red"}>
+                      {vehicle?.vehicleDetails?.hasEsc ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                      {vehicle?.vehicleDetails?.hasEsc ? ' Có' : ' Không'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hỗ trợ khởi hành ngang dốc">
+                    <Tag color={vehicle?.vehicleDetails?.hasHillStartAssist ? "green" : "red"}>
+                      {vehicle?.vehicleDetails?.hasHillStartAssist ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                      {vehicle?.vehicleDetails?.hasHillStartAssist ? ' Có' : ' Không'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Cảm biến áp suất lốp">
+                    <Tag color={vehicle?.vehicleDetails?.hasTpms ? "green" : "red"}>
+                      {vehicle?.vehicleDetails?.hasTpms ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                      {vehicle?.vehicleDetails?.hasTpms ? ' Có' : ' Không'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Camera lùi">
+                    <Tag color={vehicle?.vehicleDetails?.hasRearCamera ? "green" : "red"}>
+                      {vehicle?.vehicleDetails?.hasRearCamera ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                      {vehicle?.vehicleDetails?.hasRearCamera ? ' Có' : ' Không'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Khóa cửa trẻ em" span={2}>
+                    <Tag color={vehicle?.vehicleDetails?.hasChildLock ? "green" : "red"}>
+                      {vehicle?.vehicleDetails?.hasChildLock ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                      {vehicle?.vehicleDetails?.hasChildLock ? ' Có' : ' Không'}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
               </TabPane>
               
               <TabPane
                 tab="Hình ảnh"
                 key="2"
               >
-                <Card title="Hình ảnh phương tiện">
-                  <Row gutter={[16, 16]}>
-                    {vehicle?.image && (
-                      <Col span={12}>
-                        <Image
-                          width="100%"
-                          src={vehicle.image}
-                          alt={vehicle.name}
-                          style={{ borderRadius: 8 }}
-                        />
-                        <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginTop: 8 }}>
-                          Hình ảnh xe
-                        </Text>
-                      </Col>
-                    )}
-                    {vehicle?.variantImage && (
-                      <Col span={12}>
-                        <Image
-                          width="100%"
-                          src={vehicle.variantImage}
-                          alt={vehicle.variantName}
-                          style={{ borderRadius: 8 }}
-                        />
-                        <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginTop: 8 }}>
-                          Hình ảnh phiên bản
-                        </Text>
-                      </Col>
-                    )}
-                  </Row>
-                </Card>
-              </TabPane>
-              
-              <TabPane
-                tab="Lịch sử"
-                key="3"
-              >
-                <Card title="Lịch sử phương tiện">
-                  <p>Chưa có thông tin lịch sử cho phương tiện này.</p>
-                </Card>
+                <Row gutter={[16, 16]}>
+                  {vehicle?.image && (
+                    <Col span={12}>
+                      <Image
+                        width="100%"
+                        src={vehicle.image}
+                        alt={vehicle.name}
+                        style={{ borderRadius: 8 }}
+                      />
+                      <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginTop: 8 }}>
+                        Hình ảnh xe
+                      </Text>
+                    </Col>
+                  )}
+                  {vehicle?.variantImage && (
+                    <Col span={12}>
+                      <Image
+                        width="100%"
+                        src={vehicle.variantImage}
+                        alt={vehicle.variantName}
+                        style={{ borderRadius: 8 }}
+                      />
+                      <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginTop: 8 }}>
+                        Hình ảnh phiên bản
+                      </Text>
+                    </Col>
+                  )}
+                </Row>
               </TabPane>
             </Tabs>
           </Card>
@@ -290,139 +380,16 @@ export default function VehicleDetail() {
       </Row>
 
       {/* Edit Modal */}
-      <Modal
-        title={
-          <div>
-            <EditOutlined style={{ marginRight: 8 }} />
-            Chỉnh sửa phương tiện
-          </div>
-        }
+      <VehicleEditModal
         open={isEditModalOpen}
-        onOk={handleUpdateSubmit}
         onCancel={handleEditCancel}
-        okText="Cập nhật"
-        cancelText="Hủy"
-        width={700}
-      >
-        <Form form={form} layout="vertical">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="name"
-                label="Tên xe"
-                rules={[{ required: true, message: "Vui lòng nhập tên xe" }]}
-              >
-                <Input placeholder="Nhập tên xe" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="color"
-                label="Màu sắc"
-                rules={[{ required: true, message: "Vui lòng nhập màu sắc" }]}
-              >
-                <Input placeholder="Nhập màu sắc" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="image"
-            label="URL hình ảnh"
-            rules={[
-              { required: true, message: "Vui lòng nhập URL hình ảnh" },
-              { type: "url", message: "Vui lòng nhập URL hợp lệ" },
-            ]}
-          >
-            <Input placeholder="https://example.com/image.jpg" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="price"
-                label="Giá (VNĐ)"
-                rules={[{ required: true, message: "Vui lòng nhập giá" }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                  parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-                  placeholder="Nhập giá"
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="stock"
-                label="Tồn kho"
-                rules={[{ required: true, message: "Vui lòng nhập số lượng tồn kho" }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  placeholder="Nhập số lượng"
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="dealerId"
-                label="Đại lý"
-                rules={[{ required: true, message: "Vui lòng chọn đại lý" }]}
-              >
-                <Select placeholder="Chọn đại lý" showSearch optionFilterProp="children">
-                  {dealers.map((dealer) => (
-                    <Option key={dealer.dealerId} value={dealer.dealerId}>
-                      {dealer.dealerName}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="variantId"
-                label="Phiên bản"
-                rules={[{ required: true, message: "Vui lòng chọn phiên bản" }]}
-              >
-                <Select placeholder="Chọn phiên bản" showSearch optionFilterProp="children">
-                  {variants.map((variant) => (
-                    <Option key={variant.variantId} value={variant.variantId}>
-                      {variant.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="vehicleName"
-            label="Tên phương tiện (tùy chọn)"
-          >
-            <Input placeholder="Nhập tên phương tiện" />
-          </Form.Item>
-
-          <Form.Item
-            name="vehicleType"
-            label="Loại xe (tùy chọn)"
-          >
-            <Input placeholder="Nhập loại xe" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Mô tả"
-          >
-            <Input.TextArea rows={4} placeholder="Nhập mô tả phương tiện" />
-          </Form.Item>
-        </Form>
-      </Modal>
+        onSubmit={handleUpdateSubmit}
+        form={form}
+        vehicle={vehicle}
+        dealers={dealers}
+        variants={variants}
+        isLoading={isLoading}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal

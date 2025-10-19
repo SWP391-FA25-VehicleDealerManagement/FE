@@ -48,9 +48,9 @@ const Login = () => {
     try {
       const result = await login(values);
       console.log("Login result:", result);
-
+      console.log("ket qua", result);
       if (result.success) {
-        toast.success("Chào mừng bạn trở lại hệ thống EVM!", {
+        toast.success(`Chào mừng bạn trở lại hệ thống ${result.role}`, {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,

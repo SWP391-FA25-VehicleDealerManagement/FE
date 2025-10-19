@@ -1,27 +1,36 @@
-import React, { useState, useEffect } from "react";
-import { Table, Card, Button, Space, Tag, Input, Typography, Spin, Modal, Form, Select, Upload, message } from "antd";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import useModelStore from "../../../hooks/useModel";
 import {
-  EyeOutlined,
-  SearchOutlined,
-  DeleteOutlined,
+  Table,
+  Card,
+  Button,
+  Space,
+  Input,
+  Typography,
+  Spin,
+  Modal,
+  Form,
+} from "antd";
+import {
   PlusOutlined,
+  SearchOutlined,
+  EyeOutlined,
+  DeleteOutlined,
   CarOutlined,
-  UploadOutlined,
-  EditOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import useVariantStore from "../../../hooks/useVariant";
 
 const { Title } = Typography;
-const { Option } = Select;
 
-export default function VariantList() {
-  const { variants, isLoading, fetchVariants, deleteVariant, createVariant } = useVariantStore();
+const ModelLists = () => {
+  const navigate = useNavigate();
+  const { models, isLoading, fetchModels, createModel, deleteModelById } =
+    useModelStore();
   const [searchText, setSearchText] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedModel, setSelectedModel] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
@@ -33,8 +42,8 @@ export default function VariantList() {
   });
 
   useEffect(() => {
-    fetchVariants();
-  }, [fetchVariants]);
+    fetchModels();
+  }, [fetchModels]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -46,36 +55,36 @@ export default function VariantList() {
     setSearchText("");
   };
 
-  const showDeleteConfirm = (variant) => {
-    setSelectedVariant(variant);
+  const showDeleteConfirm = (model) => {
+    setSelectedModel(model);
     setIsDeleteModalOpen(true);
   };
 
   const handleDelete = async () => {
-    if (!selectedVariant) return;
+    if (!selectedModel) return;
 
     setIsDeleting(true);
     try {
-      const response = await deleteVariant(selectedVariant.variantId);
-      
+      const response = await deleteModelById(selectedModel.modelId);
+
       if (response.data.success) {
-        toast.success("Xóa phiên bản thành công", {
+        toast.success("Xóa model thành công", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
         });
         setIsDeleteModalOpen(false);
-        setSelectedVariant(null);
-        fetchVariants();
+        setSelectedModel(null);
+        fetchModels();
       } else {
-        toast.error(response.data.message || "Xóa phiên bản thất bại", {
+        toast.error(response.data.message || "Xóa model thất bại", {
           position: "top-right",
           autoClose: 3000,
         });
       }
     } catch (error) {
-      console.error("Error deleting variant:", error);
-      toast.error(error.response?.data?.message || "Xóa phiên bản thất bại", {
+      console.error("Error deleting model:", error);
+      toast.error(error.response?.data?.message || "Xóa model thất bại", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -87,7 +96,7 @@ export default function VariantList() {
 
   const handleCancel = () => {
     setIsDeleteModalOpen(false);
-    setSelectedVariant(null);
+    setSelectedModel(null);
   };
 
   const showAddModal = () => {
@@ -102,39 +111,40 @@ export default function VariantList() {
   const handleAddSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
-      // Tạo data object với URL ảnh
+
       const data = {
         name: values.name,
-        modelId: values.modelId,
-        image: values.image, // URL của ảnh
+        description: values.description,
       };
 
-      // Gọi API tạo variant
-      const response = await createVariant(data);
-      
+      const response = await createModel(data);
+
       if (response.data.success) {
-        toast.success("Thêm phiên bản thành công", {
+        toast.success("Thêm model thành công", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
         });
         setIsAddModalOpen(false);
         form.resetFields();
-        fetchVariants();
+        fetchModels();
       } else {
-        toast.error(response.data.message || "Thêm phiên bản thất bại", {
+        toast.error(response.data.message || "Thêm model thất bại", {
           position: "top-right",
           autoClose: 3000,
         });
       }
     } catch (error) {
-      console.error("Error creating variant:", error);
-      toast.error(error.response?.data?.message || "Thêm phiên bản thất bại", {
+      console.error("Error creating model:", error);
+      toast.error(error.response?.data?.message || "Thêm model thất bại", {
         position: "top-right",
         autoClose: 3000,
       });
     }
+  };
+
+  const handleViewDetail = (modelId) => {
+    navigate(`/evm-staff/vehicle-models/${modelId}`);
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -189,44 +199,35 @@ export default function VariantList() {
   const columns = [
     {
       title: "ID",
-      dataIndex: "variantId",
-      key: "variantId",
+      dataIndex: "modelId",
+      key: "modelId",
       width: 80,
-      sorter: (a, b) => a.variantId - b.variantId,
+      sorter: (a, b) => a.modelId - b.modelId,
     },
     {
-      title: "Hình ảnh",
-      dataIndex: "image",
-      key: "image",
-      width: 100,
-      render: (image, record) => (
-        <img
-          src={image || "https://via.placeholder.com/60"}
-          alt={record.name}
-          style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 4 }}
-        />
-      ),
-    },
-    {
-      title: "Tên phiên bản",
+      title: "Tên Model",
       dataIndex: "name",
       key: "name",
       ...getColumnSearchProps("name"),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: "Model",
-      dataIndex: "modelName",
-      key: "modelName",
-      ...getColumnSearchProps("modelName"),
-      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
-    },
-    {
-      title: "Model ID",
-      dataIndex: "modelId",
-      key: "modelId",
-      width: 150,
-      sorter: (a, b) => a.modelId - b.modelId,
+      title: "Mô Tả",
+      dataIndex: "description",
+      key: "description",
+      ...getColumnSearchProps("description"),
+      render: (text) => (
+        <div
+          style={{
+            maxWidth: 400,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {text || "Không có mô tả"}
+        </div>
+      ),
     },
     {
       title: "Thao tác",
@@ -234,11 +235,14 @@ export default function VariantList() {
       width: 200,
       render: (_, record) => (
         <Space size="middle">
-          <Link to={`/admin/vehicle-types/${record.variantId}`}>
-            <Button type="primary" icon={<EyeOutlined />} size="small">
-              Chi tiết
-            </Button>
-          </Link>
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => handleViewDetail(record.modelId)}
+          >
+            Chi tiết
+          </Button>
           <Button
             danger
             icon={<DeleteOutlined />}
@@ -256,10 +260,10 @@ export default function VariantList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
-          <CarOutlined style={{ marginRight: 8 }} /> Quản lý phiên bản xe
+          <CarOutlined style={{ marginRight: 8 }} /> Quản lý Model Xe
         </Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
-          Thêm phiên bản mới
+          Thêm model mới
         </Button>
       </div>
 
@@ -271,8 +275,8 @@ export default function VariantList() {
         ) : (
           <Table
             columns={columns}
-            dataSource={variants}
-            rowKey="variantId"
+            dataSource={models}
+            rowKey="modelId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
           />
@@ -281,7 +285,7 @@ export default function VariantList() {
 
       {/* Modal xác nhận xóa */}
       <Modal
-        title="Xác nhận xóa phiên bản"
+        title="Xác nhận xóa model"
         open={isDeleteModalOpen}
         onOk={handleDelete}
         onCancel={handleCancel}
@@ -292,18 +296,15 @@ export default function VariantList() {
         confirmLoading={isDeleting}
       >
         <p>
-          Bạn có chắc chắn muốn xóa phiên bản{" "}
-          <strong>
-            {selectedVariant?.name} - {selectedVariant?.modelName}
-          </strong>{" "}
-          không?
+          Bạn có chắc chắn muốn xóa model{" "}
+          <strong>{selectedModel?.name}</strong> không?
         </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
 
-      {/* Modal thêm phiên bản mới */}
+      {/* Modal thêm model mới */}
       <Modal
-        title="Thêm phiên bản mới"
+        title="Thêm model mới"
         open={isAddModalOpen}
         onOk={handleAddSubmit}
         onCancel={handleAddCancel}
@@ -315,40 +316,26 @@ export default function VariantList() {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="Tên phiên bản"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên phiên bản" },
-            ]}
+            label="Tên Model"
+            rules={[{ required: true, message: "Vui lòng nhập tên model" }]}
           >
-            <Input placeholder="Ví dụ: Vios G 1.5" />
+            <Input placeholder="Ví dụ: Toyota Vios" />
           </Form.Item>
 
           <Form.Item
-            name="modelId"
-            label="Model"
-            rules={[{ required: true, message: "Vui lòng chọn model" }]}
+            name="description"
+            label="Mô Tả"
+            rules={[{ required: false }]}
           >
-            <Select placeholder="Chọn model xe">
-              <Option value={1}>Toyota Vios</Option>
-              <Option value={2}>Ford Ranger</Option>
-              <Option value={3}>Hyundai Accent</Option>
-              <Option value={4}>VinFast Lux A2.0</Option>
-              <Option value={5}>Honda City</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="image"
-            label="URL Hình ảnh"
-            rules={[
-              { required: true, message: "Vui lòng nhập URL hình ảnh" },
-              { type: "url", message: "Vui lòng nhập URL hợp lệ" },
-            ]}
-          >
-            <Input placeholder="https://example.com/image.jpg" />
+            <Input.TextArea
+              rows={4}
+              placeholder="Nhập mô tả chi tiết về model xe"
+            />
           </Form.Item>
         </Form>
       </Modal>
     </div>
   );
-}
+};
+
+export default ModelLists;

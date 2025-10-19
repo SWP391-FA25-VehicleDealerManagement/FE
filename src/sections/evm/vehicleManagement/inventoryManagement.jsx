@@ -538,28 +538,6 @@ export default function InventoryManagement() {
               />
             )}
           </TabPane>
-          <TabPane
-            tab={
-              <span>
-                <InboxOutlined /> Danh sách kho hàng
-              </span>
-            }
-            key="2"
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center p-10">
-                <Spin size="large" />
-              </div>
-            ) : (
-              <Table
-                columns={warehouseColumns}
-                dataSource={warehouseData}
-                pagination={{ pageSize: 5 }}
-                rowKey="id"
-                scroll={{ x: 1200 }}
-              />
-            )}
-          </TabPane>
         </Tabs>
       </Card>
 

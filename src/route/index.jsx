@@ -19,29 +19,53 @@ const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
 const AdminDashboard = lazy(() =>
   import("../page/admin/adminDashboardPage.jsx")
 );
-const VehicleList = lazy(() => import("../page/admin/vehicleListPage.jsx"));
-const VehicleDetail = lazy(() => import("../page/admin/vehicleDetailPage.jsx"));
-const VehicleTypeList = lazy(() => import("../page/admin/vehicleTypeListPage.jsx"));
-const VehicleTypeDetail = lazy(() => import("../page/admin/vehicleTypeDetailPage.jsx"));
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
   import("../sections/dealer/manager/dashboard/dealerdashboard.jsx")
 );
+const VehicleListPage = lazy(() =>
+  import("../page/dealer/manager/vehicleListPage.jsx")
+);
+const VehicleDetailPage = lazy(() =>
+  import("../page/dealer/manager/vehicleDetailPage.jsx")
+);
+const RequestVehiclePage = lazy(() =>
+  import("../page/dealer/manager/requestVehiclePage.jsx")
+);
+const RequestVehicleDetailPage = lazy(() =>
+  import("../page/dealer/manager/requestVehicleDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
 const DealerDetailPage = lazy(() => import("../page/evm/dealerDetailPage.jsx"));
-const EVMVehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
-const EVMVehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
-const VehicleInventoryPage = lazy(() => import("../page/evm/vehicleInventoryPage.jsx"));
-const EVMVehicleTypeList = lazy(() => import("../page/evm/vehicleTypeListPage.jsx"));
-const EVMVehicleTypeDetail = lazy(() => import("../page/evm/vehicleTypeDetailPage.jsx"));
-const ContractsTargetsPage = lazy(() => import("../page/evm/contractsTargetsPage.jsx"));
+const VehicleInventoryPage = lazy(() =>
+  import("../page/evm/vehicleInventoryPage.jsx")
+);
+const ContractsTargetsPage = lazy(() =>
+  import("../page/evm/contractsTargetsPage.jsx")
+);
 const DealerDebtsPage = lazy(() => import("../page/evm/dealerDebtsPage.jsx"));
+const VehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
+const VehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
+const VehicleTypeList = lazy(() =>
+  import("../page/evm/vehicleTypeListPage.jsx")
+);
+const VehicleTypeDetail = lazy(() =>
+  import("../page/evm/vehicleTypeDetailPage.jsx")
+);
+const VehicleModelList = lazy(() =>
+  import("../page/evm/vehicleModelListPage.jsx")
+);
+const VehicleModelDetail = lazy(() =>
+  import("../page/evm/vehicleModelDetailPage.jsx")
+);
 
 //User Profile
-const UserProfilePage = lazy(() => import("../page/profile/userProfilePage.jsx"));
+const UserProfilePage = lazy(() =>
+  import("../page/profile/userProfilePage.jsx")
+);
 
 //Dealer Staff
 
@@ -114,10 +138,6 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <AdminDashboard /> },
         { path: "profile", element: <UserProfilePage /> },
-        { path: "vehicles", element: <VehicleList /> },
-        { path: "vehicles/:vehicleId", element: <VehicleDetail /> },
-        { path: "vehicle-types", element: <VehicleTypeList /> },
-        { path: "vehicle-types/:variantId", element: <VehicleTypeDetail /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -142,11 +162,13 @@ const Routes = () => {
         { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
         { path: "contracts-targets", element: <ContractsTargetsPage /> },
         { path: "debts", element: <DealerDebtsPage /> },
-        { path: "vehicles", element: <EVMVehicleList /> },
-        { path: "vehicles/:vehicleId", element: <EVMVehicleDetail /> },
+        { path: "vehicles", element: <VehicleList /> },
+        { path: "vehicles/:vehicleId", element: <VehicleDetail /> },
+        { path: "vehicle-types", element: <VehicleTypeList /> },
+        { path: "vehicle-types/:variantId", element: <VehicleTypeDetail /> },
+        { path: "vehicle-models", element: <VehicleModelList /> },
+        { path: "vehicle-models/:id", element: <VehicleModelDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
-        { path: "vehicle-types", element: <EVMVehicleTypeList /> },
-        { path: "vehicle-types/:variantId", element: <EVMVehicleTypeDetail /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -169,6 +191,10 @@ const Routes = () => {
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerList /> },
         { path: "profile", element: <UserProfilePage /> },
+        { path: "vehicles", element: <VehicleListPage /> },
+        { path: "vehicles/:id", element: <VehicleDetailPage /> },
+        { path: "vehicle-requests", element: <RequestVehiclePage /> },
+        { path: "vehicle-requests/:id", element: <RequestVehicleDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
