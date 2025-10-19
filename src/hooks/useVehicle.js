@@ -7,7 +7,6 @@ import {
   createVehicle,
   updateVehicle,
 } from "../api/vehicle";
-import { toast } from "react-toastify";
 
 const useVehicleStore = create((set) => ({
   vehicles: [],
@@ -22,11 +21,12 @@ const useVehicleStore = create((set) => ({
     }
   },
 
+  vehicleDetail: {},
   fetchVehicleById: async (id) => {
     try {
       set({ isLoading: true });
       const response = await getVehicleById(id);
-      set({ isLoading: false });
+      set({ isLoading: false, vehicleDetail: response.data.data });
       return response.data.data;
     } catch (error) {
       set({ isLoading: false });
@@ -60,6 +60,21 @@ const useVehicleStore = create((set) => ({
       return response.data;
     } catch (error) {
       console.error("Error creating vehicle:", error);
+      throw error;
+    }
+  },
+
+
+  dealerCarLists: [],
+  fetchVehicleDealers: async (id) => {
+    try {
+      set({ isLoading: true });
+      const response = await getVehicleDealers(id);
+      set({ isLoading: false, dealerCarLists: response.data.data });
+      return response;
+    } catch (error) {
+      set({ isLoading: false });
+      console.error("Error fetching vehicle dealers:", error);
       throw error;
     }
   },

@@ -31,29 +31,6 @@ const adminMenuItems = [
     null,
     "/admin/dashboard"
   ),
-  getItem("Quản lý xe", "car-management", <ShopOutlined />, [
-    getItem(
-      "Danh mục mẫu xe",
-      "vehicle-models",
-      <CarOutlined />,
-      null,
-      "/admin/vehicle-models"
-    ),
-    getItem(
-      "Danh mục xe",
-      "vehicle-catalog",
-      <CarOutlined />,
-      null,
-      "/admin/vehicles"
-    ),
-    getItem(
-      "Danh mục loại xe",
-      "vehicle-types",
-      <TagOutlined />,
-      null,
-      "/admin/vehicle-types"
-    ),
-  ]),
   getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
     getItem(
       "Doanh số theo vùng",
@@ -95,7 +72,6 @@ const adminMenuItems = [
 
 const Admin = ({ children }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { logout, userDetail } = useAuthen();
 
   const storeDefaultSelectedKeys = (keys) => {
@@ -109,34 +85,11 @@ const Admin = ({ children }) => {
 
   const defaultSelectedKeys = resetDefaultSelectedKeys();
 
-  const [current, setCurrent] = useState(resetDefaultSelectedKeys());
   const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
-  };
-
-  const handleMenuClick = ({ key }) => {
-    const findMenuItem = (items, targetKey) => {
-      for (const item of items) {
-        if (item.key === targetKey) {
-          return item;
-        }
-        if (item.children) {
-          const found = findMenuItem(item.children, targetKey);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    const menuItem = findMenuItem(adminMenuItems, key);
-    if (menuItem && menuItem.path) {
-      setCurrent(key);
-      storeDefaultSelectedKeys(key);
-      navigate(menuItem.path);
-    }
   };
 
   const renderMenuItems = (items) => {

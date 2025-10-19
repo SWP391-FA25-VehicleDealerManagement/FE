@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Table, Card, Button, Space, Tag, Input, Typography, Spin, Modal, Form, Select } from "antd";
+import { Table, Card, Button, Space, Tag, Input, Typography, Spin, Modal, Form, Select, Upload, message } from "antd";
 import {
   EyeOutlined,
   SearchOutlined,
   DeleteOutlined,
   PlusOutlined,
   CarOutlined,
+  UploadOutlined,
   EditOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
@@ -224,7 +225,7 @@ export default function VariantList() {
       title: "Model ID",
       dataIndex: "modelId",
       key: "modelId",
-      width: 100,
+      width: 150,
       sorter: (a, b) => a.modelId - b.modelId,
     },
     {

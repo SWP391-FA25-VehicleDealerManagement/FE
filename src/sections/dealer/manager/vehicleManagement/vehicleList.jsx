@@ -1,0 +1,225 @@
+import React, { useEffect, useState } from "react";
+import { Table, Input, Button, Space, Card, Typography, Spin, Tag } from "antd";
+import { SearchOutlined, EyeOutlined, CarOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import useVehicleStore from "../../../../hooks/useVehicle";
+import useAuthen from "../../../../hooks/useAuthen";
+const { Title } = Typography;
+
+export default function VehicleList() {
+  const navigate = useNavigate();
+  const { userDetail } = useAuthen();
+  const { fetchVehicleDealers, dealerCarLists } = useVehicleStore();
+  const [vehicles, setVehicles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    showSizeChanger: true,
+    pageSizeOptions: ["5", "10", "20", "50"],
+    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+  });
+
+  useEffect(() => {
+    if (userDetail && userDetail.dealer && userDetail.dealer.dealerId) {
+      fetchVehicleDealers(userDetail.dealer.dealerId);
+    }
+  }, [userDetail, fetchVehicleDealers]);
+
+  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+  };
+
+  const handleReset = (clearFilters) => {
+    clearFilters();
+    setSearchText("");
+  };
+
+  const handleViewDetail = (vehicleId) => {
+    navigate(`/dealer-manager/vehicles/${vehicleId}`);
+  };
+
+  const getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          placeholder={`Tìm ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Tìm kiếm
+          </Button>
+          <Button
+            onClick={() => handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Đặt lại
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        ? record[dataIndex]
+            .toString()
+            .toLowerCase()
+            .includes(value.toLowerCase())
+        : "",
+  });
+
+  const columns = [
+    {
+      title: "Mã xe",
+      dataIndex: "vehicleId",
+      key: "vehicleId",
+      width: 100,
+      sorter: (a, b) => a.vehicleId - b.vehicleId,
+    },
+    {
+      title: "Hình ảnh",
+      dataIndex: "image",
+      key: "image",
+      width: 100,
+      render: (image, record) => (
+        <img
+          src={image || record.variantImage || "https://via.placeholder.com/80"}
+          alt={record.name}
+          style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 4 }}
+        />
+      ),
+    },
+    {
+      title: "Tên xe",
+      dataIndex: "name",
+      key: "name",
+      ...getColumnSearchProps("name"),
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: "Model",
+      dataIndex: "modelName",
+      key: "modelName",
+      ...getColumnSearchProps("modelName"),
+      sorter: (a, b) => (a.modelName || "").localeCompare(b.modelName || ""),
+    },
+    {
+      title: "Phiên bản",
+      dataIndex: "variantName",
+      key: "variantName",
+      ...getColumnSearchProps("variantName"),
+    },
+    {
+      title: "Màu sắc",
+      dataIndex: "color",
+      key: "color",
+      filters: [
+        { text: "Đen", value: "Đen" },
+        { text: "Trắng", value: "Trắng" },
+        { text: "Đỏ", value: "Đỏ" },
+        { text: "Xanh", value: "Xanh" },
+        { text: "Bạc", value: "Bạc" },
+        { text: "Green", value: "Green" },
+        { text: "Black", value: "Black" },
+        { text: "White", value: "White" },
+      ],
+      onFilter: (value, record) => record.color === value,
+    },
+    {
+      title: "Giá (VNĐ)",
+      dataIndex: "price",
+      key: "price",
+      sorter: (a, b) => {
+        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
+        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
+        return priceA - priceB;
+      },
+      render: (price) => price || "N/A",
+    },
+    {
+      title: "Tồn kho",
+      dataIndex: "stock",
+      key: "stock",
+      width: 120,
+      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
+      render: (stock) => (
+        <Tag color={stock > 0 ? "green" : "red"}>
+          {stock !== null && stock !== undefined ? stock : "N/A"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Đại lý",
+      dataIndex: "dealerName",
+      key: "dealerName",
+      ...getColumnSearchProps("dealerName"),
+      render: (dealerName) => dealerName || "Chưa phân bổ",
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      width: 150,
+      render: (_, record) => (
+        <Space size="middle">
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => handleViewDetail(record.vehicleId)}
+          >
+            Chi tiết
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <Title level={2} className="flex items-center">
+          <CarOutlined style={{ marginRight: 8 }} /> Danh sách xe tại đại lý
+        </Title>
+      </div>
+
+      <Card>
+        {isLoading ? (
+          <div className="flex justify-center items-center p-10">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={dealerCarLists}
+            rowKey="vehicleId"
+            pagination={pagination}
+            onChange={(pagination) => setPagination(pagination)}
+          />
+        )}
+      </Card>
+    </div>
+  );
+}

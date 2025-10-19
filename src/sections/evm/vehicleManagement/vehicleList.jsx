@@ -7,24 +7,34 @@ import {
   Card,
   Typography,
   Spin,
+  Modal,
   Tag,
   Select,
+  Form,
+  InputNumber
 } from "antd";
 import {
   SearchOutlined,
+  PlusOutlined,
+  DeleteOutlined,
   EyeOutlined,
-  CarOutlined,
-  FilterOutlined,
+  EditOutlined,
+  CarOutlined
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import useVehicleStore from "../../../hooks/useVehicle";
+
 const { Title } = Typography;
 const { Option } = Select;
 
 export default function VehicleList() {
   const { vehicles, isLoading, fetchVehicles } = useVehicleStore();
   const [searchText, setSearchText] = useState("");
-  const [searchedColumn, setSearchedColumn] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
@@ -40,12 +50,78 @@ export default function VehicleList() {
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
     setSearchText(selectedKeys[0]);
-    setSearchedColumn(dataIndex);
   };
 
   const handleReset = (clearFilters) => {
     clearFilters();
     setSearchText("");
+  };
+
+  const showDeleteConfirm = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedVehicle) return;
+
+    try {
+      // TODO: Implement API call to delete vehicle
+      // await deleteVehicle(selectedVehicle.vehicleId);
+      
+      setIsDeleteModalOpen(false);
+      setSelectedVehicle(null);
+      fetchVehicles(); // Refresh the list
+      
+      toast.success("Xóa phương tiện thành công", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    } catch (error) {
+      toast.error("Xóa phương tiện thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedVehicle(null);
+  };
+
+  const showAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddCancel = () => {
+    setIsAddModalOpen(false);
+    form.resetFields();
+  };
+
+  const handleAddSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      // TODO: Implement API call to add vehicle
+      // await addVehicle(values);
+      
+      setIsAddModalOpen(false);
+      form.resetFields();
+      fetchVehicles(); // Refresh the list
+      
+      toast.success("Thêm phương tiện thành công", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    } catch (error) {
+      toast.error("Thêm phương tiện thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -150,33 +226,47 @@ export default function VehicleList() {
       },
       render: (price) => price || "N/A",
     },
-    {
-      title: "Tồn kho",
-      dataIndex: "stock",
-      key: "stock",
-      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
-      render: (stock) => (
-        <Tag color={stock > 0 ? "green" : "red"}>
-          {stock !== null ? stock : "N/A"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Đại lý",
-      dataIndex: "dealerName",
-      key: "dealerName",
-      ...getColumnSearchProps("dealerName"),
-      render: (dealerName) => dealerName || "Chưa phân bổ",
-    },
+    // {
+    //   title: "Tồn kho",
+    //   dataIndex: "stock",
+    //   key: "stock",
+    //   sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
+    //   render: (stock) => (
+    //     <Tag color={stock > 0 ? "green" : "red"}>
+    //       {stock !== null ? stock : "N/A"}
+    //     </Tag>
+    //   ),
+    // },
+    // {
+    //   title: "Đại lý",
+    //   dataIndex: "dealerName",
+    //   key: "dealerName",
+    //   ...getColumnSearchProps("dealerName"),
+    //   render: (dealerName) => dealerName || "Chưa phân bổ",
+    // },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <Link to={`/evm-staff/vehicles/${record.vehicleId}`}>
-          <Button type="primary" icon={<EyeOutlined />} size="small">
-            Xem chi tiết
+        <Space size="middle">
+          <Link to={`/evm-staff/vehicles/${record.vehicleId}`}>
+            <Button
+              type="primary"
+              icon={<EyeOutlined />}
+              size="small"
+            >
+              Chi tiết
+            </Button>
+          </Link>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            size="small"
+            onClick={() => showDeleteConfirm(record)}
+          >
+            Xóa
           </Button>
-        </Link>
+        </Space>
       ),
     },
   ];
@@ -185,8 +275,15 @@ export default function VehicleList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
-          <CarOutlined style={{ marginRight: 8 }} /> Danh sách phương tiện
+          <CarOutlined style={{ marginRight: 8 }} /> Quản lý phương tiện
         </Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={showAddModal}
+        >
+          Thêm phương tiện mới
+        </Button>
       </div>
 
       <Card>
@@ -204,6 +301,93 @@ export default function VehicleList() {
           />
         )}
       </Card>
+
+      {/* Modal xác nhận xóa */}
+      <Modal
+        title="Xác nhận xóa phương tiện"
+        open={isDeleteModalOpen}
+        onOk={handleDelete}
+        onCancel={handleCancel}
+        okText="Xóa"
+        cancelText="Hủy"
+        okType="danger"
+        closable={false}
+      >
+        <p>
+          Bạn có chắc chắn muốn xóa phương tiện{" "}
+          <strong>{selectedVehicle?.vehicleId} - {selectedVehicle?.name}</strong> không?
+        </p>
+        <p>Hành động này không thể hoàn tác.</p>
+      </Modal>
+
+      {/* Modal thêm phương tiện mới */}
+      <Modal
+        title="Thêm phương tiện mới"
+        open={isAddModalOpen}
+        onOk={handleAddSubmit}
+        onCancel={handleAddCancel}
+        okText="Thêm"
+        cancelText="Hủy"
+        closable={false}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="model"
+            label="Model"
+            rules={[{ required: true, message: "Vui lòng nhập model xe" }]}
+          >
+            <Select placeholder="Chọn model xe">
+              <Option value="VF5">VF5</Option>
+              <Option value="VF6">VF6</Option>
+              <Option value="VF7">VF7</Option>
+              <Option value="VF8">VF8</Option>
+              <Option value="VF9">VF9</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="color"
+            label="Màu sắc"
+            rules={[{ required: true, message: "Vui lòng chọn màu sắc" }]}
+          >
+            <Select placeholder="Chọn màu sắc">
+              <Option value="Đen">Đen</Option>
+              <Option value="Trắng">Trắng</Option>
+              <Option value="Đỏ">Đỏ</Option>
+              <Option value="Xanh">Xanh</Option>
+              <Option value="Xám">Xám</Option>
+              <Option value="Bạc">Bạc</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="price"
+            label="Giá (VNĐ)"
+            rules={[{ required: true, message: "Vui lòng nhập giá xe" }]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+              placeholder="Nhập giá xe"
+              min={0}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="year"
+            label="Năm sản xuất"
+            rules={[{ required: true, message: "Vui lòng nhập năm sản xuất" }]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="Nhập năm sản xuất"
+              min={2020}
+              max={new Date().getFullYear()}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -9,15 +9,19 @@ const getVehicleById = (id) => {
 };
 
 const getVehicleDealers = (id) => {
-  return axiosClient.get(`/api/vehicles/dealers/${id}`);
+  return axiosClient.get(`/api/vehicles/dealer/${id}`);
 };
 
 const createVehicle = (data) => {
   return axiosClient.post("/api/vehicles/create", data);
 };
 
-const updateVehicle = (id, data) => {
-  return axiosClient.put(`/api/vehicles/${id}`, data);
+const updateVehicle = (id, formData) => {
+  return axiosClient.put(`/api/vehicles/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
 
 const deleteVehicle = (id) => {
