@@ -122,22 +122,7 @@ export default function CustomerList() {
                     >
                         Xem
                     </Button>
-                    <Button
-                        type="default"
-                        icon={<EditOutlined />}
-                        size="small"
-                        onClick={() => console.log("Edit customer:", record)}
-                    >
-                        Sửa
-                    </Button>
-                    <Button
-                        danger
-                        icon={<DeleteOutlined />}
-                        size="small"
-                        onClick={() => console.log("Delete customer:", record)}
-                    >
-                        Xóa
-                    </Button>
+                    
                 </Space>
             ),
         },
@@ -145,16 +130,7 @@ export default function CustomerList() {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
-                <Title level={2}>Danh sách Khách hàng</Title>
-                <Button
-                    type="primary"
-                    icon={<UserAddOutlined />}
-                    onClick={() => console.log("Add new customer")}
-                >
-                    Thêm Khách hàng mới
-                </Button>
-            </div>
+            
 
             <Card>
                 {isLoading ? (
