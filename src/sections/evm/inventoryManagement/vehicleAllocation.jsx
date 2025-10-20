@@ -37,6 +37,8 @@ import {
   HistoryOutlined
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
+import useInventoryStore from "../../../hooks/useInventory";
+import useDealerStore from "../../../hooks/useDealer";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,10 +46,11 @@ const { Step } = Steps;
 const { TabPane } = Tabs;
 
 export default function VehicleAllocation() {
-  const [inventory, setInventory] = useState([]);
-  const [dealers, setDealers] = useState([]);
+  const { inventory, isLoading, fetchInventory } = useInventoryStore();
+  const { dealers, fetchDealers } = useDealerStore();
+  
   const [allocationHistory, setAllocationHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("1");
   const [isAllocationModalVisible, setIsAllocationModalVisible] = useState(false);
   const [allocationForm] = Form.useForm();
@@ -61,92 +64,16 @@ export default function VehicleAllocation() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
 
-  // Mock data for inventory available for allocation
-  const mockInventory = [
-    {
-      id: "INV001",
-      model: "VF8",
-      color: "Đen",
-      available: 20,
-      warehouseId: "WH001",
-      warehouseName: "Kho Hà Nội",
-      unitPrice: 1200000000,
-    },
-    {
-      id: "INV002",
-      model: "VF9",
-      color: "Trắng",
-      available: 13,
-      warehouseId: "WH001",
-      warehouseName: "Kho Hà Nội",
-      unitPrice: 1500000000,
-    },
-    {
-      id: "INV003",
-      model: "VF5",
-      color: "Đỏ",
-      available: 28,
-      warehouseId: "WH002",
-      warehouseName: "Kho Hồ Chí Minh",
-      unitPrice: 800000000,
-    },
-    {
-      id: "INV004",
-      model: "VF6",
-      color: "Xanh",
-      available: 19,
-      warehouseId: "WH002",
-      warehouseName: "Kho Hồ Chí Minh",
-      unitPrice: 950000000,
-    },
-  ];
-
-  // Mock data for dealers
-  const mockDealers = [
-    {
-      id: "DL001",
-      name: "Đại lý VinFast Hà Nội",
-      address: "235 Nguyễn Văn Cừ, Hà Nội",
-      manager: "Nguyễn Văn A",
-      phone: "0901234567",
-      targetVehicles: 50,
-      currentVehicles: 25,
-      requestedVehicles: 10,
-    },
-    {
-      id: "DL002",
-      name: "Đại lý VinFast Hồ Chí Minh",
-      address: "456 Võ Văn Kiệt, TP. HCM",
-      manager: "Trần Thị B",
-      phone: "0909876543",
-      targetVehicles: 60,
-      currentVehicles: 28,
-      requestedVehicles: 15,
-    },
-    {
-      id: "DL003",
-      name: "Đại lý VinFast Đà Nẵng",
-      address: "789 Ngô Quyền, Đà Nẵng",
-      manager: "Lê Văn C",
-      phone: "0905678901",
-      targetVehicles: 40,
-      currentVehicles: 18,
-      requestedVehicles: 8,
-    },
-  ];
-
-  // Mock data for allocation history
+  // Mock data for allocation history (sẽ thay bằng API call khi backend có endpoint)
   const mockAllocationHistory = [
     {
       id: "AL001",
       inventoryId: "INV001",
-      model: "VF8",
+      vehicleName: "VinFast VF8 Plus",
       color: "Đen",
       quantity: 3,
       dealerId: "DL001",
       dealerName: "Đại lý VinFast Hà Nội",
-      warehouseId: "WH001",
-      warehouseName: "Kho Hà Nội",
       allocationDate: "2025-09-15",
       status: "completed",
       arrivalDate: "2025-09-18",
@@ -154,13 +81,11 @@ export default function VehicleAllocation() {
     {
       id: "AL002",
       inventoryId: "INV002",
-      model: "VF9",
+      vehicleName: "VinFast VF9 Eco",
       color: "Trắng",
       quantity: 2,
       dealerId: "DL002",
       dealerName: "Đại lý VinFast Hồ Chí Minh",
-      warehouseId: "WH001",
-      warehouseName: "Kho Hà Nội",
       allocationDate: "2025-09-20",
       status: "in_transit",
       estimatedArrival: "2025-09-25",
@@ -168,13 +93,11 @@ export default function VehicleAllocation() {
     {
       id: "AL003",
       inventoryId: "INV003",
-      model: "VF5",
+      vehicleName: "VinFast VF5 Base",
       color: "Đỏ",
       quantity: 5,
       dealerId: "DL003",
       dealerName: "Đại lý VinFast Đà Nẵng",
-      warehouseId: "WH002",
-      warehouseName: "Kho Hồ Chí Minh",
       allocationDate: "2025-09-18",
       status: "pending",
       estimatedArrival: "2025-09-28",
@@ -185,33 +108,38 @@ export default function VehicleAllocation() {
     fetchData();
   }, []);
 
-  const fetchData = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setInventory(mockInventory);
-      setDealers(mockDealers);
+  const fetchData = async () => {
+    try {
+      await Promise.all([fetchInventory(), fetchDealers()]);
+      // Mock allocation history - có thể thay bằng API call
       setAllocationHistory(mockAllocationHistory);
-      setIsLoading(false);
-    }, 1000);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Không thể tải dữ liệu", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
   };
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
+    setSearchText(selectedKeys[0]);
   };
 
   const handleReset = (clearFilters) => {
     clearFilters();
+    setSearchText("");
   };
 
   const startAllocation = (inventoryItem) => {
     setSelectedInventory(inventoryItem);
     allocationForm.setFieldsValue({
-      model: inventoryItem.model,
+      model: inventoryItem.vehicleName,
       color: inventoryItem.color,
-      warehouseId: inventoryItem.warehouseId,
-      warehouseName: inventoryItem.warehouseName,
-      maxQuantity: inventoryItem.available,
+      warehouseId: inventoryItem.dealerId,
+      warehouseName: inventoryItem.dealerName,
+      maxQuantity: inventoryItem.quantity,
     });
     setCurrentStep(0);
     setIsAllocationModalVisible(true);
@@ -229,62 +157,15 @@ export default function VehicleAllocation() {
 
   const handleAllocationSubmit = () => {
     allocationForm.validateFields().then((values) => {
-      // Simulate API call
-      setIsLoading(true);
-      setTimeout(() => {
-        // Update inventory
-        const updatedInventory = inventory.map(item => {
-          if (item.id === selectedInventory.id) {
-            return {
-              ...item,
-              available: item.available - values.quantity
-            };
-          }
-          return item;
-        });
-        setInventory(updatedInventory);
-
-        // Add allocation history
-        const newAllocation = {
-          id: `AL${Math.floor(1000 + Math.random() * 9000)}`,
-          inventoryId: selectedInventory.id,
-          model: values.model,
-          color: values.color,
-          quantity: values.quantity,
-          dealerId: values.dealerId,
-          dealerName: dealers.find(dealer => dealer.id === values.dealerId)?.name,
-          warehouseId: values.warehouseId,
-          warehouseName: values.warehouseName,
-          allocationDate: new Date().toISOString().split('T')[0],
-          status: "pending",
-          estimatedArrival: values.estimatedArrival?.format('YYYY-MM-DD') || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        };
-        setAllocationHistory([newAllocation, ...allocationHistory]);
-
-        // Update dealer info (in a real app, this would be a separate API call)
-        const updatedDealers = dealers.map(dealer => {
-          if (dealer.id === values.dealerId) {
-            return {
-              ...dealer,
-              currentVehicles: dealer.currentVehicles + values.quantity,
-              requestedVehicles: Math.max(0, dealer.requestedVehicles - values.quantity)
-            };
-          }
-          return dealer;
-        });
-        setDealers(updatedDealers);
-
-        setIsLoading(false);
-        setIsAllocationModalVisible(false);
-        allocationForm.resetFields();
-        setCurrentStep(0);
-
-        toast.success("Phân bổ xe thành công", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-        });
-      }, 1000);
+      // TODO: Implement real API call
+      toast.info("Tính năng đang phát triển - sẽ kết nối API sau", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      
+      setIsAllocationModalVisible(false);
+      allocationForm.resetFields();
+      setCurrentStep(0);
     });
   };
 
@@ -339,63 +220,59 @@ export default function VehicleAllocation() {
 
   const inventoryColumns = [
     {
-      title: "Mã",
-      dataIndex: "id",
-      key: "id",
-      ...getColumnSearchProps("id"),
+      title: "STT",
+      key: "index",
+      width: 60,
+      align: "center",
+      render: (text, record, index) => index + 1,
+    },
+    {
+      title: "Mã kho",
+      dataIndex: "stockId",
+      key: "stockId",
       width: 100,
     },
     {
-      title: "Model",
-      dataIndex: "model",
-      key: "model",
-      filters: [
-        { text: "VF5", value: "VF5" },
-        { text: "VF6", value: "VF6" },
-        { text: "VF7", value: "VF7" },
-        { text: "VF8", value: "VF8" },
-        { text: "VF9", value: "VF9" },
-      ],
-      onFilter: (value, record) => record.model === value,
-      width: 100,
+      title: "Tên xe",
+      dataIndex: "vehicleName",
+      key: "vehicleName",
+      ...getColumnSearchProps("vehicleName"),
+      width: 200,
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
-      filters: [
-        { text: "Đen", value: "Đen" },
-        { text: "Trắng", value: "Trắng" },
-        { text: "Đỏ", value: "Đỏ" },
-        { text: "Xanh", value: "Xanh" },
-      ],
-      onFilter: (value, record) => record.color === value,
       width: 100,
     },
     {
-      title: "Kho",
-      dataIndex: "warehouseName",
-      key: "warehouseName",
-      ...getColumnSearchProps("warehouseName"),
+      title: "Đại lý",
+      dataIndex: "dealerName",
+      key: "dealerName",
+      ...getColumnSearchProps("dealerName"),
       width: 150,
     },
     {
-      title: "Số lượng sẵn có",
-      dataIndex: "available",
-      key: "available",
-      sorter: (a, b) => a.available - b.available,
-      width: 150,
-      render: (available) => (
-        <Text type={available < 5 ? "warning" : ""}>{available}</Text>
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      sorter: (a, b) => a.quantity - b.quantity,
+      width: 120,
+      align: "center",
+      render: (quantity) => (
+        <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),
     },
     {
-      title: "Đơn giá",
-      dataIndex: "unitPrice",
-      key: "unitPrice",
-      sorter: (a, b) => a.unitPrice - b.unitPrice,
-      width: 150,
-      render: (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price),
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status) => (
+        <Tag color={status === "AVAILABLE" ? "green" : "orange"}>
+          {status === "AVAILABLE" ? "Có sẵn" : "Đã phân bổ"}
+        </Tag>
+      ),
     },
     {
       title: "Thao tác",
@@ -406,7 +283,7 @@ export default function VehicleAllocation() {
           type="primary"
           icon={<ExportOutlined />}
           onClick={() => startAllocation(record)}
-          disabled={record.available <= 0}
+          disabled={record.status !== "AVAILABLE" || record.quantity <= 0}
         >
           Phân bổ
         </Button>
@@ -415,30 +292,25 @@ export default function VehicleAllocation() {
   ];
 
   const dealerColumns = [
-    {
-      title: "Mã",
-      dataIndex: "id",
-      key: "id",
+{
+      title: "Mã đại lý",
+      dataIndex: "dealerId",
+      key: "dealerId",
       width: 100,
     },
     {
       title: "Tên đại lý",
-      dataIndex: "name",
-      key: "name",
-      ...getColumnSearchProps("name"),
+      dataIndex: "dealerName",
+      key: "dealerName",
+      ...getColumnSearchProps("dealerName"),
       width: 200,
     },
     {
       title: "Địa chỉ",
       dataIndex: "address",
       key: "address",
-      width: 200,
-    },
-    {
-      title: "Người quản lý",
-      dataIndex: "manager",
-      key: "manager",
-      width: 150,
+      ...getColumnSearchProps("address"),
+      width: 300,
     },
     {
       title: "Số điện thoại",
@@ -447,32 +319,11 @@ export default function VehicleAllocation() {
       width: 150,
     },
     {
-      title: "Tiến độ",
-      key: "progress",
-      width: 200,
-      render: (_, record) => (
-        <div>
-          <Progress
-            percent={Math.round((record.currentVehicles / record.targetVehicles) * 100)}
-            size="small"
-            status={
-              record.currentVehicles >= record.targetVehicles
-                ? "success"
-                : "active"
-            }
-          />
-          <div className="text-xs mt-1">
-            {record.currentVehicles}/{record.targetVehicles} xe ({Math.round((record.currentVehicles / record.targetVehicles) * 100)}%)
-          </div>
-        </div>
-      ),
-    },
-    {
       title: "Yêu cầu thêm",
       dataIndex: "requestedVehicles",
       key: "requestedVehicles",
       width: 120,
-      render: (value) => (
+      render: (value = 0) => (
         value > 0 ? <Tag color="volcano">{value} xe</Tag> : <Tag color="green">0 xe</Tag>
       )
     },
@@ -486,10 +337,10 @@ export default function VehicleAllocation() {
       width: 100,
     },
     {
-      title: "Model",
-      dataIndex: "model",
-      key: "model",
-      width: 100,
+      title: "Tên xe",
+      dataIndex: "vehicleName",
+      key: "vehicleName",
+      width: 150,
     },
     {
       title: "Màu sắc",
@@ -502,12 +353,6 @@ export default function VehicleAllocation() {
       dataIndex: "quantity",
       key: "quantity",
       width: 100,
-    },
-    {
-      title: "Từ kho",
-      dataIndex: "warehouseName",
-      key: "warehouseName",
-      width: 150,
     },
     {
       title: "Đến đại lý",
@@ -594,8 +439,8 @@ export default function VehicleAllocation() {
     >
       <Select placeholder="Chọn đại lý">
         {dealers.map((dealer) => (
-          <Option key={dealer.id} value={dealer.id}>
-            {dealer.name} - {dealer.address}
+          <Option key={dealer.dealerId} value={dealer.dealerId}>
+            {dealer.dealerName} - {dealer.address}
             {dealer.requestedVehicles > 0 && (
               <Tag color="volcano" style={{ marginLeft: 8 }}>Yêu cầu: {dealer.requestedVehicles}</Tag>
             )}
@@ -610,8 +455,8 @@ export default function VehicleAllocation() {
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
-            name="model"
-            label="Model xe"
+            name="vehicleName"
+            label="Tên xe"
             rules={[{ required: true }]}
           >
             <Input disabled />
@@ -631,8 +476,8 @@ export default function VehicleAllocation() {
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
-            name="warehouseName"
-            label="Kho xuất"
+            name="dealerName"
+            label="Đại lý nhận"
             rules={[{ required: true }]}
           >
             <Input disabled />
@@ -698,10 +543,9 @@ export default function VehicleAllocation() {
         />
         
         <Descriptions title="Thông tin phân bổ" bordered>
-          <Descriptions.Item label="Model xe" span={3}>{values.model}</Descriptions.Item>
+          <Descriptions.Item label="Tên xe" span={3}>{values.vehicleName}</Descriptions.Item>
           <Descriptions.Item label="Màu sắc" span={3}>{values.color}</Descriptions.Item>
-          <Descriptions.Item label="Kho xuất" span={3}>{values.warehouseName}</Descriptions.Item>
-          <Descriptions.Item label="Đại lý" span={3}>{selectedDealer?.name}</Descriptions.Item>
+          <Descriptions.Item label="Đại lý nhận" span={3}>{selectedDealer?.name}</Descriptions.Item>
           <Descriptions.Item label="Địa chỉ đại lý" span={3}>{selectedDealer?.address}</Descriptions.Item>
           <Descriptions.Item label="Số lượng phân bổ" span={3}>
             <Text strong>{values.quantity}</Text> (Còn lại sau phân bổ: {values.maxQuantity - values.quantity})
@@ -738,7 +582,7 @@ export default function VehicleAllocation() {
           <Card>
             <Statistic
               title="Tổng số xe sẵn có để phân bổ"
-              value={inventory.reduce((sum, item) => sum + item.available, 0)}
+              value={inventory.filter(item => item.status === "AVAILABLE").reduce((sum, item) => sum + item.quantity, 0)}
               valueStyle={{ color: '#3f8600' }}
               prefix={<CarOutlined />}
             />
@@ -758,7 +602,7 @@ export default function VehicleAllocation() {
           <Card>
             <Statistic
               title="Yêu cầu xe chưa xử lý"
-              value={dealers.reduce((sum, dealer) => sum + dealer.requestedVehicles, 0)}
+              value={dealers.reduce((sum, dealer) => sum + (dealer.requestedVehicles || 0), 0)}
               valueStyle={{ color: '#faad14' }}
               prefix={<FileDoneOutlined />}
             />
@@ -783,10 +627,10 @@ export default function VehicleAllocation() {
             ) : (
               <Table
                 columns={inventoryColumns}
-                dataSource={inventory}
+                dataSource={inventory.filter(item => item.status === "AVAILABLE")}
                 pagination={pagination}
                 onChange={(pagination) => setPagination(pagination)}
-                rowKey="id"
+                rowKey="stockId"
                 scroll={{ x: 1200 }}
               />
             )}
