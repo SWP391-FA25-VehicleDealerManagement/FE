@@ -8,10 +8,10 @@ import {
   UserOutlined,
   LogoutOutlined,
   DownOutlined,
-  SettingOutlined,
+  InboxOutlined,
   CarOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -25,24 +25,65 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem("Tổng quan", "1", <PieChartOutlined />, null, "/dealer-staff/dashboard"),
-  getItem("Quản lý xe", "2", <CarOutlined />, null, "/dealer-staff/vehicle-management"),
+  getItem(
+    "Quản lý lịch hẹn",
+    "1",
+    <PieChartOutlined />,
+    null,
+    "/dealer-staff/appointments"
+  ),
+  getItem(
+    "Quản lý đơn hàng",
+    "5",
+    <FileOutlined />,
+    null,
+    "/dealer-staff/orders"
+  ),
+  getItem(
+    "Quản lý xe",
+    "2",
+    <CarOutlined />,
+    null,
+    "/dealer-staff/vehicles"
+  ),
+  getItem(
+    "Quản lý kho",
+    "sub3",
+    <InboxOutlined />,
+    null,
+    "/dealer-staff/inventory"
+  ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
-    getItem("Khách hàng", "3", null, null, "/dealer-staff/customers"),
+    getItem("Khách hàng", "3", null, null, "/dealer-staff/customer-list"),
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
     getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),
     getItem("Báo cáo kho", "8", null, null, "/dealer-staff/inventory-report"),
-    getItem("Báo cáo công nợ", "9", null, null, "/dealer-staff/customer-debt-report"),
+    getItem(
+      "Báo cáo công nợ",
+      "9",
+      null,
+      null,
+      "/dealer-staff/customer-debt-report"
+    ),
   ]),
 ];
 
 const DealerStaff = ({ children }) => {
-  const [current, setCurrent] = useState("1");
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { logout, userDetail } = useAuthen();
+
+  const storeDefaultSelectedKeys = (keys) => {
+    sessionStorage.setItem("selectedMenuKey", keys);
+  };
+
+  const resetDefaultSelectedKeys = () => {
+    const selectedKeys = sessionStorage.getItem("selectedMenuKey");
+    return selectedKeys ? selectedKeys : "dashboard";
+  };
+
+  const defaultSelectedKeys = resetDefaultSelectedKeys();
 
   const handleLogout = async () => {
     await logout();
@@ -75,48 +116,27 @@ const DealerStaff = ({ children }) => {
     },
   ];
 
-  const handleMenuClick = ({ key }) => {
-    const findMenuItem = (items, targetKey) => {
-      for (const item of items) {
-        if (item.key === targetKey) {
-          return item;
-        }
-        if (item.children) {
-          const found = findMenuItem(item.children, targetKey);
-          if (found) return found;
-        }
+  const renderMenuItems = (items) => {
+    return items.map((item) => {
+      if (item.children && item.children.length > 0) {
+        return (
+          <Menu.SubMenu key={item.key} icon={item.icon} title={item.label}>
+            {renderMenuItems(item.children)}
+          </Menu.SubMenu>
+        );
+      } else {
+        return (
+          <Menu.Item
+            key={item.key}
+            icon={item.icon}
+            onClick={() => storeDefaultSelectedKeys([item.key])}
+          >
+            <Link to={item.path}>{item.label}</Link>
+          </Menu.Item>
+        );
       }
-      return null;
-    };
-
-    const menuItem = findMenuItem(menuItems, key);
-    if (menuItem && menuItem.path) {
-      setCurrent(key);
-      navigate(menuItem.path);
-    }
+    });
   };
-  
-  // Update selected menu item based on current URL path
-  useEffect(() => {
-    const findMenuKeyByPath = (items, path) => {
-      for (const item of items) {
-        if (item.path === path) {
-          return item.key;
-        }
-        if (item.children) {
-          const found = findMenuKeyByPath(item.children, path);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    
-    const currentPath = location.pathname;
-    const menuKey = findMenuKeyByPath(menuItems, currentPath);
-    if (menuKey) {
-      setCurrent(menuKey);
-    }
-  }, [location.pathname]);
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -142,17 +162,17 @@ const DealerStaff = ({ children }) => {
           <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
-          mode="inline"
-          items={menuItems}
-          selectedKeys={[current]}
-          className="border-0 h-full"
           theme="light"
-          onClick={handleMenuClick}
+          defaultSelectedKeys={defaultSelectedKeys}
+          mode="inline"
+          className="border-0 h-full"
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
           }}
-        />
+        >
+          {renderMenuItems(menuItems)}
+        </Menu>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
@@ -187,7 +207,9 @@ const DealerStaff = ({ children }) => {
                     icon={<UserOutlined />}
                     className="border-2 border-white"
                   />
-                  <span className="text-black font-medium">{ userDetail?.userName || "Dealer Staff"}</span>
+                  <span className="text-black font-medium">
+                    {userDetail?.userName || "Dealer Staff"}
+                  </span>
                   <DownOutlined className="text-black text-xs" />
                 </Space>
               </Button>
@@ -207,7 +229,7 @@ const DealerStaff = ({ children }) => {
           </div>
         </Content>
 
-         <Footer
+        <Footer
           className="text-center border-t border-gray-200"
           style={{
             padding: "16px 24px",
@@ -218,7 +240,8 @@ const DealerStaff = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-             © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được
+              bảo lưu.
             </span>
           </div>
         </Footer>

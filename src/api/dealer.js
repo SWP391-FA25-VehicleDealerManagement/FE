@@ -20,8 +20,16 @@ const deleteDealer = (id) => {
   return axiosClient.delete(`/api/dealers/delete/${id}`);
 }
 
+const createDealerManagerAccount = (data) => {
+  return axiosClient.post("/api/admin/create-dealer-account", data);
+}
+
+const createDealerStaffAccount = (data) => {
+  return axiosClient.post("/api/admin/create-dealer-staff", data);
+}
 
 
-export { getAllDealers, getDealerById, createDealer, deleteDealer , updateDealer};
+
+export { getAllDealers, getDealerById, createDealer, deleteDealer , updateDealer, createDealerManagerAccount, createDealerStaffAccount };
 
 

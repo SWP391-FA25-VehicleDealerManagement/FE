@@ -44,7 +44,7 @@ const useDealerStore = create((set) => ({
       const response = await deleteDealer(id);
       if (response && response.status === 200) {
         set({ isLoading: false });
-        toast.success("Dealer deleted successfully", {
+        toast.success("Xoá đại lý thành công", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -67,7 +67,6 @@ const useDealerStore = create((set) => ({
       const response = await createDealer(dealerData);
       if (response && response.status === 201) {
         set({ isLoading: false });
-        // Optionally refresh the dealers list
         return response.data;
       }
     } catch (error) {
@@ -92,6 +91,8 @@ const useDealerStore = create((set) => ({
       throw error;
     }
   },
+
+
 }));
 
 export default useDealerStore;

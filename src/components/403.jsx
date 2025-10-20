@@ -4,7 +4,12 @@ import useAuthen from "../hooks/useAuthen";
 
 const Error = () => {
   const navigate = useNavigate();
-  const { role, isAuthenticated } = useAuthen();
+  const { role, isAuthenticated , logout} = useAuthen();
+
+   const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
+  };
 
   const handleGoToDashboard = () => {
     if (!isAuthenticated) {
@@ -27,7 +32,7 @@ const Error = () => {
         navigate('/evm-staff/dealer-list', { replace: true });
         break;
       default:
-        navigate('/', { replace: true });
+        handleLogout();
     }
   };
 
