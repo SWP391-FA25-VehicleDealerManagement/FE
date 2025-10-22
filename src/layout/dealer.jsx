@@ -8,7 +8,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   DownOutlined,
-  SettingOutlined,
+  InboxOutlined,
   CarOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
@@ -55,6 +55,13 @@ const menuItems = [
       "/dealer-manager/request-list"
     ),
   ]),
+  getItem(
+    "Kho hàng",
+    "inventory",
+    <InboxOutlined />,
+    null,
+    "/dealer-manager/inventory"
+  ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
   ]),

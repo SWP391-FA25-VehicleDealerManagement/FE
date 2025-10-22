@@ -65,20 +65,31 @@ const useInventoryStore = create((set) => ({
       throw error;
     }
   },
-  recallInventory: async () => {
+  
+  isLoadingRecall: false,
+  recallInventory: async (data) => {
     try {
-      const response = await recallInventory();
-      return response.data;
+      const response = await recallInventory(data);
+      if (response && response.status === 200) {
+        set({ isLoadingRecall: false });
+      }
+      return response;
     } catch (error) {
       console.error("Error recalling inventory:", error);
       throw error;
     }
   },
-  allocateInventory: async () => {
+  
+  isLoadingAllocate: false,
+  allocateInventory: async (data) => {
     try {
-      const response = await allocateInventory();
-      return response.data;
+      const response = await allocateInventory(data);
+      if (response && response.status === 200) {
+        set({ isLoadingAllocate: false });
+      }
+      return response;
     } catch (error) {
+      set({ isLoading: false });
       console.error("Error allocating inventory:", error);
       throw error;
     }

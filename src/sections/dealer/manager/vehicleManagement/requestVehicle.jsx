@@ -12,6 +12,7 @@ import {
   Form,
   InputNumber,
   Select,
+  DatePicker,
 } from "antd";
 import {
   SearchOutlined,
@@ -24,6 +25,7 @@ import { toast } from "react-toastify";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import useDealerRequest from "../../../../hooks/useDealerRequest";
+import dayjs from "dayjs";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -37,6 +39,7 @@ export default function RequestVehicle() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [form] = Form.useForm();
+  const [totalAmount, setTotalAmount] = useState(0);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -66,12 +69,27 @@ export default function RequestVehicle() {
   const showOrderModal = (vehicle) => {
     setSelectedVehicle(vehicle);
     setIsOrderModalOpen(true);
+    // Tính tổng tiền ban đầu với số lượng = 1
+    const priceString = vehicle?.listingPrice || "0";
+    const unitPrice = parseFloat(priceString.replace(/[^0-9]/g, "")) || 0;
+    setTotalAmount(unitPrice);
   };
 
   const handleOrderCancel = () => {
     setIsOrderModalOpen(false);
     setSelectedVehicle(null);
+    setTotalAmount(0);
     form.resetFields();
+  };
+
+  const handleQuantityChange = (value) => {
+    if (selectedVehicle && value) {
+      const priceString = selectedVehicle?.listingPrice || "0";
+      const unitPrice = parseFloat(priceString.replace(/[^0-9]/g, "")) || 0;
+      setTotalAmount(unitPrice * value);
+    } else {
+      setTotalAmount(0);
+    }
   };
 
   const handleOrderSubmit = async () => {
@@ -110,19 +128,20 @@ export default function RequestVehicle() {
       }
 
       // Parse price từ string sang number (loại bỏ ký tự không phải số)
-      const priceString = selectedVehicle?.price || "0";
+      const priceString = selectedVehicle?.listingPrice || "0";
       const unitPrice = parseFloat(priceString.replace(/[^0-9.]/g, "")) || 0;
 
       // Tạo request data theo đúng format API
       const requestData = {
         dealerId: dealerId,
         userId: userId,
-        requiredDate: new Date().toISOString(), // Ngày yêu cầu hiện tại
-        priority: "NORMAL", // Hoặc lấy từ form nếu có
+        requiredDate: values.requiredDate ? values.requiredDate.toISOString() : new Date().toISOString(),
+        priority: values.priority || "NORMAL",
         notes: values.notes || "",
         requestDetails: [
           {
             variantId: variantId,
+            color: values.color || selectedVehicle?.color,
             quantity: values.quantity,
             unitPrice: unitPrice,
             notes: values.notes || ""
@@ -221,69 +240,86 @@ export default function RequestVehicle() {
       dataIndex: "vehicleId",
       key: "vehicleId",
       width: 100,
+      fixed: "left",
       sorter: (a, b) => a.vehicleId - b.vehicleId,
     },
     {
       title: "Hình ảnh",
-      dataIndex: "image",
-      key: "image",
-      width: 100,
-      render: (image, record) => (
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      width: 120,
+      render: (imageUrl, record) => (
         <img
-          src={image || "https://via.placeholder.com/80"}
-          alt={record.name}
+          src={imageUrl || "https://via.placeholder.com/80"}
+          alt={record.variantName}
           style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 4 }}
         />
       ),
     },
     {
       title: "Tên xe",
-      dataIndex: "name",
-      key: "name",
-      ...getColumnSearchProps("name"),
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: "Model",
       dataIndex: "modelName",
       key: "modelName",
+      width: 150,
       ...getColumnSearchProps("modelName"),
-      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
+      sorter: (a, b) => (a.modelName || "").localeCompare(b.modelName || ""),
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
+      width: 150,
       ...getColumnSearchProps("variantName"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
+      width: 120,
       filters: [
         { text: "Đen", value: "Đen" },
         { text: "Trắng", value: "Trắng" },
         { text: "Đỏ", value: "Đỏ" },
         { text: "Xanh", value: "Xanh" },
         { text: "Bạc", value: "Bạc" },
+        { text: "Green", value: "Green" },
+        { text: "Black", value: "Black" },
+        { text: "White", value: "White" },
       ],
       onFilter: (value, record) => record.color === value,
     },
     {
+      title: "VIN Number",
+      dataIndex: "vinNumber",
+      key: "vinNumber",
+      width: 180,
+      ...getColumnSearchProps("vinNumber"),
+    },
+    {
       title: "Giá (VNĐ)",
-      dataIndex: "price",
-      key: "price",
+      dataIndex: "listingPrice",
+      key: "listingPrice",
+      width: 150,
       sorter: (a, b) => {
-        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
-        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
+        const priceA = a.listingPrice ? parseFloat(a.listingPrice.replace(/[^0-9]/g, "")) : 0;
+        const priceB = b.listingPrice ? parseFloat(b.listingPrice.replace(/[^0-9]/g, "")) : 0;
         return priceA - priceB;
       },
-      render: (price) => price || "N/A",
+      render: (listingPrice) => listingPrice || "N/A",
+    },
+    {
+      title: "Bảo hành đến",
+      dataIndex: "warrantyExpiryDate",
+      key: "warrantyExpiryDate",
+      width: 150,
+      sorter: (a, b) => new Date(a.warrantyExpiryDate) - new Date(b.warrantyExpiryDate),
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : "N/A",
     },
     {
       title: "Thao tác",
       key: "action",
-      width: 200,
+      width: 220,
+      fixed: "right",
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -328,13 +364,14 @@ export default function RequestVehicle() {
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
+            scroll={{ x: 1400 }}
           />
         )}
       </Card>
 
       {/* Modal đặt xe */}
       <Modal
-        title={`Đặt xe: ${selectedVehicle?.name}`}
+        title={`Đặt xe: ${selectedVehicle?.modelName} ${selectedVehicle?.variantName}`}
         open={isOrderModalOpen}
         onOk={handleOrderSubmit}
         onCancel={handleOrderCancel}
@@ -354,9 +391,83 @@ export default function RequestVehicle() {
           >
             <InputNumber
               min={1}
-              max={selectedVehicle?.stock || 1}
+              max={selectedVehicle?.stock || 100}
               style={{ width: "100%" }}
               placeholder="Nhập số lượng xe cần đặt"
+              onChange={handleQuantityChange}
+            />
+          </Form.Item>
+
+          <div className="bg-blue-50 p-4 rounded mb-4">
+            <div className="flex justify-between items-center">
+              <span className="text-lg">
+                <strong>Đơn giá:</strong>
+              </span>
+              <span className="text-lg text-blue-600">
+                {selectedVehicle?.listingPrice || "N/A"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-lg">
+                <strong>Số lượng:</strong>
+              </span>
+              <span className="text-lg font-bold">
+                {form.getFieldValue('quantity') || 1} xe
+              </span>
+            </div>
+            <div className="border-t border-blue-200 mt-3 pt-3 flex justify-between items-center">
+              <span className="text-xl">
+                <strong>Tổng tiền:</strong>
+              </span>
+              <span className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(totalAmount)}
+              </span>
+            </div>
+          </div>
+
+          <Form.Item
+            name="color"
+            label="Màu sắc"
+            initialValue={selectedVehicle?.color}
+          >
+            <Input disabled style={{ fontWeight: "500", color: "#000" }} />
+          </Form.Item>
+
+          <Form.Item
+            name="priority"
+            label="Mức độ ưu tiên"
+            rules={[{ required: true, message: "Vui lòng chọn mức độ ưu tiên" }]}
+            initialValue="NORMAL"
+          >
+            <Select placeholder="Chọn mức độ ưu tiên">
+              <Option value="LOW">
+                <Tag color="green">Thấp</Tag>
+              </Option>
+              <Option value="NORMAL">
+                <Tag color="blue">Trung bình</Tag>
+              </Option>
+              <Option value="HIGH">
+                <Tag color="red">Cao</Tag>
+              </Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="requiredDate"
+            label="Ngày cần xe"
+            rules={[{ required: true, message: "Vui lòng chọn ngày cần xe" }]}
+            initialValue={dayjs().add(7, 'day')}
+          >
+            <DatePicker
+              style={{ width: "100%" }}
+              format="DD/MM/YYYY"
+              placeholder="Chọn ngày cần xe"
+              disabledDate={(current) =>
+                current && current < dayjs().startOf("day")
+              }
             />
           </Form.Item>
 
@@ -369,19 +480,16 @@ export default function RequestVehicle() {
 
           <div className="bg-gray-50 p-4 rounded">
             <p className="mb-2">
-              <strong>Xe:</strong> {selectedVehicle?.name}
-            </p>
-            <p className="mb-2">
-              <strong>Model:</strong> {selectedVehicle?.modelName}
+              <strong>Xe:</strong> {selectedVehicle?.modelName}
             </p>
             <p className="mb-2">
               <strong>Phiên bản:</strong> {selectedVehicle?.variantName}
             </p>
             <p className="mb-2">
-              <strong>Màu sắc:</strong> {selectedVehicle?.color}
+              <strong>VIN:</strong> {selectedVehicle?.vinNumber}
             </p>
             <p className="mb-2">
-              <strong>Giá:</strong> {selectedVehicle?.price}
+              <strong>Giá:</strong> {selectedVehicle?.listingPrice}
             </p>
           </div>
         </Form>

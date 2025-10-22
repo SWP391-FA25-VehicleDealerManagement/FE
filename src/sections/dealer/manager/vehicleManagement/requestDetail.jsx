@@ -34,15 +34,11 @@ const { Title, Text } = Typography;
 export default function RequestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { requestDetail, isLoading, fetchRequestById, clearRequestDetail } = useDealerRequest();
+  const { requestDetail, isLoading, fetchRequestById } = useDealerRequest();
   const [details, setDetails] = useState([]);
 
   useEffect(() => {
     loadData();
-    
-    return () => {
-      clearRequestDetail();
-    };
   }, [id]);
 
   const loadData = async () => {
@@ -68,17 +64,41 @@ export default function RequestDetail() {
 
   const getStatusTag = (status) => {
     const statusConfig = {
-      PENDING: { color: "orange", icon: <ClockCircleOutlined />, text: "Chờ duyệt" },
-      APPROVED: { color: "green", icon: <CheckCircleOutlined />, text: "Đã duyệt" },
-      REJECTED: { color: "red", icon: <CloseCircleOutlined />, text: "Từ chối" },
-      COMPLETED: { color: "blue", icon: <CheckCircleOutlined />, text: "Hoàn thành" },
-      CANCELLED: { color: "default", icon: <CloseCircleOutlined />, text: "Đã hủy" },
+      PENDING: {
+        color: "orange",
+        icon: <ClockCircleOutlined />,
+        text: "Chờ duyệt",
+      },
+      APPROVED: {
+        color: "green",
+        icon: <CheckCircleOutlined />,
+        text: "Đã duyệt",
+      },
+      REJECTED: {
+        color: "red",
+        icon: <CloseCircleOutlined />,
+        text: "Từ chối",
+      },
+      COMPLETED: {
+        color: "blue",
+        icon: <CheckCircleOutlined />,
+        text: "Hoàn thành",
+      },
+      CANCELLED: {
+        color: "default",
+        icon: <CloseCircleOutlined />,
+        text: "Đã hủy",
+      },
     };
 
     const config = statusConfig[status] || { color: "default", text: status };
 
     return (
-      <Tag color={config.color} icon={config.icon} style={{ fontSize: "14px", padding: "4px 12px" }}>
+      <Tag
+        color={config.color}
+        icon={config.icon}
+        style={{ fontSize: "14px", padding: "4px 12px" }}
+      >
         {config.text}
       </Tag>
     );
@@ -91,10 +111,16 @@ export default function RequestDetail() {
       LOW: { color: "default", text: "Thấp" },
     };
 
-    const config = priorityConfig[priority] || { color: "default", text: priority };
+    const config = priorityConfig[priority] || {
+      color: "default",
+      text: priority,
+    };
 
     return (
-      <Tag color={config.color} style={{ fontSize: "14px", padding: "4px 12px" }}>
+      <Tag
+        color={config.color}
+        style={{ fontSize: "14px", padding: "4px 12px" }}
+      >
         {config.text}
       </Tag>
     );
@@ -118,17 +144,16 @@ export default function RequestDetail() {
     },
     {
       title: "Phiên bản xe",
+      dataIndex: "variantName",
       key: "variantName",
-      render: (_, record) => {
-        const variantName = record.vehicleVariant?.name || "N/A";
-        const modelName = record.vehicleVariant?.model?.name;
-        return (
-          <div>
-            <div className="font-semibold">{variantName}</div>
-            {modelName && <div className="text-gray-500 text-sm">{modelName}</div>}
-          </div>
-        );
-      },
+      render: (variantName, record) => (
+        <div>
+          <div className="font-semibold">{variantName || "N/A"}</div>
+          {record.modelName && (
+            <div className="text-gray-500 text-sm">{record.modelName}</div>
+          )}
+        </div>
+      ),
     },
     {
       title: "Số lượng",
@@ -143,6 +168,7 @@ export default function RequestDetail() {
       dataIndex: "unitPrice",
       key: "unitPrice",
       width: 150,
+      align: "right",
       render: (price) => formatCurrency(price),
     },
     {
@@ -150,20 +176,12 @@ export default function RequestDetail() {
       dataIndex: "lineTotal",
       key: "lineTotal",
       width: 150,
-      render: (lineTotal, record) => {
-        const total = lineTotal || (record.unitPrice || 0) * (record.quantity || 0);
-        return (
-          <span className="font-semibold text-green-600">
-            {formatCurrency(total)}
-          </span>
-        );
-      },
-    },
-    {
-      title: "Ghi chú",
-      dataIndex: "notes",
-      key: "notes",
-      render: (notes) => notes || <span className="text-gray-400">Không có</span>,
+      align: "right",
+      render: (lineTotal) => (
+        <span className="font-semibold text-green-600">
+          {formatCurrency(lineTotal)}
+        </span>
+      ),
     },
   ];
 
@@ -199,13 +217,13 @@ export default function RequestDetail() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          <Button
+          {/* <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/dealer-manager/request-list")}
             style={{ marginRight: 16 }}
           >
             Quay lại
-          </Button>
+          </Button> */}
           <Title level={2} style={{ margin: 0 }}>
             Chi tiết yêu cầu #{requestDetail.requestId}
           </Title>
@@ -225,7 +243,7 @@ export default function RequestDetail() {
               <Descriptions.Item label="Trạng thái" span={1}>
                 {getStatusTag(requestDetail.status)}
               </Descriptions.Item>
-              
+
               <Descriptions.Item label="Ưu tiên" span={1}>
                 {getPriorityTag(requestDetail.priority)}
               </Descriptions.Item>
@@ -235,51 +253,63 @@ export default function RequestDetail() {
                 </Text>
               </Descriptions.Item>
 
-              <Descriptions.Item 
-                label={<span><CalendarOutlined /> Ngày yêu cầu</span>} 
+              <Descriptions.Item
+                label={
+                  <span>
+                    <CalendarOutlined /> Ngày yêu cầu
+                  </span>
+                }
                 span={1}
               >
                 {requestDetail.requestDate
                   ? dayjs(requestDetail.requestDate).format("DD/MM/YYYY HH:mm")
                   : "N/A"}
               </Descriptions.Item>
-              <Descriptions.Item 
-                label={<span><CalendarOutlined /> Ngày cần xe</span>} 
+              <Descriptions.Item
+                label={
+                  <span>
+                    <CalendarOutlined /> Ngày cần xe
+                  </span>
+                }
                 span={1}
               >
                 {requestDetail.requiredDate
-                  ? dayjs(requestDetail.requiredDate).format("DD/MM/YYYY")
+                  ? dayjs(requestDetail.requiredDate).format("DD/MM/YYYY HH:mm")
                   : "N/A"}
               </Descriptions.Item>
 
-              <Descriptions.Item 
-                label={<span><UserOutlined /> Người tạo</span>} 
+              <Descriptions.Item
+                label={
+                  <span>
+                    <UserOutlined /> Người tạo
+                  </span>
+                }
                 span={1}
               >
                 <div>
-                  <div>{requestDetail.createdBy?.fullName || requestDetail.createdBy?.userName || "N/A"}</div>
-                  {requestDetail.createdBy?.phone && (
-                    <div className="text-gray-500 text-sm">SĐT: {requestDetail.createdBy.phone}</div>
-                  )}
-                  {requestDetail.createdBy?.email && (
-                    <div className="text-gray-500 text-sm">Email: {requestDetail.createdBy.email}</div>
+                  <div className="font-semibold">
+                    {requestDetail.userFullName || "N/A"}
+                  </div>
+                  {requestDetail.userRole && (
+                    <Tag color="blue" className="mt-1">
+                      {requestDetail.userRole === "DEALER_MANAGER"
+                        ? "Quản lý đại lý"
+                        : requestDetail.userRole}
+                    </Tag>
                   )}
                 </div>
               </Descriptions.Item>
+
               <Descriptions.Item label="Đại lý" span={1}>
-                <div>
-                  <div className="font-semibold">{requestDetail.dealer?.dealerName || "N/A"}</div>
-                  {requestDetail.dealer?.phone && (
-                    <div className="text-gray-500 text-sm">SĐT: {requestDetail.dealer.phone}</div>
-                  )}
-                  {requestDetail.dealer?.address && (
-                    <div className="text-gray-500 text-sm">Địa chỉ: {requestDetail.dealer.address}</div>
-                  )}
+                <div className="font-semibold">
+                  {requestDetail.dealerName || "N/A"}
                 </div>
               </Descriptions.Item>
 
               <Descriptions.Item label="Ghi chú" span={2}>
-                {requestDetail.notes || <Text type="secondary">Không có ghi chú</Text>}
+                {requestDetail.notes || (
+                  <Text type="secondary">Không có ghi chú</Text>
+                )}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -289,7 +319,7 @@ export default function RequestDetail() {
             <Table
               columns={detailColumns}
               dataSource={requestDetail.requestDetails || []}
-              rowKey="detailId"
+              rowKey="requestDetailId"
               pagination={false}
               locale={{
                 emptyText: "Không có chi tiết",
@@ -300,7 +330,7 @@ export default function RequestDetail() {
 
                 pageData.forEach((item) => {
                   totalQuantity += item.quantity || 0;
-                  totalAmount += item.lineTotal || ((item.quantity || 0) * (item.unitPrice || 0));
+                  totalAmount += item.lineTotal || 0;
                 });
 
                 return (
@@ -313,7 +343,7 @@ export default function RequestDetail() {
                         <Text strong>{totalQuantity}</Text>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={3} />
-                      <Table.Summary.Cell index={4}>
+                      <Table.Summary.Cell index={4} align="right">
                         <Text strong style={{ color: "#52c41a" }}>
                           {formatCurrency(totalAmount)}
                         </Text>
@@ -331,11 +361,13 @@ export default function RequestDetail() {
             <Card title="Thông tin duyệt" className="mb-4">
               <Descriptions bordered column={2}>
                 <Descriptions.Item label="Người duyệt" span={1}>
-                  {requestDetail.approvedBy || "N/A"}
+                  {requestDetail.userFullName || "N/A"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Ngày duyệt" span={1}>
                   {requestDetail.approvedDate
-                    ? dayjs(requestDetail.approvedDate).format("DD/MM/YYYY HH:mm")
+                    ? dayjs(requestDetail.approvedDate).format(
+                        "DD/MM/YYYY HH:mm"
+                      )
                     : "N/A"}
                 </Descriptions.Item>
                 {requestDetail.deliveryDate && (
@@ -361,7 +393,9 @@ export default function RequestDetail() {
                       <br />
                       <Text type="secondary">
                         {requestDetail.requestDate
-                          ? dayjs(requestDetail.requestDate).format("DD/MM/YYYY HH:mm")
+                          ? dayjs(requestDetail.requestDate).format(
+                              "DD/MM/YYYY HH:mm"
+                            )
                           : "N/A"}
                       </Text>
                     </div>
@@ -370,20 +404,27 @@ export default function RequestDetail() {
                 ...(requestDetail.approvedDate
                   ? [
                       {
-                        color: requestDetail.status === "APPROVED" ? "green" : "red",
+                        color:
+                          requestDetail.status === "APPROVED" ? "green" : "red",
                         children: (
                           <div>
                             <Text strong>
-                              {requestDetail.status === "APPROVED" ? "Đã duyệt" : "Từ chối"}
+                              {requestDetail.status === "APPROVED"
+                                ? "Đã duyệt"
+                                : "Từ chối"}
                             </Text>
                             <br />
                             <Text type="secondary">
-                              {dayjs(requestDetail.approvedDate).format("DD/MM/YYYY HH:mm")}
+                              {dayjs(requestDetail.approvedDate).format(
+                                "DD/MM/YYYY HH:mm"
+                              )}
                             </Text>
                             {requestDetail.approvedBy && (
                               <>
                                 <br />
-                                <Text type="secondary">Bởi: {requestDetail.approvedBy}</Text>
+                                <Text type="secondary">
+                                  Bởi: {requestDetail.approvedBy}
+                                </Text>
                               </>
                             )}
                           </div>
@@ -400,7 +441,9 @@ export default function RequestDetail() {
                             <Text strong>Giao hàng</Text>
                             <br />
                             <Text type="secondary">
-                              {dayjs(requestDetail.deliveryDate).format("DD/MM/YYYY")}
+                              {dayjs(requestDetail.deliveryDate).format(
+                                "DD/MM/YYYY"
+                              )}
                             </Text>
                           </div>
                         ),
@@ -414,13 +457,13 @@ export default function RequestDetail() {
           {/* Quick Actions */}
           <Card title="Thao tác nhanh" className="mt-4">
             <Space direction="vertical" style={{ width: "100%" }}>
-              <Button
+              {/* <Button
                 block
                 icon={<FileTextOutlined />}
                 onClick={() => window.print()}
               >
                 In yêu cầu
-              </Button>
+              </Button> */}
               <Button
                 block
                 type="primary"
