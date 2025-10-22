@@ -1,11 +1,19 @@
 import axiosClient from "../config/axiosClient";
 
 const importInventory = (data) => {
-  return axiosClient.post("/api/inventory", data);
+  return axiosClient.post("/api/inventory/manufacturer", data);
+};
+
+const importDealerInventory = (data) => {
+  return axiosClient.post("/api/inventory/dealer", data);
 };
 
 const getInventory = () => {
-  return axiosClient.get("/api/inventory");
+  return axiosClient.get("/api/inventory/manufacturer");
+};
+
+const getDealerInventory = () => {
+  return axiosClient.get("/api/inventory/dealer");
 };
 
 const updateInventory = (id, data) => {
@@ -13,15 +21,15 @@ const updateInventory = (id, data) => {
 };
 
 const deleteInventory = (id) => {
-  return axiosClient.delete(`/api/inventory/${id}`);
+  return axiosClient.delete(`/api/inventory/dealer/${id}`);
 };
 
-const recallInventory = () => {
-  return axiosClient.oost(`/api/inventory/recall`);
+const recallInventory = (data) => {
+  return axiosClient.post(`/api/inventory/recall`, data);
 };
 
-const allocateInventory = () => {
-  return axiosClient.post(`/api/inventory/allocate`);
+const allocateInventory = (data) => {
+  return axiosClient.post(`/api/inventory/allocate`, data);
 };
 
 export {
@@ -31,4 +39,6 @@ export {
   deleteInventory,
   recallInventory,
   allocateInventory,
+  importDealerInventory,
+  getDealerInventory,
 };

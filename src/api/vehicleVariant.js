@@ -8,8 +8,12 @@ const getVehicleVariantById = (id) => {
   return axiosClient.get(`/api/variants/${id}`);
 };
 
-const createVehicleVariant = (data) => {
-  return axiosClient.post("/api/variants", data);
+const createVehicleVariant = (formData) => {
+  return axiosClient.post("/api/variants", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
 
 const deleteVehicleVariant = (id) => {

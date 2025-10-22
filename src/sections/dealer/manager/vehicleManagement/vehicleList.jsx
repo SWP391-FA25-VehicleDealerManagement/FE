@@ -101,26 +101,19 @@ export default function VehicleList() {
     },
     {
       title: "Hình ảnh",
-      dataIndex: "image",
-      key: "image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
       width: 100,
-      render: (image, record) => (
+      render: (imageUrl, record) => (
         <img
-          src={image || record.variantImage || "https://via.placeholder.com/80"}
-          alt={record.name}
+          src={imageUrl || "https://via.placeholder.com/80"}
+          alt={record.variantName}
           style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 4 }}
         />
       ),
     },
     {
       title: "Tên xe",
-      dataIndex: "name",
-      key: "name",
-      ...getColumnSearchProps("name"),
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: "Model",
       dataIndex: "modelName",
       key: "modelName",
       ...getColumnSearchProps("modelName"),
@@ -149,15 +142,28 @@ export default function VehicleList() {
       onFilter: (value, record) => record.color === value,
     },
     {
+      title: "VIN Number",
+      dataIndex: "vinNumber",
+      key: "vinNumber",
+      ...getColumnSearchProps("vinNumber"),
+    },
+    {
       title: "Giá (VNĐ)",
-      dataIndex: "price",
-      key: "price",
+      dataIndex: "listingPrice",
+      key: "listingPrice",
       sorter: (a, b) => {
-        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
-        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
+        const priceA = a.listingPrice ? parseFloat(a.listingPrice.replace(/[^0-9]/g, "")) : 0;
+        const priceB = b.listingPrice ? parseFloat(b.listingPrice.replace(/[^0-9]/g, "")) : 0;
         return priceA - priceB;
       },
-      render: (price) => price || "N/A",
+      render: (listingPrice) => listingPrice || "N/A",
+    },
+    {
+      title: "Bảo hành đến",
+      dataIndex: "warrantyExpiryDate",
+      key: "warrantyExpiryDate",
+      sorter: (a, b) => new Date(a.warrantyExpiryDate) - new Date(b.warrantyExpiryDate),
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : "N/A",
     },
     {
       title: "Tồn kho",
@@ -170,13 +176,6 @@ export default function VehicleList() {
           {stock !== null && stock !== undefined ? stock : "N/A"}
         </Tag>
       ),
-    },
-    {
-      title: "Đại lý",
-      dataIndex: "dealerName",
-      key: "dealerName",
-      ...getColumnSearchProps("dealerName"),
-      render: (dealerName) => dealerName || "Chưa phân bổ",
     },
     {
       title: "Thao tác",

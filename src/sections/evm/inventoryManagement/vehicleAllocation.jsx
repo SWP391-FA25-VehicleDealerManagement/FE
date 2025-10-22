@@ -12,16 +12,15 @@ import {
   Row,
   Col,
   Statistic,
-  Progress,
   Modal,
   Form,
   InputNumber,
-  DatePicker,
-  Steps,
   Divider,
   Alert,
   Tabs,
-  Descriptions
+  Descriptions,
+  Drawer,
+  Badge,
 } from "antd";
 import {
   SearchOutlined,
@@ -34,28 +33,52 @@ import {
   ExportOutlined,
   ReloadOutlined,
   FileDoneOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  EyeOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useInventoryStore from "../../../hooks/useInventory";
 import useDealerStore from "../../../hooks/useDealer";
+import useVehicleRequestStore from "../../../hooks/useVehicleRequest";
+import useAuthen from "../../../hooks/useAuthen";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { Step } = Steps;
 const { TabPane } = Tabs;
 
 export default function VehicleAllocation() {
-  const { inventory, isLoading, fetchInventory } = useInventoryStore();
+  const { userDetail } = useAuthen();
+  const { inventory, isLoading, fetchInventory, allocateInventory, recallInventory, isLoadingRecall } =
+    useInventoryStore();
+  const {
+    fetchVehicleRequests,
+    fetchVehicleRequestDetail,
+    approvedRequest,
+    rejectedRequest,
+    vehicleRequestLists,
+    vehicleRequestDetail,
+    isLoadingVehicleRequests,
+  } = useVehicleRequestStore();
   const { dealers, fetchDealers } = useDealerStore();
-  
+
   const [allocationHistory, setAllocationHistory] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("1");
-  const [isAllocationModalVisible, setIsAllocationModalVisible] = useState(false);
+  const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
+  const [isApproveModalVisible, setIsApproveModalVisible] = useState(false);
+  const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
+  const [isAllocationModalVisible, setIsAllocationModalVisible] =
+    useState(false);
+  const [isRecallModalVisible, setIsRecallModalVisible] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [approveForm] = Form.useForm();
+  const [rejectForm] = Form.useForm();
   const [allocationForm] = Form.useForm();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedInventory, setSelectedInventory] = useState(null);
+  const [recallForm] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -110,12 +133,28 @@ export default function VehicleAllocation() {
 
   const fetchData = async () => {
     try {
-      await Promise.all([fetchInventory(), fetchDealers()]);
-      // Mock allocation history - có thể thay bằng API call
+      await Promise.all([
+        fetchInventory(),
+        fetchDealers(),
+        fetchVehicleRequests(),
+      ]);
       setAllocationHistory(mockAllocationHistory);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Không thể tải dữ liệu", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleViewDetail = async (record) => {
+    try {
+      await fetchVehicleRequestDetail(record.requestId);
+      setSelectedRequest(record);
+      setIsDetailDrawerVisible(true);
+    } catch (error) {
+      toast.error("Không thể tải chi tiết yêu cầu", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -132,41 +171,182 @@ export default function VehicleAllocation() {
     setSearchText("");
   };
 
-  const startAllocation = (inventoryItem) => {
-    setSelectedInventory(inventoryItem);
-    allocationForm.setFieldsValue({
-      model: inventoryItem.vehicleName,
-      color: inventoryItem.color,
-      warehouseId: inventoryItem.dealerId,
-      warehouseName: inventoryItem.dealerName,
-      maxQuantity: inventoryItem.quantity,
+  const showApproveModal = (record) => {
+    setSelectedRequest(record);
+    approveForm.setFieldsValue({
+      approverName: userDetail?.fullName || "N/A",
     });
-    setCurrentStep(0);
-    setIsAllocationModalVisible(true);
+    setIsApproveModalVisible(true);
   };
 
-  const nextStep = () => {
-    allocationForm.validateFields().then(() => {
-      setCurrentStep(currentStep + 1);
-    });
-  };
+  const handleApprove = async () => {
+    try {
+      const values = await approveForm.validateFields();
+      const approverName = values.approverName || "Admin"; // Lấy tên người duyệt từ form hoặc user context
 
-  const prevStep = () => {
-    setCurrentStep(currentStep - 1);
-  };
+      await approvedRequest(selectedRequest.requestId, approverName);
 
-  const handleAllocationSubmit = () => {
-    allocationForm.validateFields().then((values) => {
-      // TODO: Implement real API call
-      toast.info("Tính năng đang phát triển - sẽ kết nối API sau", {
+      toast.success("Phê duyệt yêu cầu thành công", {
         position: "top-right",
         autoClose: 3000,
       });
-      
+
+      setIsApproveModalVisible(false);
+      approveForm.resetFields();
+      fetchVehicleRequests(); // Refresh danh sách
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Phê duyệt thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleApproveCancel = () => {
+    setIsApproveModalVisible(false);
+    approveForm.resetFields();
+  };
+
+  // Reject request functions
+  const showRejectModal = (record) => {
+    setSelectedRequest(record);
+    rejectForm.setFieldsValue({
+      rejecterName: userDetail?.fullName || "N/A",
+    });
+    setIsRejectModalVisible(true);
+  };
+
+  const handleReject = async () => {
+    try {
+      const values = await rejectForm.validateFields();
+      const rejecterName = values.rejecterName || "Admin"; // Lấy tên người từ chối từ form hoặc user context
+
+      await rejectedRequest(selectedRequest.requestId, rejecterName);
+
+      toast.success("Từ chối yêu cầu thành công", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      setIsRejectModalVisible(false);
+      rejectForm.resetFields();
+      fetchVehicleRequests(); // Refresh danh sách
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Từ chối thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleRejectCancel = () => {
+    setIsRejectModalVisible(false);
+    rejectForm.resetFields();
+  };
+
+  // Recall inventory functions
+  const showRecallModal = (record) => {
+    setSelectedRequest(record);
+    recallForm.setFieldsValue({
+      recallerName: userDetail?.fullName || "N/A",
+    });
+    setIsRecallModalVisible(true);
+  };
+
+  const handleRecall = async () => {
+    try {
+      const values = await recallForm.validateFields();
+
+      // Prepare recall data from request details
+      const recallData = selectedRequest.requestDetails?.map((detail) => ({
+        variantId: detail.variantId,
+        dealerId: selectedRequest.dealerId,
+        color: detail.color,
+        quantity: detail.quantity,
+      }));
+
+      if (!recallData || recallData.length === 0) {
+        toast.error("Không tìm thấy thông tin để thu hồi");
+        return;
+      }
+
+      // Call recall API for each item
+      for (const item of recallData) {
+        await recallInventory(item);
+      }
+
+      toast.success("Thu hồi xe thành công", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      setIsRecallModalVisible(false);
+      recallForm.resetFields();
+      fetchVehicleRequests(); // Refresh danh sách
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Thu hồi thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleRecallCancel = () => {
+    setIsRecallModalVisible(false);
+    recallForm.resetFields();
+  };
+
+  const showAllocationModal = (record) => {
+    setSelectedRequest(record);
+    setIsAllocationModalVisible(true);
+  };
+
+  const handleAllocationSubmit = async () => {
+    try {
+      // Get dealerId from selectedRequest
+      const dealerId = selectedRequest?.dealerId;
+
+      if (!dealerId) {
+        toast.error("Không tìm thấy thông tin đại lý");
+        return;
+      }
+
+      // Extract allocation data from request details (color already exists)
+      const allocationData = selectedRequest.requestDetails.map((detail) => ({
+        variantId: detail.variantId,
+        dealerId: dealerId,
+        color: detail.color,
+        quantity: detail.quantity,
+      }));
+
+      // Validate allocation data
+      const hasInvalidData = allocationData.some(
+        (item) =>
+          !item.variantId || !item.color || !item.quantity || !item.dealerId
+      );
+
+      if (hasInvalidData) {
+        toast.error("Dữ liệu phân bổ không hợp lệ");
+        return;
+      }
+
+      // Send allocation request to API
+      for (const allocation of allocationData) {
+        await allocateInventory(allocation);
+      }
+
+      toast.success("Phân bổ xe thành công!");
+
+      // Reset form and close modal
       setIsAllocationModalVisible(false);
       allocationForm.resetFields();
-      setCurrentStep(0);
-    });
+
+      // Refresh data
+      fetchData();
+    } catch (error) {
+      console.error("Error allocating inventory:", error);
+      toast.error(error.response?.data?.message || "Phân bổ xe thất bại!");
+    }
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -218,39 +398,40 @@ export default function VehicleAllocation() {
         : "",
   });
 
+  const formatCurrency = (amount) => {
+    if (!amount) return "0 ₫";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
   const inventoryColumns = [
+    // {
+    //   title: "Mã kho",
+    //   dataIndex: "manufacturerStockId",
+    //   key: "manufacturerStockId",
+    //   width: 100,
+    // },
     {
-      title: "STT",
-      key: "index",
-      width: 60,
-      align: "center",
-      render: (text, record, index) => index + 1,
+      title: "Mẫu xe",
+      dataIndex: "modelName",
+      key: "modelName",
+      ...getColumnSearchProps("modelName"),
+      width: 150,
     },
     {
-      title: "Mã kho",
-      dataIndex: "stockId",
-      key: "stockId",
-      width: 100,
-    },
-    {
-      title: "Tên xe",
-      dataIndex: "vehicleName",
-      key: "vehicleName",
-      ...getColumnSearchProps("vehicleName"),
-      width: 200,
+      title: "Phiên bản",
+      dataIndex: "variantName",
+      key: "variantName",
+      ...getColumnSearchProps("variantName"),
+      width: 150,
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
       width: 100,
-    },
-    {
-      title: "Đại lý",
-      dataIndex: "dealerName",
-      key: "dealerName",
-      ...getColumnSearchProps("dealerName"),
-      width: 150,
     },
     {
       title: "Số lượng",
@@ -268,31 +449,16 @@ export default function VehicleAllocation() {
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (status) => (
-        <Tag color={status === "AVAILABLE" ? "green" : "orange"}>
-          {status === "AVAILABLE" ? "Có sẵn" : "Đã phân bổ"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 150,
-      render: (_, record) => (
-        <Button
-          type="primary"
-          icon={<ExportOutlined />}
-          onClick={() => startAllocation(record)}
-          disabled={record.status !== "AVAILABLE" || record.quantity <= 0}
-        >
-          Phân bổ
-        </Button>
-      ),
+      // render: (status) => (
+      //   <Tag color={status === "AVAILABLE" ? "green" : "orange"}>
+      //     {status === "AVAILABLE" ? "Có sẵn" : "Đã phân bổ"}
+      //   </Tag>
+      // ),
     },
   ];
 
   const dealerColumns = [
-{
+    {
       title: "Mã đại lý",
       dataIndex: "dealerId",
       key: "dealerId",
@@ -318,55 +484,229 @@ export default function VehicleAllocation() {
       key: "phone",
       width: 150,
     },
+  ];
+
+  const requestColumns = [
     {
-      title: "Yêu cầu thêm",
-      dataIndex: "requestedVehicles",
-      key: "requestedVehicles",
+      title: "Mã yêu cầu",
+      dataIndex: "requestId",
+      key: "requestId",
+      width: 100,
+    },
+    {
+      title: "Đại lý",
+      dataIndex: "dealerName",
+      key: "dealerName",
+      ...getColumnSearchProps("dealerName"),
+      width: 180,
+    },
+    {
+      title: "Người yêu cầu",
+      dataIndex: "userFullName",
+      key: "userFullName",
+      width: 150,
+    },
+    {
+      title: "Ngày yêu cầu",
+      dataIndex: "requestDate",
+      key: "requestDate",
       width: 120,
-      render: (value = 0) => (
-        value > 0 ? <Tag color="volcano">{value} xe</Tag> : <Tag color="green">0 xe</Tag>
-      )
+      render: (date) => dayjs(date).format("DD/MM/YYYY"),
+      sorter: (a, b) =>
+        dayjs(a.requestDate).unix() - dayjs(b.requestDate).unix(),
+    },
+    {
+      title: "Ngày cần",
+      dataIndex: "requiredDate",
+      key: "requiredDate",
+      width: 120,
+      render: (date) => dayjs(date).format("DD/MM/YYYY"),
+    },
+    {
+      title: "Ưu tiên",
+      dataIndex: "priority",
+      key: "priority",
+      width: 100,
+      render: (priority) => {
+        const color =
+          priority === "HIGH"
+            ? "red"
+            : priority === "NORMAL"
+            ? "blue"
+            : "green";
+        const text =
+          priority === "HIGH"
+            ? "Cao"
+            : priority === "NORMAL"
+            ? "Trung bình"
+            : "Thấp";
+        return <Tag color={color}>{text}</Tag>;
+      },
+      filters: [
+        { text: "Cao", value: "HIGH" },
+        { text: "Trung bình", value: "NORMAL" },
+        { text: "Thấp", value: "LOW" },
+      ],
+      onFilter: (value, record) => record.priority === value,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 200,
+      render: (status) => {
+        let color = "";
+        let text = "";
+        let icon = null;
+
+        switch (status) {
+          case "PENDING":
+            color = "warning";
+            text = "Chờ duyệt";
+            icon = <ClockCircleOutlined />;
+            break;
+          case "APPROVED":
+            color = "processing";
+            text = "Đã duyệt";
+            icon = <CheckCircleOutlined />;
+            break;
+          case "SHIPPED":
+            color = "blue";
+            text = "Đang phân vận chuyển";
+            icon = <SyncOutlined spin />;
+            break;
+          default:
+            color = "default";
+            text = status;
+        }
+
+        return (
+          <Tag
+            color={color}
+            icon={icon}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            {text}
+          </Tag>
+        );
+      },
+       filters: [
+        { text: "Chờ duyệt", value: "PENDING" },
+        { text: "Đã duyệt", value: "APPROVED" },
+        { text: "Đang vận chuyển", value: "SHIPPED" },
+      ],
+      onFilter: (value, record) => record.status === value,
+    },
+    {
+      title: "Tổng tiền",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      width: 150,
+      render: (amount) => (
+        <span className="font-semibold text-green-600">
+          {formatCurrency(amount)}
+        </span>
+      ),
+      sorter: (a, b) => a.totalAmount - b.totalAmount,
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      width: 250,
+      fixed: "right",
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            Chi tiết
+          </Button>
+          {record.status === "PENDING" && (
+            <>
+              <Button
+                type="primary"
+                size="small"
+                icon={<CheckOutlined />}
+                onClick={() => showApproveModal(record)}
+              >
+                Duyệt
+              </Button>
+              <Button
+                danger
+                size="small"
+                icon={<CloseOutlined />}
+                onClick={() => showRejectModal(record)}
+              >
+                Từ chối
+              </Button>
+            </>
+          )}
+          {record.status === "APPROVED" && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<ExportOutlined />}
+              onClick={() => showAllocationModal(record)}
+            >
+              Phân bổ
+            </Button>
+          )}
+          {record.status === "SHIPPED" && (
+            <Button
+              type="default"
+              size="small"
+              icon={<RollbackOutlined />}
+              onClick={() => showRecallModal(record)}
+            >
+              Thu hồi
+            </Button>
+          )}
+        </Space>
+      ),
     },
   ];
 
   const historyColumns = [
     {
-      title: "Mã phân bổ",
-      dataIndex: "id",
-      key: "id",
+      title: "Mã yêu cầu",
+      dataIndex: "requestId",
+      key: "requestId",
       width: 100,
     },
     {
-      title: "Tên xe",
-      dataIndex: "vehicleName",
-      key: "vehicleName",
-      width: 150,
-    },
-    {
-      title: "Màu sắc",
-      dataIndex: "color",
-      key: "color",
-      width: 100,
-    },
-    {
-      title: "Số lượng",
-      dataIndex: "quantity",
-      key: "quantity",
-      width: 100,
-    },
-    {
-      title: "Đến đại lý",
+      title: "Đại lý",
       dataIndex: "dealerName",
       key: "dealerName",
+      ...getColumnSearchProps("dealerName"),
+      width: 180,
+    },
+    {
+      title: "Người yêu cầu",
+      dataIndex: "userFullName",
+      key: "userFullName",
       width: 150,
     },
     {
-      title: "Ngày phân bổ",
-      dataIndex: "allocationDate",
-      key: "allocationDate",
-      width: 150,
-      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
-      sorter: (a, b) => new Date(a.allocationDate) - new Date(b.allocationDate),
+      title: "Ngày yêu cầu",
+      dataIndex: "requestDate",
+      key: "requestDate",
+      width: 120,
+      render: (date) => dayjs(date).format("DD/MM/YYYY"),
+      sorter: (a, b) =>
+        dayjs(a.requestDate).unix() - dayjs(b.requestDate).unix(),
+    },
+    {
+      title: "Ngày cần",
+      dataIndex: "requiredDate",
+      key: "requiredDate",
+      width: 120,
+      render: (date) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
       title: "Trạng thái",
@@ -377,22 +717,31 @@ export default function VehicleAllocation() {
         let color = "";
         let icon = null;
         let text = "";
-        
         switch (status) {
-          case "completed":
-            color = "success";
-            icon = <CheckCircleOutlined />;
-            text = "Hoàn thành";
-            break;
-          case "in_transit":
-            color = "processing";
-            icon = <SyncOutlined spin />;
-            text = "Đang vận chuyển";
-            break;
-          case "pending":
+          case "PENDING":
             color = "warning";
+            text = "Chờ duyệt";
             icon = <ClockCircleOutlined />;
-            text = "Đang xử lý";
+            break;
+          case "APPROVED":
+            color = "processing";
+            text = "Đã duyệt";
+            icon = <CheckCircleOutlined />;
+            break;
+          case "REJECTED":
+            color = "error";
+            text = "Từ chối";
+            icon = <CloseOutlined />;
+            break;
+          case "SHIPPED":
+            color = "blue";
+            text = "Đang phân vận chuyển";
+            icon = <SyncOutlined spin />;
+            break;
+          case "ALLOCATED":
+            color = "success";
+            text = "Hoàn thành";
+            icon = <CheckOutlined />;
             break;
           default:
             color = "default";
@@ -400,164 +749,157 @@ export default function VehicleAllocation() {
         }
 
         return (
-          <Tag color={color} icon={icon}>
+          <Tag
+            color={color}
+            icon={icon}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
             {text}
           </Tag>
         );
       },
       filters: [
-        { text: "Hoàn thành", value: "completed" },
-        { text: "Đang vận chuyển", value: "in_transit" },
-        { text: "Đang xử lý", value: "pending" },
+        { text: "Chờ duyệt", value: "PENDING" },
+        { text: "Đã duyệt", value: "APPROVED" },
+        { text: "Từ chối", value: "REJECTED" },
+        { text: "Đang phân bổ", value: "SHIPPED" },
+        { text: "Đã phân bổ", value: "ALLOCATED" },
       ],
       onFilter: (value, record) => record.status === value,
     },
     {
-      title: "Ngày đến (dự kiến)",
-      key: "arrivalDate",
+      title: "Tổng tiền",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
       width: 150,
-      render: (_, record) => {
-        const date = record.arrivalDate || record.estimatedArrival;
-        return date ? new Date(date).toLocaleDateString("vi-VN") : "N/A";
-      }
+      render: (amount) => (
+        <span className="font-semibold text-green-600">
+          {formatCurrency(amount)}
+        </span>
+      ),
+      sorter: (a, b) => a.totalAmount - b.totalAmount,
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      width: 100,
+      fixed: "right",
+      render: (_, record) => (
+        <Button
+          type="link"
+          icon={<EyeOutlined />}
+          onClick={() => handleViewDetail(record)}
+        >
+          Chi tiết
+        </Button>
+      ),
     },
   ];
 
-  const AllocationSteps = () => (
-    <Steps current={currentStep} style={{ marginBottom: 20 }}>
-      <Step title="Chọn đại lý" description="Chọn đại lý nhận xe" />
-      <Step title="Thông tin phân bổ" description="Nhập thông tin chi tiết" />
-      <Step title="Xác nhận" description="Xác nhận thông tin" />
-    </Steps>
-  );
+  const AllocationFormContent = () => {
+    if (!selectedRequest) return null;
 
-  const AllocationStep1 = () => (
-    <Form.Item
-      name="dealerId"
-      label="Chọn đại lý"
-      rules={[{ required: true, message: "Vui lòng chọn đại lý" }]}
-    >
-      <Select placeholder="Chọn đại lý">
-        {dealers.map((dealer) => (
-          <Option key={dealer.dealerId} value={dealer.dealerId}>
-            {dealer.dealerName} - {dealer.address}
-            {dealer.requestedVehicles > 0 && (
-              <Tag color="volcano" style={{ marginLeft: 8 }}>Yêu cầu: {dealer.requestedVehicles}</Tag>
-            )}
-          </Option>
-        ))}
-      </Select>
-    </Form.Item>
-  );
-
-  const AllocationStep2 = () => (
-    <>
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            name="vehicleName"
-            label="Tên xe"
-            rules={[{ required: true }]}
-          >
-            <Input disabled />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="color"
-            label="Màu sắc"
-            rules={[{ required: true }]}
-          >
-            <Input disabled />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            name="dealerName"
-            label="Đại lý nhận"
-            rules={[{ required: true }]}
-          >
-            <Input disabled />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="maxQuantity"
-            label="Số lượng có sẵn"
-            rules={[{ required: true }]}
-          >
-            <Input disabled />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Form.Item
-        name="quantity"
-        label="Số lượng phân bổ"
-        rules={[
-          { required: true, message: "Vui lòng nhập số lượng phân bổ" },
-          ({ getFieldValue }) => ({
-            validator(_, value) {
-              if (!value || (value <= getFieldValue('maxQuantity') && value > 0)) {
-                return Promise.resolve();
-              }
-              return Promise.reject(new Error(`Số lượng phải từ 1 đến ${getFieldValue('maxQuantity')}`));
-            }
-          })
-        ]}
-      >
-        <InputNumber min={1} max={allocationForm.getFieldValue('maxQuantity')} style={{ width: "100%" }} />
-      </Form.Item>
-
-      <Form.Item
-        name="estimatedArrival"
-        label="Ngày đến dự kiến"
-      >
-        <DatePicker style={{ width: "100%" }} />
-      </Form.Item>
-
-      <Form.Item
-        name="note"
-        label="Ghi chú"
-      >
-        <Input.TextArea rows={3} placeholder="Nhập ghi chú (nếu có)" />
-      </Form.Item>
-    </>
-  );
-
-  const AllocationStep3 = () => {
-    const values = allocationForm.getFieldsValue();
-    const selectedDealer = dealers.find(dealer => dealer.id === values.dealerId);
-    
     return (
-      <div>
+      <>
         <Alert
-          message="Xác nhận thông tin phân bổ"
-          description="Vui lòng kiểm tra kỹ thông tin trước khi xác nhận phân bổ xe."
+          message={`Phân bổ xe cho đại lý: ${selectedRequest.dealerName}`}
+          description={
+            <div>
+              <p>
+                <strong>Người yêu cầu:</strong> {selectedRequest.userFullName}
+              </p>
+              <p>
+                <strong>Ngày cần:</strong>{" "}
+                {dayjs(selectedRequest.requiredDate).format("DD/MM/YYYY")}
+              </p>
+            </div>
+          }
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
         />
-        
-        <Descriptions title="Thông tin phân bổ" bordered>
-          <Descriptions.Item label="Tên xe" span={3}>{values.vehicleName}</Descriptions.Item>
-          <Descriptions.Item label="Màu sắc" span={3}>{values.color}</Descriptions.Item>
-          <Descriptions.Item label="Đại lý nhận" span={3}>{selectedDealer?.name}</Descriptions.Item>
-          <Descriptions.Item label="Địa chỉ đại lý" span={3}>{selectedDealer?.address}</Descriptions.Item>
-          <Descriptions.Item label="Số lượng phân bổ" span={3}>
-            <Text strong>{values.quantity}</Text> (Còn lại sau phân bổ: {values.maxQuantity - values.quantity})
-          </Descriptions.Item>
-          <Descriptions.Item label="Ngày đến dự kiến" span={3}>
-            {values.estimatedArrival ? values.estimatedArrival.format('DD/MM/YYYY') : 'Chưa xác định'}
-          </Descriptions.Item>
-          {values.note && (
-            <Descriptions.Item label="Ghi chú" span={3}>{values.note}</Descriptions.Item>
-          )}
-        </Descriptions>
-      </div>
+
+        <Divider orientation="left">Chi tiết xe phân bổ</Divider>
+
+        {selectedRequest.requestDetails?.map((detail, index) => (
+          <Card
+            key={detail.requestDetailId}
+            style={{ marginBottom: 16 }}
+            size="small"
+            title={
+              <Space>
+                <CarOutlined />
+                <Text strong>
+                  {index + 1}. {detail.modelName} - {detail.variantName}
+                </Text>
+              </Space>
+            }
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <div>
+                    <Text type="secondary">Màu sắc:</Text>
+                    <div>
+                      <Tag color="blue" style={{ marginTop: 4 }}>
+                        {detail.color}
+                      </Tag>
+                    </div>
+                  </div>
+                  <div>
+                    <Text type="secondary">Số lượng:</Text>
+                    <div>
+                      <Text strong style={{ fontSize: 16 }}>
+                        {detail.quantity}
+                      </Text>
+                    </div>
+                  </div>
+                </Space>
+              </Col>
+              <Col span={12}>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <div>
+                    <Text type="secondary">Đơn giá:</Text>
+                    <div>
+                      <Text strong>
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(detail.unitPrice)}
+                      </Text>
+                    </div>
+                  </div>
+                  <div>
+                    <Text type="secondary">Thành tiền:</Text>
+                    <div>
+                      <Text strong style={{ color: "#52c41a" }}>
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(detail.lineTotal)}
+                      </Text>
+                    </div>
+                  </div>
+                </Space>
+              </Col>
+            </Row>
+          </Card>
+        ))}
+
+        <Alert
+          message="Xác nhận phân bổ"
+          description={`Tổng cộng: ${new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(selectedRequest.totalAmount)}`}
+          type="success"
+          showIcon
+        />
+      </>
     );
   };
 
@@ -568,10 +910,7 @@ export default function VehicleAllocation() {
           <SwapOutlined style={{ marginRight: 8 }} /> Phân bổ xe cho đại lý
         </Title>
         <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchData}
-          >
+          <Button icon={<ReloadOutlined />} onClick={fetchData}>
             Làm mới
           </Button>
         </Space>
@@ -582,8 +921,8 @@ export default function VehicleAllocation() {
           <Card>
             <Statistic
               title="Tổng số xe sẵn có để phân bổ"
-              value={inventory.filter(item => item.status === "AVAILABLE").reduce((sum, item) => sum + item.quantity, 0)}
-              valueStyle={{ color: '#3f8600' }}
+              value={inventory.reduce((sum, item) => sum + item.quantity, 0)}
+              valueStyle={{ color: "#3f8600" }}
               prefix={<CarOutlined />}
             />
           </Card>
@@ -593,7 +932,7 @@ export default function VehicleAllocation() {
             <Statistic
               title="Tổng số đại lý"
               value={dealers.length}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: "#1890ff" }}
               prefix={<ShopOutlined />}
             />
           </Card>
@@ -601,10 +940,12 @@ export default function VehicleAllocation() {
         <Col span={8}>
           <Card>
             <Statistic
-              title="Yêu cầu xe chưa xử lý"
-              value={dealers.reduce((sum, dealer) => sum + (dealer.requestedVehicles || 0), 0)}
-              valueStyle={{ color: '#faad14' }}
-              prefix={<FileDoneOutlined />}
+              title="Yêu cầu chờ duyệt"
+              value={
+                vehicleRequestLists.filter((r) => r.status === "PENDING").length
+              }
+              valueStyle={{ color: "#faad14" }}
+              prefix={<ClockCircleOutlined />}
             />
           </Card>
         </Col>
@@ -615,24 +956,59 @@ export default function VehicleAllocation() {
           <TabPane
             tab={
               <span>
-                <CarOutlined /> Xe có sẵn để phân bổ
+                <FileDoneOutlined />
+                Yêu cầu xe từ đại lý
+                <Badge
+                  count={
+                    vehicleRequestLists.filter((r) => r.status === "PENDING")
+                      .length
+                  }
+                  style={{ marginLeft: 8 }}
+                />
               </span>
             }
             key="1"
+          >
+            {isLoadingVehicleRequests ? (
+              <div className="flex justify-center items-center p-10">
+                <Spin size="large" />
+              </div>
+            ) : (
+              <Table
+                columns={requestColumns}
+                dataSource={vehicleRequestLists.filter(
+                  (r) => r.status !== "REJECTED" && r.status !== "ALLOCATED"
+                )}
+                pagination={pagination}
+                onChange={(pagination) => setPagination(pagination)}
+                rowKey="requestId"
+                scroll={{ x: 1200 }}
+              />
+            )}
+          </TabPane>
+          <TabPane
+            tab={
+              <span>
+                <CarOutlined /> Xe có sẵn để phân bổ
+              </span>
+            }
+            key="2"
           >
             {isLoading ? (
               <div className="flex justify-center items-center p-10">
                 <Spin size="large" />
               </div>
             ) : (
-              <Table
-                columns={inventoryColumns}
-                dataSource={inventory.filter(item => item.status === "AVAILABLE")}
-                pagination={pagination}
-                onChange={(pagination) => setPagination(pagination)}
-                rowKey="stockId"
-                scroll={{ x: 1200 }}
-              />
+              <>
+                <Table
+                  columns={inventoryColumns}
+                  dataSource={inventory} // Bỏ filter tạm để xem tất cả data
+                  pagination={pagination}
+                  onChange={(pagination) => setPagination(pagination)}
+                  rowKey="manufacturerStockId"
+                  scroll={{ x: 1200 }}
+                />
+              </>
             )}
           </TabPane>
           <TabPane
@@ -641,7 +1017,7 @@ export default function VehicleAllocation() {
                 <ShopOutlined /> Danh sách đại lý
               </span>
             }
-            key="2"
+            key="3"
           >
             {isLoading ? (
               <div className="flex justify-center items-center p-10">
@@ -663,18 +1039,19 @@ export default function VehicleAllocation() {
                 <HistoryOutlined /> Lịch sử phân bổ
               </span>
             }
-            key="3"
+            key="4"
           >
-            {isLoading ? (
+            {isLoadingVehicleRequests ? (
               <div className="flex justify-center items-center p-10">
                 <Spin size="large" />
               </div>
             ) : (
               <Table
                 columns={historyColumns}
-                dataSource={allocationHistory}
-                pagination={{ pageSize: 5 }}
-                rowKey="id"
+                dataSource={vehicleRequestLists}
+                pagination={pagination}
+                onChange={(pagination) => setPagination(pagination)}
+                rowKey="requestId"
                 scroll={{ x: 1500 }}
               />
             )}
@@ -682,42 +1059,354 @@ export default function VehicleAllocation() {
         </Tabs>
       </Card>
 
+      {/* Drawer chi tiết yêu cầu */}
+      <Drawer
+        title="Chi tiết yêu cầu xe"
+        placement="right"
+        width={720}
+        onClose={() => setIsDetailDrawerVisible(false)}
+        open={isDetailDrawerVisible}
+      >
+        {vehicleRequestDetail && (
+          <>
+            <Descriptions title="Thông tin chung" bordered size="small">
+              <Descriptions.Item label="Mã yêu cầu" span={3}>
+                {vehicleRequestDetail.requestId}
+              </Descriptions.Item>
+              <Descriptions.Item label="Đại lý" span={3}>
+                {vehicleRequestDetail.dealerName}
+              </Descriptions.Item>
+              <Descriptions.Item label="Người yêu cầu" span={3}>
+                {vehicleRequestDetail.userFullName}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày yêu cầu" span={3}>
+                {dayjs(vehicleRequestDetail.requestDate).format(
+                  "DD/MM/YYYY HH:mm"
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày cần" span={3}>
+                {dayjs(vehicleRequestDetail.requiredDate).format("DD/MM/YYYY")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ưu tiên" span={3}>
+                <Tag
+                  color={
+                    vehicleRequestDetail.priority === "HIGH"
+                      ? "red"
+                      : vehicleRequestDetail.priority === "NORMAL"
+                      ? "blue"
+                      : "green"
+                  }
+                >
+                  {vehicleRequestDetail.priority === "HIGH"
+                    ? "Cao"
+                    : vehicleRequestDetail.priority === "NORMAL"
+                    ? "Trung bình"
+                    : "Thấp"}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái" span={3}>
+                <Tag
+                  color={
+                    vehicleRequestDetail.status === "PENDING"
+                      ? "warning"
+                      : vehicleRequestDetail.status === "APPROVED"
+                      ? "success"
+                      : vehicleRequestDetail.status === "REJECTED"
+                      ? "error"
+                      : vehicleRequestDetail.status === "SHIPPED"
+                      ? "blue"
+                      : vehicleRequestDetail.status === "ALLOCATED"
+                      ? "processing"
+                      : "default"
+                  }
+                  icon={
+                    vehicleRequestDetail.status === "PENDING" ? (
+                      <ClockCircleOutlined />
+                    ) : vehicleRequestDetail.status === "APPROVED" ? (
+                      <CheckCircleOutlined />
+                    ) : vehicleRequestDetail.status === "REJECTED" ? (
+                      <CloseOutlined />
+                    ) : vehicleRequestDetail.status === "SHIPPED" ? (
+                      <SyncOutlined spin />
+                    ) : vehicleRequestDetail.status === "ALLOCATED" ? (
+                      <CheckCircleOutlined />
+                    ) : null
+                  }
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  {vehicleRequestDetail.status === "PENDING"
+                    ? "Chờ duyệt"
+                    : vehicleRequestDetail.status === "APPROVED"
+                    ? "Đã duyệt"
+                    : vehicleRequestDetail.status === "REJECTED"
+                    ? "Từ chối"
+                    : vehicleRequestDetail.status === "SHIPPED"
+                    ? "Đang vận chuyển"
+                    : vehicleRequestDetail.status === "ALLOCATED"
+                    ? "Đã phân bổ"
+                    : vehicleRequestDetail.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tổng tiền" span={3}>
+                <Text strong style={{ color: "oklch(0.627 0.194 149.214)" }}>
+                  {formatCurrency(vehicleRequestDetail.totalAmount)}
+                </Text>
+              </Descriptions.Item>
+              {vehicleRequestDetail.notes && (
+                <Descriptions.Item label="Ghi chú" span={3}>
+                  {vehicleRequestDetail.notes}
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            <Divider />
+
+            <Title level={5}>Chi tiết xe yêu cầu</Title>
+            <Table
+              dataSource={vehicleRequestDetail.requestDetails || []}
+              pagination={false}
+              rowKey="requestDetailId"
+              size="small"
+              columns={[
+                {
+                  title: "Model",
+                  dataIndex: "modelName",
+                  key: "modelName",
+                },
+                {
+                  title: "Phiên bản",
+                  dataIndex: "variantName",
+                  key: "variantName",
+                },
+                {
+                  title: "Màu sắc",
+                  dataIndex: "color",
+                  key: "color",
+                  render: (color) => (
+                    <Tag color="blue">{color}</Tag>
+                  ),
+                },
+                {
+                  title: "Số lượng",
+                  dataIndex: "quantity",
+                  key: "quantity",
+                  align: "center",
+                },
+                {
+                  title: "Đơn giá",
+                  dataIndex: "unitPrice",
+                  key: "unitPrice",
+                  render: (amount) => (
+                    <span className="font-semibold text-gray-600">
+                      {formatCurrency(amount)}
+                    </span>
+                  ),
+                },
+                {
+                  title: "Thành tiền",
+                  dataIndex: "lineTotal",
+                  key: "lineTotal",
+                  render: (amount) => (
+                    <span className="font-semibold text-green-600">
+                      {formatCurrency(amount)}
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          </>
+        )}
+      </Drawer>
+
+      {/* Modal phê duyệt */}
+      <Modal
+        title="Phê duyệt yêu cầu"
+        open={isApproveModalVisible}
+        onOk={handleApprove}
+        onCancel={handleApproveCancel}
+        okText="Phê duyệt"
+        cancelText="Hủy"
+        confirmLoading={isLoadingVehicleRequests}
+        okButtonProps={{ icon: <CheckOutlined /> }}
+      >
+        <Form form={approveForm} layout="vertical">
+          <Alert
+            message={`Phê duyệt yêu cầu #${selectedRequest?.requestId} từ ${selectedRequest?.dealerName}`}
+            description={
+              <div>
+                <p>Người yêu cầu: {selectedRequest?.userFullName}</p>
+                <p>
+                  Ngày cần:{" "}
+                  {dayjs(selectedRequest?.requiredDate).format("DD/MM/YYYY")}
+                </p>
+                <p>
+                  Tổng tiền:{" "}
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(selectedRequest?.totalAmount || 0)}
+                </p>
+              </div>
+            }
+            type="success"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+
+          <Form.Item
+            name="approverName"
+            label="Người phê duyệt"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên người phê duyệt" },
+            ]}
+          >
+            <Input placeholder="Nhập tên người phê duyệt" disabled />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal từ chối */}
+      <Modal
+        title="Từ chối yêu cầu"
+        open={isRejectModalVisible}
+        onOk={handleReject}
+        onCancel={handleRejectCancel}
+        okText="Từ chối"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true, icon: <CloseOutlined /> }}
+        confirmLoading={isLoadingVehicleRequests}
+      >
+        <Form form={rejectForm} layout="vertical">
+          <Alert
+            message={`Từ chối yêu cầu #${selectedRequest?.requestId} từ ${selectedRequest?.dealerName}`}
+            description={
+              <div>
+                <p>Người yêu cầu: {selectedRequest?.userFullName}</p>
+                <p>
+                  Ngày yêu cầu:{" "}
+                  {dayjs(selectedRequest?.requestDate).format("DD/MM/YYYY")}
+                </p>
+              </div>
+            }
+            type="error"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+
+          <Form.Item
+            name="rejecterName"
+            label="Người từ chối"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên người từ chối" },
+            ]}
+          >
+            <Input placeholder="Nhập tên người từ chối" />
+          </Form.Item>
+
+          {/* <Form.Item
+            name="rejectionReason"
+            label="Lý do từ chối"
+            rules={[{ required: true, message: "Vui lòng nhập lý do từ chối" }]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="Nhập lý do từ chối yêu cầu này"
+            />
+          </Form.Item> */}
+        </Form>
+      </Modal>
+
       {/* Modal phân bổ xe */}
       <Modal
         title="Phân bổ xe cho đại lý"
         open={isAllocationModalVisible}
-        footer={[
-          <Button key="cancel" onClick={() => setIsAllocationModalVisible(false)}>
-            Hủy
-          </Button>,
-          currentStep > 0 && (
-            <Button key="back" onClick={prevStep}>
-              Quay lại
-            </Button>
-          ),
-          currentStep < 2 ? (
-            <Button key="next" type="primary" onClick={nextStep}>
-              Tiếp tục
-            </Button>
-          ) : (
-            <Button key="submit" type="primary" onClick={handleAllocationSubmit} loading={isLoading}>
-              Xác nhận phân bổ
-            </Button>
-          )
-        ]}
+        onOk={handleAllocationSubmit}
         onCancel={() => setIsAllocationModalVisible(false)}
-        width={700}
+        okText="Xác nhận phân bổ"
+        cancelText="Hủy"
+        confirmLoading={isLoading}
+        width={800}
       >
-        <AllocationSteps />
-        <Divider />
         <Form form={allocationForm} layout="vertical">
-          <Form.Item name="warehouseId" hidden>
-            <Input />
+          <AllocationFormContent />
+        </Form>
+      </Modal>
+
+      {/* Modal thu hồi xe */}
+      <Modal
+        title="Thu hồi xe"
+        open={isRecallModalVisible}
+        onOk={handleRecall}
+        onCancel={handleRecallCancel}
+        okText="Thu hồi"
+        cancelText="Hủy"
+        okButtonProps={{ icon: <RollbackOutlined /> }}
+        confirmLoading={isLoadingRecall}
+      >
+        <Form form={recallForm} layout="vertical">
+          <Alert
+            message={`Thu hồi xe từ yêu cầu #${selectedRequest?.requestId} - ${selectedRequest?.dealerName}`}
+            description={
+              <div>
+                <p>
+                  <strong>Người yêu cầu:</strong>{" "}
+                  {selectedRequest?.userFullName}
+                </p>
+                <p>
+                  <strong>Ngày yêu cầu:</strong>{" "}
+                  {dayjs(selectedRequest?.requestDate).format("DD/MM/YYYY")}
+                </p>
+                <p>
+                  <strong>Tổng tiền:</strong>{" "}
+                  {formatCurrency(selectedRequest?.totalAmount || 0)}
+                </p>
+              </div>
+            }
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+
+          <Divider orientation="left">Chi tiết xe cần thu hồi</Divider>
+
+          {selectedRequest?.requestDetails?.map((detail, index) => (
+            <Card key={detail.requestDetailId} style={{ marginBottom: 12 }}>
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Text strong>
+                  {index + 1}. {detail.modelName} - {detail.variantName}
+                </Text>
+                <div>
+                  <Text type="secondary">Màu sắc: </Text>
+                  <Tag color="blue">{detail.color}</Tag>
+                </div>
+                <div>
+                  <Text type="secondary">Số lượng: </Text>
+                  <Text strong>{detail.quantity}</Text>
+                </div>
+                <div>
+                  <Text type="secondary">Đơn giá: </Text>
+                  <Text strong>{formatCurrency(detail.unitPrice)}</Text>
+                </div>
+              </Space>
+            </Card>
+          ))}
+
+          <Form.Item
+            name="recallerName"
+            label="Người thực hiện thu hồi"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập tên người thực hiện thu hồi",
+              },
+            ]}
+          >
+            <Input placeholder="Nhập tên người thực hiện thu hồi" disabled />
           </Form.Item>
-          
-          {currentStep === 0 && <AllocationStep1 />}
-          {currentStep === 1 && <AllocationStep2 />}
-          {currentStep === 2 && <AllocationStep3 />}
         </Form>
       </Modal>
     </div>

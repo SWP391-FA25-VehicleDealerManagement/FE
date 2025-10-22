@@ -42,6 +42,11 @@ const RequestListPage = lazy(() =>
 const RequestDetailPage = lazy(() =>
   import("../sections/dealer/manager/vehicleManagement/requestDetail.jsx")
 );
+const InventoryPage = lazy(() =>
+  import("../page/dealer/manager/inventoryListPage.jsx")
+);
+
+
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -213,6 +218,7 @@ const Routes = () => {
         { path: "vehicle-requests/:id", element: <RequestVehicleDetailPage /> },
         { path: "request-list", element: <RequestListPage /> },
         { path: "request-list/:id", element: <RequestDetailPage /> },
+        { path: "inventory", element: <InventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

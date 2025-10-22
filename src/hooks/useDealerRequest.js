@@ -3,6 +3,7 @@ import {
   getDealerRequest,
   createDealerRequest,
   getDealerRequestById,
+  confirmVehicleRequest,
 } from "../api/dealerRequest";
 
 const useDealerRequest = create((set) => ({
@@ -16,11 +17,11 @@ const useDealerRequest = create((set) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await getDealerRequest(dealerId);
-      
+
       if (response && response.data) {
-        set({ 
+        set({
           requestLists: response.data.data || [],
-          isLoading: false 
+          isLoading: false,
         });
         return response.data.data;
       }
@@ -28,10 +29,10 @@ const useDealerRequest = create((set) => ({
       return [];
     } catch (error) {
       console.error("Error fetching dealer requests:", error);
-      set({ 
+      set({
         error: error.message || "Failed to fetch requests",
         isLoading: false,
-        requestLists: []
+        requestLists: [],
       });
       return [];
     }
@@ -42,11 +43,11 @@ const useDealerRequest = create((set) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await getDealerRequestById(requestId);
-      
+
       if (response && response.data) {
-        set({ 
+        set({
           requestDetail: response.data.data || null,
-          isLoading: false 
+          isLoading: false,
         });
         return response.data.data;
       }
@@ -54,10 +55,10 @@ const useDealerRequest = create((set) => ({
       return null;
     } catch (error) {
       console.error("Error fetching request detail:", error);
-      set({ 
+      set({
         error: error.message || "Failed to fetch request detail",
         isLoading: false,
-        requestDetail: null
+        requestDetail: null,
       });
       return null;
     }
@@ -68,7 +69,7 @@ const useDealerRequest = create((set) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await createDealerRequest(data);
-      
+
       if (response && response.data) {
         set({ isLoading: false });
         return response;
@@ -77,22 +78,29 @@ const useDealerRequest = create((set) => ({
       return null;
     } catch (error) {
       console.error("Error creating dealer request:", error);
-      set({ 
+      set({
         error: error.message || "Failed to create request",
-        isLoading: false 
+        isLoading: false,
       });
       throw error;
     }
   },
 
-  // Clear request detail
-  clearRequestDetail: () => {
-    set({ requestDetail: null });
-  },
-
-  // Clear error
-  clearError: () => {
-    set({ error: null });
+  // Confirm vehicle request (change status to ALLOCATED)
+  isLoadingConfirmRequest: false,
+  confirmRequestReceived: async (id, name) => {
+    try {
+      set({ isLoadingConfirmRequest: true });
+      const response = await confirmVehicleRequest(id, name);
+      if (response && response.status === 200) {
+        set({ isLoadingConfirmRequest: false });
+      }
+      return response;
+    } catch (error) {
+      set({ isLoadingConfirmRequest: false });
+      console.error("Error confirming request:", error);
+      throw error;
+    }
   },
 }));
 
