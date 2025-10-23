@@ -10,6 +10,8 @@ import ScrollToTop from "../components/scrolltotop.jsx";
 import Error404 from "../components/404.jsx";
 import Error403 from "../components/403.jsx";
 import useAuthen from "../hooks/useAuthen";
+import CustomerListPage from "../page/dealer/manager/customerListPage.jsx";
+import CustomerDetail from "../sections/dealer/manager/customerManagement/customerDetail.jsx";
 
 //Import page
 //Authentication
@@ -18,6 +20,12 @@ const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
 //Admin
 const AdminDashboard = lazy(() =>
   import("../page/admin/adminDashboardPage.jsx")
+);
+const EvmStaffPage = lazy(() =>
+  import("../page/admin/evmStaffPage.jsx")
+);
+const EvmStaffDetailPage = lazy(() =>
+  import("../page/admin/evmStaffDetailPage.jsx")
 );
 
 //Dealer Manager
@@ -41,6 +49,12 @@ const RequestListPage = lazy(() =>
 );
 const RequestDetailPage = lazy(() =>
   import("../sections/dealer/manager/vehicleManagement/requestDetail.jsx")
+);
+const StaffListPage = lazy(() =>
+  import("../page/dealer/manager/staffListPage.jsx")
+);
+const StaffDetailPage = lazy(() =>
+  import("../page/dealer/manager/staffDetailPage.jsx")
 );
 
 //EVM Staff
@@ -82,6 +96,12 @@ const DealerStaffVehicleListPage = lazy(() =>
 );
 const DealerStaffVehicleDetailPage = lazy(() =>
   import("../page/dealer/staff/vehicleDetail.jsx")
+);
+const DealerStaffCustomerListPage = lazy(() =>
+  import("../page/dealer/staff/customerListPage.jsx")
+);
+const DealerStaffCustomerDetailPage = lazy(() =>
+  import("../page/dealer/staff/customerDetailPage.jsx")
 );
 
 const Routes = () => {
@@ -153,6 +173,8 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <AdminDashboard /> },
         { path: "profile", element: <UserProfilePage /> },
+        { path: "staff-management", element: <EvmStaffPage /> },
+        { path: "staff-management/:staffId", element: <EvmStaffDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -205,7 +227,8 @@ const Routes = () => {
       ),
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
-        { path: "customer-list", element: <DealerList /> },
+        { path: "customer-list", element: <CustomerListPage /> },
+        { path: "customer-list/:id", element: <CustomerDetail />},
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
@@ -213,6 +236,8 @@ const Routes = () => {
         { path: "vehicle-requests/:id", element: <RequestVehicleDetailPage /> },
         { path: "request-list", element: <RequestListPage /> },
         { path: "request-list/:id", element: <RequestDetailPage /> },
+        { path: "staff", element: <StaffListPage /> },
+        { path: "staff/:staffId", element: <StaffDetailPage /> },
         { path: "*", element: <Error404 /> },
 
       ],
@@ -234,7 +259,8 @@ const Routes = () => {
       ),
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
-        { path: "customer-list", element: <DealerList /> },
+        { path: "customer-list", element: <DealerStaffCustomerListPage /> },
+        { path: "customers/:customerId", element: <DealerStaffCustomerDetailPage /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <DealerStaffVehicleListPage /> },
         { path: "vehicles/:vehicleId", element: <DealerStaffVehicleDetailPage /> },

@@ -57,6 +57,7 @@ const menuItems = [
   ]),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
+    getItem( "Khách hàng", "customer-list", null, null, "/dealer-manager/customer-list"),
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
     getItem(
