@@ -13,6 +13,7 @@ import {
   InputNumber,
   Select,
   DatePicker,
+  Image, // <-- ĐÃ THÊM
 } from "antd";
 import {
   SearchOutlined,
@@ -26,6 +27,7 @@ import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import useDealerRequest from "../../../../hooks/useDealerRequest";
 import dayjs from "dayjs";
+import axiosClient from "../../../../config/axiosClient"; 
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -39,6 +41,7 @@ export default function RequestVehicle() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [form] = Form.useForm();
+  const [currentQuantity, setCurrentQuantity] = useState(1);
   const [totalAmount, setTotalAmount] = useState(0);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -47,10 +50,64 @@ export default function RequestVehicle() {
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
     fetchVehicles();
   }, [fetchVehicles]);
+
+  useEffect(() => {
+    const objectUrlsToRevoke = [];
+
+    const fetchAllImages = async () => {
+      if (vehicles && vehicles.length > 0) {
+        const newImageUrls = {};
+
+        // Tạo mảng các promise để tải ảnh song song
+        const fetchPromises = vehicles.map(async (vehicle) => {
+          if (vehicle.variantImage) {
+            try {
+              const response = await axiosClient.get(vehicle.variantImage, {
+                responseType: "blob",
+              });
+              const objectUrl = URL.createObjectURL(response.data);
+              objectUrlsToRevoke.push(objectUrl);
+              return {
+                path: vehicle.variantImage,
+                url: objectUrl,
+              };
+            } catch (error) {
+              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+              return {
+                path: vehicle.variantImage,
+                url: null, // Đánh dấu là lỗi
+              };
+            }
+          }
+          return null;
+        });
+
+        // Chờ tất cả ảnh được tải về
+        const results = await Promise.all(fetchPromises);
+
+        // Cập nhật state
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+
+        setImageUrls(newImageUrls);
+      }
+    };
+
+    fetchAllImages();
+
+    // Xóa các Object URL khi component unmount
+    return () => {
+      objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [vehicles]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -69,24 +126,26 @@ export default function RequestVehicle() {
   const showOrderModal = (vehicle) => {
     setSelectedVehicle(vehicle);
     setIsOrderModalOpen(true);
-    // Tính tổng tiền ban đầu với số lượng = 1
-    const priceString = vehicle?.listingPrice || "0";
-    const unitPrice = parseFloat(priceString.replace(/[^0-9]/g, "")) || 0;
+    const unitPrice = vehicle?.msrp || 0;
     setTotalAmount(unitPrice);
+    setCurrentQuantity(1);
+    form.setFieldsValue({ quantity: 1 });
   };
 
   const handleOrderCancel = () => {
     setIsOrderModalOpen(false);
     setSelectedVehicle(null);
     setTotalAmount(0);
+    setCurrentQuantity(1);
     form.resetFields();
   };
 
   const handleQuantityChange = (value) => {
     if (selectedVehicle && value) {
-      const priceString = selectedVehicle?.listingPrice || "0";
-      const unitPrice = parseFloat(priceString.replace(/[^0-9]/g, "")) || 0;
-      setTotalAmount(unitPrice * value);
+      const newQuantity = value || 1;
+      setCurrentQuantity(newQuantity);
+      const unitPrice = selectedVehicle?.msrp || 0;
+      setTotalAmount(unitPrice * newQuantity);
     } else {
       setTotalAmount(0);
     }
@@ -95,7 +154,7 @@ export default function RequestVehicle() {
   const handleOrderSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+
       // Lấy dealerId và userId từ userDetail
       const dealerId = userDetail?.dealer?.dealerId;
       const userId = userDetail?.userId;
@@ -118,7 +177,7 @@ export default function RequestVehicle() {
 
       // Lấy variantId từ vehicle (cần có trong vehicle object)
       const variantId = selectedVehicle?.variantId;
-      
+
       if (!variantId) {
         toast.error("Không tìm thấy thông tin phiên bản xe", {
           position: "top-right",
@@ -128,14 +187,15 @@ export default function RequestVehicle() {
       }
 
       // Parse price từ string sang number (loại bỏ ký tự không phải số)
-      const priceString = selectedVehicle?.listingPrice || "0";
-      const unitPrice = parseFloat(priceString.replace(/[^0-9.]/g, "")) || 0;
+      const unitPrice = selectedVehicle?.msrp || 0;
 
       // Tạo request data theo đúng format API
       const requestData = {
         dealerId: dealerId,
         userId: userId,
-        requiredDate: values.requiredDate ? values.requiredDate.toISOString() : new Date().toISOString(),
+        requiredDate: values.requiredDate
+          ? values.requiredDate.toISOString()
+          : new Date().toISOString(),
         priority: values.priority || "NORMAL",
         notes: values.notes || "",
         requestDetails: [
@@ -144,19 +204,18 @@ export default function RequestVehicle() {
             color: values.color || selectedVehicle?.color,
             quantity: values.quantity,
             unitPrice: unitPrice,
-            notes: values.notes || ""
-          }
-        ]
+            notes: values.notes || "",
+          },
+        ],
       };
 
-      console.log("Request data:", requestData);
 
       // Gọi API tạo dealer request
       const response = await createRequestVehicle(requestData);
 
-      if (response && response.data) {
+      if (response && response.status === 200) {
         toast.success(
-          `Đã gửi yêu cầu đặt ${values.quantity} xe ${selectedVehicle.name} thành công!`,
+          `Đã gửi yêu cầu đặt ${values.quantity} xe ${selectedVehicle.modelName}  ${selectedVehicle.variantName} thành công!`,
           {
             position: "top-right",
             autoClose: 3000,
@@ -167,23 +226,26 @@ export default function RequestVehicle() {
         setIsOrderModalOpen(false);
         setSelectedVehicle(null);
         form.resetFields();
+        setCurrentQuantity(1);
       } else {
         throw new Error("Phản hồi từ server không hợp lệ");
       }
     } catch (error) {
       console.error("Error ordering vehicle:", error);
-      
+
       // Xử lý error message từ API
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          "Không thể gửi yêu cầu đặt xe";
-      
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể gửi yêu cầu đặt xe";
+
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
       });
     }
   };
+
 
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
@@ -236,84 +298,157 @@ export default function RequestVehicle() {
 
   const columns = [
     {
-      title: "Mã xe",
+      title: "Mã",
       dataIndex: "vehicleId",
       key: "vehicleId",
-      width: 100,
-      fixed: "left",
+      width: "10%",
+      ...getColumnSearchProps("vehicleId"),
       sorter: (a, b) => a.vehicleId - b.vehicleId,
     },
     {
-      title: "Hình ảnh",
-      dataIndex: "imageUrl",
-      key: "imageUrl",
-      width: 120,
-      render: (imageUrl, record) => (
-        <img
-          src={imageUrl || "https://via.placeholder.com/80"}
-          alt={record.variantName}
-          style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 4 }}
-        />
-      ),
+      title: "Số VIN",
+      dataIndex: "vinNumber",
+      key: "vinNumber",
+      width: "15%",
+      ...getColumnSearchProps("vinNumber"),
     },
     {
-      title: "Tên xe",
+      title: "Hình ảnh",
+      dataIndex: "variantImage",
+      key: "variantImage",
+      width: "25%",
+      render: (imagePath, record) => {
+        const blobUrl = imageUrls[imagePath];
+        if (!imagePath) {
+          return (
+            <div
+              style={{
+                width: 200,
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#f0f0f0",
+                borderRadius: 4,
+              }}
+            >
+              <CarOutlined style={{ fontSize: 24, color: "#999" }} />
+            </div>
+          );
+        }
+
+        if (blobUrl) {
+          // Trường hợp đã tải xong, dùng blobUrl
+          return (
+            <Image
+              src={blobUrl}
+              alt={record.name}
+              style={{
+                width: 200,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
+              preview={true}
+            />
+          );
+        }
+
+        // Trường hợp đang tải
+        return (
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f0f0f0",
+              borderRadius: 4,
+            }}
+          >
+            <Spin size="small" />
+          </div>
+        );
+      },
+    },
+    {
+      title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
-      width: 150,
+      width: "15%",
       ...getColumnSearchProps("modelName"),
-      sorter: (a, b) => (a.modelName || "").localeCompare(b.modelName || ""),
+      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
-      width: 150,
+      width: "15%",
       ...getColumnSearchProps("variantName"),
+    },
+    {
+      title: "Hãng sản xuất",
+      dataIndex: "manufacturer",
+      key: "manufacturer",
+      width: "15%",
+      ...getColumnSearchProps("manufacturer"),
+    },
+    {
+      title: "Kiểu dáng",
+      dataIndex: "bodyType",
+      key: "bodyType",
+      width: "10%",
+      ...getColumnSearchProps("bodyType"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
-      width: 120,
+      width: "10%",
       filters: [
-        { text: "Đen", value: "Đen" },
-        { text: "Trắng", value: "Trắng" },
-        { text: "Đỏ", value: "Đỏ" },
-        { text: "Xanh", value: "Xanh" },
-        { text: "Bạc", value: "Bạc" },
-        { text: "Green", value: "Green" },
         { text: "Black", value: "Black" },
         { text: "White", value: "White" },
+        { text: "Red", value: "Red" },
+        { text: "Green", value: "Green" },
+        { text: "Đen", value: "Đen" },
       ],
       onFilter: (value, record) => record.color === value,
-    },
-    {
-      title: "VIN Number",
-      dataIndex: "vinNumber",
-      key: "vinNumber",
-      width: 180,
-      ...getColumnSearchProps("vinNumber"),
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "Giá (VNĐ)",
-      dataIndex: "listingPrice",
-      key: "listingPrice",
-      width: 150,
+      dataIndex: "msrp",
+      key: "msrp",
+      width: "15%",
       sorter: (a, b) => {
-        const priceA = a.listingPrice ? parseFloat(a.listingPrice.replace(/[^0-9]/g, "")) : 0;
-        const priceB = b.listingPrice ? parseFloat(b.listingPrice.replace(/[^0-9]/g, "")) : 0;
-        return priceA - priceB;
+        const msrpA = a.msrp ? parseFloat(a.msrp.replace(/[^0-9]/g, "")) : 0;
+        const msrpB = b.msrp ? parseFloat(b.msrp.replace(/[^0-9]/g, "")) : 0;
+        return msrpA - msrpB;
       },
-      render: (listingPrice) => listingPrice || "N/A",
+      render: (msrp) => {
+        if (!msrp) {
+          return "N/A";
+        }
+        return msrp.toLocaleString("vi-VN");
+      },
     },
     {
-      title: "Bảo hành đến",
-      dataIndex: "warrantyExpiryDate",
-      key: "warrantyExpiryDate",
-      width: 150,
-      sorter: (a, b) => new Date(a.warrantyExpiryDate) - new Date(b.warrantyExpiryDate),
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : "N/A",
+      title: "Ngày SX",
+      dataIndex: "manufactureDate",
+      key: "manufactureDate",
+      width: "15%",
+      render: (text) =>
+        text ? new Date(text).toLocaleDateString("vi-VN") : "N/A",
+      sorter: (a, b) =>
+        new Date(a.manufactureDate) - new Date(b.manufactureDate),
+    },
+    {
+      title: "Năm",
+      dataIndex: "year",
+      key: "year",
+      width: "10%",
+      sorter: (a, b) => a.year - b.year,
     },
     {
       title: "Thao tác",
@@ -364,7 +499,7 @@ export default function RequestVehicle() {
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
-            scroll={{ x: 1400 }}
+            scroll={{ x: 2100 }}
           />
         )}
       </Card>
@@ -404,7 +539,12 @@ export default function RequestVehicle() {
                 <strong>Đơn giá:</strong>
               </span>
               <span className="text-lg text-blue-600">
-                {selectedVehicle?.listingPrice || "N/A"}
+                {selectedVehicle?.msrp != null
+                  ? new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(selectedVehicle.msrp)
+                  : "N/A"}
               </span>
             </div>
             <div className="flex justify-between items-center mt-2">
@@ -412,7 +552,7 @@ export default function RequestVehicle() {
                 <strong>Số lượng:</strong>
               </span>
               <span className="text-lg font-bold">
-                {form.getFieldValue('quantity') || 1} xe
+                {form.getFieldValue("quantity") || 1} xe
               </span>
             </div>
             <div className="border-t border-blue-200 mt-3 pt-3 flex justify-between items-center">
@@ -439,7 +579,9 @@ export default function RequestVehicle() {
           <Form.Item
             name="priority"
             label="Mức độ ưu tiên"
-            rules={[{ required: true, message: "Vui lòng chọn mức độ ưu tiên" }]}
+            rules={[
+              { required: true, message: "Vui lòng chọn mức độ ưu tiên" },
+            ]}
             initialValue="NORMAL"
           >
             <Select placeholder="Chọn mức độ ưu tiên">
@@ -459,7 +601,7 @@ export default function RequestVehicle() {
             name="requiredDate"
             label="Ngày cần xe"
             rules={[{ required: true, message: "Vui lòng chọn ngày cần xe" }]}
-            initialValue={dayjs().add(7, 'day')}
+            initialValue={dayjs().add(7, "day")}
           >
             <DatePicker
               style={{ width: "100%" }}
@@ -472,10 +614,7 @@ export default function RequestVehicle() {
           </Form.Item>
 
           <Form.Item name="notes" label="Ghi chú">
-            <Input.TextArea
-              rows={4}
-              placeholder="Nhập ghi chú (nếu có)"
-            />
+            <Input.TextArea rows={4} placeholder="Nhập ghi chú (nếu có)" />
           </Form.Item>
 
           <div className="bg-gray-50 p-4 rounded">
@@ -489,7 +628,11 @@ export default function RequestVehicle() {
               <strong>VIN:</strong> {selectedVehicle?.vinNumber}
             </p>
             <p className="mb-2">
-              <strong>Giá:</strong> {selectedVehicle?.listingPrice}
+              <strong>Giá:</strong>{" "}
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(selectedVehicle?.msrp)}
             </p>
           </div>
         </Form>

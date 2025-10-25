@@ -72,8 +72,6 @@ export default function VehicleAllocation() {
     isLoadingVehicleRequests,
   } = useVehicleRequestStore();
   const { dealers, fetchDealers } = useDealerStore();
-
-  const [allocationHistory, setAllocationHistory] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("1");
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -95,45 +93,6 @@ export default function VehicleAllocation() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
 
-  // Mock data for allocation history (sẽ thay bằng API call khi backend có endpoint)
-  const mockAllocationHistory = [
-    {
-      id: "AL001",
-      inventoryId: "INV001",
-      vehicleName: "VinFast VF8 Plus",
-      color: "Đen",
-      quantity: 3,
-      dealerId: "DL001",
-      dealerName: "Đại lý VinFast Hà Nội",
-      allocationDate: "2025-09-15",
-      status: "completed",
-      arrivalDate: "2025-09-18",
-    },
-    {
-      id: "AL002",
-      inventoryId: "INV002",
-      vehicleName: "VinFast VF9 Eco",
-      color: "Trắng",
-      quantity: 2,
-      dealerId: "DL002",
-      dealerName: "Đại lý VinFast Hồ Chí Minh",
-      allocationDate: "2025-09-20",
-      status: "in_transit",
-      estimatedArrival: "2025-09-25",
-    },
-    {
-      id: "AL003",
-      inventoryId: "INV003",
-      vehicleName: "VinFast VF5 Base",
-      color: "Đỏ",
-      quantity: 5,
-      dealerId: "DL003",
-      dealerName: "Đại lý VinFast Đà Nẵng",
-      allocationDate: "2025-09-18",
-      status: "pending",
-      estimatedArrival: "2025-09-28",
-    },
-  ];
 
   useEffect(() => {
     fetchData();
@@ -146,7 +105,6 @@ export default function VehicleAllocation() {
         fetchDealers(),
         fetchVehicleRequests(),
       ]);
-      setAllocationHistory(mockAllocationHistory);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Không thể tải dữ liệu", {
@@ -189,19 +147,15 @@ export default function VehicleAllocation() {
 
   const handleApprove = async () => {
     try {
-      const values = await approveForm.validateFields();
-      const approverName = values.approverName || "Admin"; // Lấy tên người duyệt từ form hoặc user context
-
-      await approvedRequest(selectedRequest.requestId, approverName);
-
-      toast.success("Phê duyệt yêu cầu thành công", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-
-      setIsApproveModalVisible(false);
-      approveForm.resetFields();
-      fetchVehicleRequests(); // Refresh danh sách
+      const response = await approvedRequest(selectedRequest.requestId);
+      if (response && response.status === 200) {
+        toast.success("Phê duyệt yêu cầu thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setIsApproveModalVisible(false);
+        fetchVehicleRequests(); // Refresh danh sách
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Phê duyệt thất bại", {
         position: "top-right",
@@ -225,20 +179,18 @@ export default function VehicleAllocation() {
   };
 
   const handleReject = async () => {
+    console.log("check request id", selectedRequest.requestId);
     try {
-      const values = await rejectForm.validateFields();
-      const rejecterName = values.rejecterName || "Admin"; // Lấy tên người từ chối từ form hoặc user context
+      const response = await rejectedRequest(selectedRequest.requestId);
+      if (response && response.status === 200) {
+        toast.success("Từ chối yêu cầu thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
 
-      await rejectedRequest(selectedRequest.requestId, rejecterName);
-
-      toast.success("Từ chối yêu cầu thành công", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-
-      setIsRejectModalVisible(false);
-      rejectForm.resetFields();
-      fetchVehicleRequests(); // Refresh danh sách
+        setIsRejectModalVisible(false);
+        fetchVehicleRequests();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Từ chối thất bại", {
         position: "top-right",
@@ -758,7 +710,7 @@ export default function VehicleAllocation() {
             text = "Đang phân vận chuyển";
             icon = <SyncOutlined spin />;
             break;
-          case "ALLOCATED":
+          case "DELIVERED":
             color = "success";
             text = "Hoàn thành";
             icon = <CheckOutlined />;
@@ -787,7 +739,7 @@ export default function VehicleAllocation() {
         { text: "Đã duyệt", value: "APPROVED" },
         { text: "Từ chối", value: "REJECTED" },
         { text: "Đang phân bổ", value: "SHIPPED" },
-        { text: "Đã phân bổ", value: "ALLOCATED" },
+        { text: "Đã phân bổ", value: "DELIVERED" },
       ],
       onFilter: (value, record) => record.status === value,
     },
@@ -938,7 +890,7 @@ export default function VehicleAllocation() {
 
       <Row gutter={16} className="mb-6">
         <Col span={8}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Tổng số xe sẵn có để phân bổ"
               value={inventory.reduce((sum, item) => sum + item.quantity, 0)}
@@ -948,7 +900,7 @@ export default function VehicleAllocation() {
           </Card>
         </Col>
         <Col span={8}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Tổng số đại lý"
               value={dealers.length}
@@ -958,7 +910,7 @@ export default function VehicleAllocation() {
           </Card>
         </Col>
         <Col span={8}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Yêu cầu chờ duyệt"
               value={
@@ -997,7 +949,7 @@ export default function VehicleAllocation() {
               <Table
                 columns={requestColumns}
                 dataSource={vehicleRequestLists.filter(
-                  (r) => r.status !== "REJECTED" && r.status !== "ALLOCATED"
+                  (r) => r.status !== "REJECTED" && r.status !== "DELIVERED"
                 )}
                 pagination={pagination}
                 onChange={(pagination) => setPagination(pagination)}
@@ -1274,16 +1226,6 @@ export default function VehicleAllocation() {
             showIcon
             style={{ marginBottom: 16 }}
           />
-
-          <Form.Item
-            name="approverName"
-            label="Người phê duyệt"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên người phê duyệt" },
-            ]}
-          >
-            <Input placeholder="Nhập tên người phê duyệt" disabled />
-          </Form.Item>
         </Form>
       </Modal>
 
@@ -1314,27 +1256,6 @@ export default function VehicleAllocation() {
             showIcon
             style={{ marginBottom: 16 }}
           />
-
-          <Form.Item
-            name="rejecterName"
-            label="Người từ chối"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên người từ chối" },
-            ]}
-          >
-            <Input placeholder="Nhập tên người từ chối" />
-          </Form.Item>
-
-          {/* <Form.Item
-            name="rejectionReason"
-            label="Lý do từ chối"
-            rules={[{ required: true, message: "Vui lòng nhập lý do từ chối" }]}
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="Nhập lý do từ chối yêu cầu này"
-            />
-          </Form.Item> */}
         </Form>
       </Modal>
 

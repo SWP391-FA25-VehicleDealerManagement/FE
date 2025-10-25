@@ -195,6 +195,7 @@ const EvmStaff = ({ children }) => {
           items={adminMenuItems}
           selectedKeys={[current]}
           className="border-0 h-full"
+          defaultOpenKeys={["9", "2", "4", "6"]}
           theme="light"
           onClick={handleMenuClick}
           style={{

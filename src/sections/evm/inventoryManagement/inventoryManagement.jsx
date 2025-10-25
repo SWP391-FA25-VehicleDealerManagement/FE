@@ -409,7 +409,7 @@ export default function InventoryManagement() {
 
       <Row gutter={16} className="mb-6">
         <Col span={12}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Tổng số lượng xe trong kho"
               value={inventory.reduce(
@@ -421,7 +421,7 @@ export default function InventoryManagement() {
           </Card>
         </Col>
         <Col span={12}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Tổng số đại lý"
               value={dealers.length}

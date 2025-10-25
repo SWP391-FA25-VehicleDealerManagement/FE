@@ -165,8 +165,8 @@ export default function VehicleDetail() {
             </Button>
           </Link>
           <Title level={2} style={{ margin: 0 }}>
-            Chi tiết phương tiện:{" "}
-            {vehicleDetail?.name || vehicleDetail?.modelName}
+            Chi tiết phương tiện: {vehicleDetail?.modelName}{" "}
+            {vehicleDetail?.variantName}
           </Title>
         </div>
         <Space>
@@ -256,8 +256,11 @@ export default function VehicleDetail() {
                 }
               >
                 {vehicleDetail?.status ? (
-                  <Tag color={statusMap[vehicleDetail.status]?.color || "default"}>
-                    {statusMap[vehicleDetail.status]?.text || vehicleDetail.status}
+                  <Tag
+                    color={statusMap[vehicleDetail.status]?.color || "default"}
+                  >
+                    {statusMap[vehicleDetail.status]?.text ||
+                      vehicleDetail.status}
                   </Tag>
                 ) : (
                   "N/A"
@@ -286,9 +289,9 @@ export default function VehicleDetail() {
                 }
               >
                 {vehicleDetail?.warrantyExpiryDate
-                  ? new Date(vehicleDetail.warrantyExpiryDate).toLocaleDateString(
-                      "vi-VN"
-                    )
+                  ? new Date(
+                      vehicleDetail.warrantyExpiryDate
+                    ).toLocaleDateString("vi-VN")
                   : "N/A"}
               </Descriptions.Item>
             </Descriptions>

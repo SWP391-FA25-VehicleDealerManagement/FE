@@ -88,10 +88,10 @@ const useDealerRequest = create((set) => ({
 
   // Confirm vehicle request (change status to ALLOCATED)
   isLoadingConfirmRequest: false,
-  confirmRequestReceived: async (id, name) => {
+  confirmRequestReceived: async (id) => {
     try {
       set({ isLoadingConfirmRequest: true });
-      const response = await confirmVehicleRequest(id, name);
+      const response = await confirmVehicleRequest(id);
       if (response && response.status === 200) {
         set({ isLoadingConfirmRequest: false });
       }

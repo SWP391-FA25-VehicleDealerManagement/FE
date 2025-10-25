@@ -63,9 +63,9 @@ const useVehicleRequestStore = create((set) => ({
     }
   },
 
-  approvedRequest: async (id, name) => {
+  approvedRequest: async (id) => {
     try {
-      const response = await approveVehicleRequest(id, name);
+      const response = await approveVehicleRequest(id);
       if (response && response.status === 200) {
         set({ isLoadingVehicleRequests: false });
       }
@@ -75,9 +75,9 @@ const useVehicleRequestStore = create((set) => ({
     }
   },
 
-  rejectedRequest: async (id, name) => {
+  rejectedRequest: async (id) => {
     try {
-      const response = await rejectVehicleRequest(id, name);
+      const response = await rejectVehicleRequest(id);
       if (response && response.status === 200) {
         set({ isLoadingVehicleRequests: false });
       }

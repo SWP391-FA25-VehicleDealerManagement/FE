@@ -243,6 +243,7 @@ const Routes = () => {
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <DealerStaffVehicleListPage /> },
         { path: "vehicles/:vehicleId", element: <DealerStaffVehicleDetailPage /> },
+        { path: "inventory", element: <InventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

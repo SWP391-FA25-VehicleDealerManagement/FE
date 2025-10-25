@@ -30,7 +30,6 @@ export default function VehicleList() {
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
-
   const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
@@ -154,27 +153,33 @@ export default function VehicleList() {
 
   const columns = [
     {
-      title: "Mã xe",
+      title: "Mã",
       dataIndex: "vehicleId",
       key: "vehicleId",
-      width: 100,
+      width: "10%",
+      ...getColumnSearchProps("vehicleId"),
       sorter: (a, b) => a.vehicleId - b.vehicleId,
+    },
+    {
+      title: "Số VIN",
+      dataIndex: "vinNumber",
+      key: "vinNumber",
+      width: "15%",
+      ...getColumnSearchProps("vinNumber"),
     },
     {
       title: "Hình ảnh",
       dataIndex: "variantImage",
       key: "variantImage",
-      width: 100,
-      render: (variantImage, record) => {
-        const blobUrl = imageUrls[variantImage];
-
-        if (!variantImage) {
-          // Trường hợp không có ảnh
+      width: "25%",
+      render: (imagePath, record) => {
+        const blobUrl = imageUrls[imagePath];
+        if (!imagePath) {
           return (
             <div
               style={{
-                width: 80,
-                height: 60,
+                width: 200,
+                height: 80,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -192,10 +197,10 @@ export default function VehicleList() {
           return (
             <Image
               src={blobUrl}
-              alt={record.variantName}
+              alt={record.name}
               style={{
-                width: 80,
-                height: 60,
+                width: 200,
+                height: 80,
                 objectFit: "cover",
                 borderRadius: 4,
               }}
@@ -208,7 +213,7 @@ export default function VehicleList() {
         return (
           <div
             style={{
-              width: 80,
+              width: 60,
               height: 60,
               display: "flex",
               alignItems: "center",
@@ -223,68 +228,88 @@ export default function VehicleList() {
       },
     },
     {
-      title: "Tên xe",
+      title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
+      width: "15%",
       ...getColumnSearchProps("modelName"),
-      sorter: (a, b) => (a.modelName || "").localeCompare(b.modelName || ""),
+      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
+      width: "15%",
       ...getColumnSearchProps("variantName"),
+    },
+    {
+      title: "Hãng sản xuất",
+      dataIndex: "manufacturer",
+      key: "manufacturer",
+      width: "15%",
+      ...getColumnSearchProps("manufacturer"),
+    },
+    {
+      title: "Kiểu dáng",
+      dataIndex: "bodyType",
+      key: "bodyType",
+      width: "10%",
+      ...getColumnSearchProps("bodyType"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
+      width: "10%",
       filters: [
-        { text: "Đen", value: "Đen" },
-        { text: "Trắng", value: "Trắng" },
-        { text: "Đỏ", value: "Đỏ" },
-        { text: "Xanh", value: "Xanh" },
-        { text: "Bạc", value: "Bạc" },
-        { text: "Green", value: "Green" },
         { text: "Black", value: "Black" },
         { text: "White", value: "White" },
+        { text: "Red", value: "Red" },
+        { text: "Green", value: "Green" },
+        { text: "Đen", value: "Đen" },
       ],
       onFilter: (value, record) => record.color === value,
-    },
-    {
-      title: "VIN Number",
-      dataIndex: "vinNumber",
-      key: "vinNumber",
-      ...getColumnSearchProps("vinNumber"),
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "Giá (VNĐ)",
       dataIndex: "msrp",
       key: "msrp",
+      width: "15%",
       sorter: (a, b) => {
-        const priceA = a.msrp
-          ? parseFloat(a.msrp.replace(/[^0-9]/g, ""))
-          : 0;
-        const priceB = b.msrp
-          ? parseFloat(b.msrp.replace(/[^0-9]/g, ""))
-          : 0;
-        return priceA - priceB;
+        const msrpA = a.msrp ? parseFloat(a.msrp.replace(/[^0-9]/g, "")) : 0;
+        const msrpB = b.msrp ? parseFloat(b.msrp.replace(/[^0-9]/g, "")) : 0;
+        return msrpA - msrpB;
       },
-      render: (msrp) => msrp.toLocaleString("vi-VN") || "N/A",
+      render: (msrp) => {
+        if (!msrp) {
+          return "N/A";
+        }
+        return msrp.toLocaleString("vi-VN");
+      },
     },
     {
-      title: "Bảo hành đến",
-      dataIndex: "warrantyExpiryDate",
-      key: "warrantyExpiryDate",
+      title: "Ngày SX",
+      dataIndex: "manufactureDate",
+      key: "manufactureDate",
+      width: "15%",
+      render: (text) =>
+        text ? new Date(text).toLocaleDateString("vi-VN") : "N/A",
       sorter: (a, b) =>
-        new Date(a.warrantyExpiryDate) - new Date(b.warrantyExpiryDate),
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
+        new Date(a.manufactureDate) - new Date(b.manufactureDate),
+    },
+    {
+      title: "Năm",
+      dataIndex: "year",
+      key: "year",
+      width: "10%",
+      sorter: (a, b) => a.year - b.year,
     },
     {
       title: "Thao tác",
       key: "action",
       width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -320,6 +345,7 @@ export default function VehicleList() {
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
+            scroll={{ x: 2000 }}
           />
         )}
       </Card>

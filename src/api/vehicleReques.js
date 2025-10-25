@@ -12,19 +12,13 @@ const getVehicleRequestsPending = () => {
   return axiosClient.get("/api/dealer-requests/pending");
 };
 
-const approveVehicleRequest = (id, name) => {
-  return axiosClient.put(
-    `/api/dealer-requests/${id}/status?status=APPROVED&approvedBy=${name}`
-  );
+const approveVehicleRequest = (id) => {
+  return axiosClient.post(`/api/dealer-requests/${id}/approve`);
 };
 
-const rejectVehicleRequest = (id, name) => {
-  return axiosClient.put(
-    `/api/dealer-requests/${id}/status?status=REJECTED&approvedBy=${name}`
-  );
+const rejectVehicleRequest = (id) => {
+  return axiosClient.post(`/api/dealer-requests/${id}/reject`);
 };
-
-
 
 export {
   getVehicleRequests,
@@ -33,4 +27,3 @@ export {
   approveVehicleRequest,
   rejectVehicleRequest,
 };
-

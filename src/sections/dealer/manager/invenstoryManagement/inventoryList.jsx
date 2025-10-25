@@ -17,6 +17,7 @@ import {
   CarOutlined,
   InboxOutlined,
   ReloadOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useDealerInventory from "../../../../hooks/useDealerInventory";
@@ -27,7 +28,6 @@ const { Title, Text } = Typography;
 export default function InventoryList() {
   const { userDetail } = useAuthen();
   const dealerId = userDetail?.dealer?.dealerId;
-  console.log("check dealer id", dealerId);
   const { inventory, isLoading, fetchDealerInventory } = useDealerInventory();
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({
@@ -119,88 +119,48 @@ export default function InventoryList() {
 
   const inventoryColumns = [
     {
-      title: "Mã",
-      dataIndex: "stockId",
-      key: "stockId",
-      ...getColumnSearchProps("stockId"),
-      width: 100,
-      fixed: "left",
+      title: "STT",
+      dataIndex: "index",
+      key: "index",
+      width: "5%",
+      render: (_, __, index) =>
+        (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
       title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
       ...getColumnSearchProps("modelName"),
-      width: 200,
+      width: "20%",
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
       ...getColumnSearchProps("variantName"),
-      width: 150,
-    },
-    {
-      title: "Màu sắc",
-      dataIndex: "color",
-      key: "color",
-      ...getColumnSearchProps("color"),
-      width: 150,
+      width: "20%",
     },
     {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: 120,
+      width: "20%",
       render: (quantity) => (
-        <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
+        <Text type={quantity < 2 ? "danger" : ""}>
+          {quantity} - Phương tiện sắp hết
+        </Text>
       ),
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 150,
-      filters: [
-        { text: "Có sẵn", value: "AVAILABLE" },
-        { text: "Đã đặt trước", value: "RESERVED" },
-        { text: "Đã bán", value: "SOLD" },
-        { text: "Đang vận chuyển", value: "IN_TRANSIT" },
-        { text: "Bảo trì", value: "MAINTENANCE" },
-      ],
-      onFilter: (value, record) => record.status === value,
-      render: (status) => {
-        let color = "default";
-        let text = status;
-        switch (status) {
-          case "AVAILABLE":
-            color = "green";
-            text = "Có sẵn";
-            break;
-          case "RESERVED":
-            color = "blue";
-            text = "Đã đặt trước";
-            break;
-          case "SOLD":
-            color = "red";
-            text = "Đã bán";
-            break;
-          case "IN_TRANSIT":
-            color = "orange";
-            text = "Đang vận chuyển";
-            break;
-          case "MAINTENANCE":
-            color = "purple";
-            text = "Bảo trì";
-            break;
-          default:
-            color = "default";
-        }
-        return <Tag color={color}>{text}</Tag>;
-      },
-    },
   ];
+
+  const totalQuantity = inventory.reduce(
+    (sum, item) => sum + (item.quantity || 0),
+    0
+  );
+  const totalStockItems = inventory.length; // Tổng số loại xe (SKUs)
+  const totalUniqueModels = new Set(inventory.map((item) => item.modelName))
+    .size;
 
   return (
     <div>
@@ -216,27 +176,23 @@ export default function InventoryList() {
       </div>
 
       <Row gutter={16} className="mb-6">
-        <Col span={12}>
-          <Card>
+        <Col span={12} className="mb-4 md:mb-0">
+          <Card hoverable>
             <Statistic
-              title="Tổng số lượng xe trong kho"
-              value={inventory.reduce(
-                (sum, item) => sum + (item.quantity || 0),
-                0
-              )}
+              title="Tổng số lượng xe"
+              value={totalQuantity}
               prefix={<CarOutlined />}
+              valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
         <Col span={12}>
-          <Card>
+          <Card hoverable>
             <Statistic
-              title="Số lượng xe sẵn có"
-              value={inventory
-                .filter((item) => item.status === "AVAILABLE")
-                .reduce((sum, item) => sum + (item.quantity || 0), 0)}
-              valueStyle={{ color: "#3f8600" }}
-              prefix={<InboxOutlined />}
+              title="Số mẫu xe"
+              value={totalUniqueModels}
+              prefix={<TagsOutlined />} 
+              valueStyle={{ color: "#d46b08" }}
             />
           </Card>
         </Col>
