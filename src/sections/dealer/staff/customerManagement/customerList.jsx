@@ -2,20 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Table, Input, Button, Space, Card, Typography, Spin, Modal } from "antd";
 import { SearchOutlined, UserAddOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import useEvmStaffStore from "../../../hooks/useEvmStaff";
-import CreateEvmStaffModal from "./createEvmStaffModal";
+import useCustomerStore from "../../../../hooks/useCustomer";
+import CreateCustomerModal from "./createCustomerModal";
 
 const { Title } = Typography;
 
-export default function EvmStaffList() {
-  const { evmStaffs, isLoading, fetchEvmStaffs, deleteEvmStaff } = useEvmStaffStore();
+export default function CustomerList() {
+  const { customers, isLoading, fetchCustomers, deleteCustomer } = useCustomerStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
 
-  useEffect(() => { fetchEvmStaffs(); }, [fetchEvmStaffs]);
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -45,28 +45,19 @@ export default function EvmStaffList() {
   });
 
   const columns = [
-    { title: "ID", dataIndex: "staffId", key: "staffId", sorter: (a,b)=>a.staffId-b.staffId },
-    { title: "Họ và tên", dataIndex: "staffName", key: "staffName", ...getColSearch("staffName"), sorter: (a,b)=>a.staffName.localeCompare(b.staffName) },
+    { title: "ID", dataIndex: "customerId", key: "customerId", sorter: (a,b)=>a.customerId-b.customerId },
+    { title: "Tên khách hàng", dataIndex: "customerName", key: "customerName", ...getColSearch("customerName"), sorter: (a,b)=>a.customerName.localeCompare(b.customerName) },
     { title: "Số điện thoại", dataIndex: "phone", key: "phone", ...getColSearch("phone") },
-    { title: "Email", dataIndex: "email", key: "email", ...getColSearch("email") },
-    { title: "Vai trò", dataIndex: "role", key: "role", ...getColSearch("role") },
     { title: "Địa chỉ", dataIndex: "address", key: "address", ...getColSearch("address") },
     {
       title: "Thao tác", key: "action",
       render: (_, record) => (
         <Space size="middle">
-          {/* Tạo route detail nếu cần: /admin/staff-management/:staffId hoặc /evm-staff/staff/:staffId */}
-          <Link to={`/admin/staff-management/${record.staffId}`}>
+          <Link to={`/dealer-staff/customers/${record.customerId}`}>
             <Button type="primary" icon={<EyeOutlined />} size="small">Xem</Button>
           </Link>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => { setSelected(record); setIsDeleteOpen(true); }}
-          >
-            Xóa
-          </Button>
+          <Button danger icon={<DeleteOutlined />} size="small"
+            onClick={() => { setSelected(record); setIsDeleteOpen(true); }}>Xóa</Button>
         </Space>
       ),
     },
@@ -75,57 +66,32 @@ export default function EvmStaffList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <Title level={2}>Danh sách Nhân viên EVM</Title>
-        <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsCreateOpen(true)}>
-          Thêm Nhân viên
-        </Button>
+        <Title level={2}>Danh sách Khách hàng</Title>
+        <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsCreateOpen(true)}>Thêm Khách hàng</Button>
       </div>
 
       <Card>
         {isLoading ? (
           <div className="flex justify-center items-center p-10"><Spin size="large" /></div>
         ) : (
-          <Table
-            columns={columns}
-            dataSource={evmStaffs}
-            rowKey="staffId"
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (t, r) => `${r[0]}-${r[1]} của ${t} mục`,
-            }}
-          />
+          <Table columns={columns} dataSource={customers} rowKey="customerId"
+                 pagination={{ pageSize: 10, showSizeChanger: true,
+                   showTotal: (t, r) => `${r[0]}-${r[1]} của ${t} mục` }} />
         )}
       </Card>
 
-      <Modal
-        title="Xác nhận xóa nhân viên"
-        open={isDeleteOpen}
-        onOk={async () => {
-          await deleteEvmStaff(selected?.staffId);
-          setIsDeleteOpen(false);
-          setSelected(null);
-          fetchEvmStaffs();
-        }}
-        onCancel={() => {
-          setIsDeleteOpen(false);
-          setSelected(null);
-        }}
-        okText="Xóa"
-        cancelText="Hủy"
-        okType="danger"
-        closable={false}
-      >
-        <p>
-          Bạn có chắc muốn xóa <strong>{selected?.staffName}</strong> không?
-        </p>
+      <Modal title="Xác nhận xóa khách hàng" open={isDeleteOpen}
+             onOk={async () => { await deleteCustomer(selected?.customerId); setIsDeleteOpen(false); setSelected(null); fetchCustomers(); }}
+             onCancel={() => { setIsDeleteOpen(false); setSelected(null); }}
+             okText="Xóa" cancelText="Hủy" okType="danger" closable={false}>
+        <p>Bạn có chắc muốn xóa <strong>{selected?.customerName}</strong> không?</p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
 
-      <CreateEvmStaffModal
+      <CreateCustomerModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onSuccess={() => fetchEvmStaffs()}
+        onSuccess={() => fetchCustomers()}
       />
     </div>
   );
