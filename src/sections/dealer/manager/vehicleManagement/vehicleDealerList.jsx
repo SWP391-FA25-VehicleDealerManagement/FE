@@ -27,7 +27,7 @@ import { toast } from "react-toastify";
 const { Title } = Typography;
 const { Option } = Select;
 
-export default function VehicleList() {
+export default function VehicleDealerList() {
   const [vehicles, setVehicles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -291,7 +291,7 @@ export default function VehicleList() {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <Link to={`/admin/vehicles/${record.id}`}>
+          <Link to={`/dealer-manager/vehicle-management/${record.id}`}>
             <Button
               type="primary"
               icon={<EyeOutlined />}

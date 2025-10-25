@@ -8,10 +8,10 @@ import {
   UserOutlined,
   LogoutOutlined,
   DownOutlined,
-  SettingOutlined,
+  InboxOutlined,
   CarOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -25,20 +25,96 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem("Tổng quan", "1", <PieChartOutlined />, null, "/dealer-manager/dashboard"),
-  getItem("Quản lý xe", "2", <CarOutlined />, null, "/dealer-manager/vehicle-management"),
+  getItem(
+    "Tổng quan",
+    "1",
+    <PieChartOutlined />,
+    null,
+    "/dealer-manager/dashboard"
+  ),
+  getItem("Quản lý hợp đồng", "2", <FileOutlined />, [
+    getItem(
+      "Hợp đồng với hãng",
+      "evm-contract",
+      null,
+      null,
+      "/dealer-manager/evm=-contract"
+    ),
+    getItem(
+      "Hợp đồng với khách",
+      "customer-contract",
+      null,
+      null,
+      "/dealer-manager/customer-contract"
+    ),
+  ]),
+  getItem("Quản lý xe", "3", <CarOutlined />, [
+    getItem(
+      "Danh sách xe",
+      "vehicle-list",
+      null,
+      null,
+      "/dealer-manager/vehicles"
+    ),
+    getItem(
+      "Yêu cầu xe từ hãng",
+      "vehicle-requests",
+      null,
+      null,
+      "/dealer-manager/vehicle-requests"
+    ),
+    getItem(
+      "Danh mục đơn yêu cầu xe",
+      "request-management",
+      null,
+      null,
+      "/dealer-manager/request-list"
+    ),
+  ]),
+  getItem(
+    "Kho hàng",
+    "inventory",
+    <InboxOutlined />,
+    null,
+    "/dealer-manager/inventory"
+  ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
-    getItem("Khách hàng", "3", null, null, "/dealer-manager/customers"),
-    getItem("Nhân viên", "4", null, null, "/dealer-manager/staff"),
+    getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
+  ]),
+  getItem("Báo cáo", "sub2", <TeamOutlined />, [
+    getItem(
+      "Báo cáo bán hàng",
+      "4",
+      null,
+      null,
+      "/dealer-manager/sales-report"
+    ),
+    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory-report"),
+    getItem(
+      "Báo cáo công nợ",
+      "6",
+      null,
+      null,
+      "/dealer-manager/customer-debt-report"
+    ),
   ]),
 ];
 
 const Dealer = ({ children }) => {
-  const [current, setCurrent] = useState("1");
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { logout, userDetail } = useAuthen();
+
+  const storeDefaultSelectedKeys = (keys) => {
+    sessionStorage.setItem("selectedMenuKey", keys);
+  };
+
+  const resetDefaultSelectedKeys = () => {
+    const selectedKeys = sessionStorage.getItem("selectedMenuKey");
+    return selectedKeys ? selectedKeys : "dashboard";
+  };
+
+  const defaultSelectedKeys = resetDefaultSelectedKeys();
 
   const handleLogout = async () => {
     await logout();
@@ -71,48 +147,27 @@ const Dealer = ({ children }) => {
     },
   ];
 
-  const handleMenuClick = ({ key }) => {
-    const findMenuItem = (items, targetKey) => {
-      for (const item of items) {
-        if (item.key === targetKey) {
-          return item;
-        }
-        if (item.children) {
-          const found = findMenuItem(item.children, targetKey);
-          if (found) return found;
-        }
+  const renderMenuItems = (items) => {
+    return items.map((item) => {
+      if (item.children && item.children.length > 0) {
+        return (
+          <Menu.SubMenu key={item.key} icon={item.icon} title={item.label}>
+            {renderMenuItems(item.children)}
+          </Menu.SubMenu>
+        );
+      } else {
+        return (
+          <Menu.Item
+            key={item.key}
+            icon={item.icon}
+            onClick={() => storeDefaultSelectedKeys([item.key])}
+          >
+            <Link to={item.path}>{item.label}</Link>
+          </Menu.Item>
+        );
       }
-      return null;
-    };
-
-    const menuItem = findMenuItem(menuItems, key);
-    if (menuItem && menuItem.path) {
-      setCurrent(key);
-      navigate(menuItem.path);
-    }
+    });
   };
-  
-  // Update selected menu item based on current URL path
-  useEffect(() => {
-    const findMenuKeyByPath = (items, path) => {
-      for (const item of items) {
-        if (item.path === path) {
-          return item.key;
-        }
-        if (item.children) {
-          const found = findMenuKeyByPath(item.children, path);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    
-    const currentPath = location.pathname;
-    const menuKey = findMenuKeyByPath(menuItems, currentPath);
-    if (menuKey) {
-      setCurrent(menuKey);
-    }
-  }, [location.pathname]);
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -138,17 +193,18 @@ const Dealer = ({ children }) => {
           <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
-          mode="inline"
-          items={menuItems}
-          selectedKeys={[current]}
-          className="border-0 h-full"
           theme="light"
-          onClick={handleMenuClick}
+          defaultSelectedKeys={defaultSelectedKeys}
+          mode="inline"
+          defaultOpenKeys={["2", "3", "sub1", "sub2"]}
+          className="border-0 h-full"
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
           }}
-        />
+        >
+          {renderMenuItems(menuItems)}
+        </Menu>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
@@ -183,7 +239,9 @@ const Dealer = ({ children }) => {
                     icon={<UserOutlined />}
                     className="border-2 border-white"
                   />
-                  <span className="text-black font-medium">{userDetail?.userName|| "Dealer Manager"}</span>
+                  <span className="text-black font-medium">
+                    {userDetail?.userName || "Dealer Manager"}
+                  </span>
                   <DownOutlined className="text-black text-xs" />
                 </Space>
               </Button>
@@ -214,7 +272,8 @@ const Dealer = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-             © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được
+              bảo lưu.
             </span>
           </div>
         </Footer>

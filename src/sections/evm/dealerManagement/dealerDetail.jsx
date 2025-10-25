@@ -12,9 +12,11 @@ import {
   DeleteOutlined,
   TeamOutlined,
   CarOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  UserAddOutlined
 } from "@ant-design/icons";
 import UpdateDealerModal from "./updateDealerModal";
+import CreateDealerManagerModal from "./createDealerManagerModal";
 import { toast } from "react-toastify";
 
 const { Title, Text } = Typography;
@@ -26,6 +28,7 @@ export default function DealerDetail() {
   const [activeTab, setActiveTab] = useState("1");
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [createManagerModalVisible, setCreateManagerModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -204,6 +207,13 @@ export default function DealerDetail() {
         </div>
         <Space>
           <Button 
+            type="default" 
+            icon={<UserAddOutlined />} 
+            onClick={() => setCreateManagerModalVisible(true)}
+          >
+            Tạo tài khoản quản lý
+          </Button>
+          <Button 
             type="primary" 
             icon={<EditOutlined />} 
             onClick={() => setUpdateModalVisible(true)}
@@ -225,6 +235,14 @@ export default function DealerDetail() {
         visible={updateModalVisible}
         onCancel={() => setUpdateModalVisible(false)}
         dealer={dealerDetail}
+      />
+
+      {/* Create Dealer Manager Modal */}
+      <CreateDealerManagerModal
+        isOpen={createManagerModalVisible}
+        onClose={() => setCreateManagerModalVisible(false)}
+        dealerId={dealerDetail.dealerId}
+        dealerName={dealerDetail.dealerName}
       />
 
       <Row gutter={16}>
@@ -279,7 +297,7 @@ export default function DealerDetail() {
                   rowKey="id"
                 />
               </TabPane>
-              <TabPane
+              {/* <TabPane
                 tab={
                   <span>
                     <CarOutlined />
@@ -294,7 +312,7 @@ export default function DealerDetail() {
                   pagination={{ pageSize: 5 }}
                   rowKey="id"
                 />
-              </TabPane>
+              </TabPane> */}
             </Tabs>
           </Card>
         </Col>

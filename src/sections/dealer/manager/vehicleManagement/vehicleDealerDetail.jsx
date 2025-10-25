@@ -19,7 +19,7 @@ import { toast } from "react-toastify";
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
-export default function VehicleDetail() {
+export default function VehicleDealerDetail() {
   const { vehicleId } = useParams();
   const [vehicle, setVehicle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +90,7 @@ export default function VehicleDetail() {
         });
         
         // Redirect to vehicle list page
-        window.location.href = '/admin/vehicles';
+        window.location.href = '/dealer-manager/vehicle-management';
       }, 1000);
     } catch (error) {
       console.error("Error deleting vehicle:", error);
@@ -114,7 +114,7 @@ export default function VehicleDetail() {
     <div className="vehicle-detail-container">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          <Link to="/admin/vehicles">
+          <Link to="/dealer-manager/vehicle-management">
             <Button icon={<ArrowLeftOutlined />} style={{ marginRight: 16 }}>
               Quay lại
             </Button>

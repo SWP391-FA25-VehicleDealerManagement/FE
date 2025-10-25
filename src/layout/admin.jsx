@@ -4,7 +4,7 @@ import {
   DashboardOutlined,
   UserOutlined,
   TeamOutlined,
-  SettingOutlined,
+  CarOutlined,
   LogoutOutlined,
   DownOutlined,
   ShopOutlined,
@@ -12,10 +12,11 @@ import {
   LineChartOutlined,
   PieChartOutlined,
   FileTextOutlined,
+  TagOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
-
+import { Link } from "react-router-dom";
 const { Header, Content, Footer, Sider } = Layout;
 
 function getItem(label, key, icon, children, path) {
@@ -29,13 +30,6 @@ const adminMenuItems = [
     <DashboardOutlined />,
     null,
     "/admin/dashboard"
-  ),
-  getItem(
-    "Quản lý xe",
-    "car-management",
-    <ShopOutlined />,
-    null,
-    "/admin/vehicles"
   ),
   getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
     getItem(
@@ -77,59 +71,48 @@ const adminMenuItems = [
 ];
 
 const Admin = ({ children }) => {
-  const [current, setCurrent] = useState("dashboard");
-  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { logout, userDetail } = useAuthen();
+
+  const storeDefaultSelectedKeys = (keys) => {
+    sessionStorage.setItem("selectedMenuKey", keys);
+  };
+
+  const resetDefaultSelectedKeys = () => {
+    const selectedKeys = sessionStorage.getItem("selectedMenuKey");
+    return selectedKeys ? selectedKeys : "dashboard";
+  };
+
+  const defaultSelectedKeys = resetDefaultSelectedKeys();
+
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
 
-  const handleMenuClick = ({ key }) => {
-    const findMenuItem = (items, targetKey) => {
-      for (const item of items) {
-        if (item.key === targetKey) {
-          return item;
-        }
-        if (item.children) {
-          const found = findMenuItem(item.children, targetKey);
-          if (found) return found;
-        }
+  const renderMenuItems = (items) => {
+    return items.map((item) => {
+      if (item.children && item.children.length > 0) {
+        return (
+          <Menu.SubMenu key={item.key} icon={item.icon} title={item.label}>
+            {renderMenuItems(item.children)}
+          </Menu.SubMenu>
+        );
+      } else {
+        return (
+          <Menu.Item
+            key={item.key}
+            icon={item.icon}
+            onClick={() => storeDefaultSelectedKeys([item.key])}
+          >
+            <Link to={item.path}>{item.label}</Link>
+          </Menu.Item>
+        );
       }
-      return null;
-    };
-
-    const menuItem = findMenuItem(adminMenuItems, key);
-    if (menuItem && menuItem.path) {
-      setCurrent(key);
-      navigate(menuItem.path);
-    }
+    });
   };
-
-  // Update selected menu item based on current URL path
-  useEffect(() => {
-    const findMenuKeyByPath = (items, path) => {
-      for (const item of items) {
-        if (item.path === path) {
-          return item.key;
-        }
-        if (item.children) {
-          const found = findMenuKeyByPath(item.children, path);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    const currentPath = location.pathname;
-    const menuKey = findMenuKeyByPath(adminMenuItems, currentPath);
-    if (menuKey) {
-      setCurrent(menuKey);
-    }
-  }, [location.pathname]);
 
   const user = {
     name: userDetail?.userName || "Admin User",
@@ -164,6 +147,7 @@ const Admin = ({ children }) => {
         width={250}
         breakpoint="lg"
         collapsedWidth="0"
+        defaultCollapsed
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
         className="shadow-lg"
@@ -179,17 +163,18 @@ const Admin = ({ children }) => {
           <div className="text-xl font-bold text-blue-600">Hệ thống EVM</div>
         </div>
         <Menu
-          mode="inline"
-          items={adminMenuItems}
-          selectedKeys={[current]}
-          className="border-0 h-full"
           theme="light"
-          onClick={handleMenuClick}
+          defaultSelectedKeys={defaultSelectedKeys}
+          mode="inline"
+          className="border-0 h-full"
+          defaultOpenKeys={["reports"]}
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
           }}
-        />
+        >
+          {renderMenuItems(adminMenuItems)}
+        </Menu>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 0 : 250 }}>
@@ -245,7 +230,8 @@ const Admin = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được
+              bảo lưu.
             </span>
           </div>
         </Footer>

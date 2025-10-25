@@ -15,6 +15,8 @@ import {
   DollarOutlined,
   ContactsOutlined,
   BankOutlined,
+  SwapOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
@@ -44,29 +46,33 @@ const adminMenuItems = [
     getItem("Công nợ", "12", <DollarOutlined />, null, "/evm-staff/debts"),
   ]),
   getItem("Quản lý sản phẩm", "2", <CarOutlined />, [
+    getItem("Danh mục xe", "3", <CarOutlined />, null, "/evm-staff/vehicles"),
     getItem(
-      "Danh mục xe",
-      "3",
-      <CarOutlined />,
+      "Danh mục loại xe",
+      "vehicle-types",
+      <TagOutlined />,
       null,
-      "/evm-staff/vehicles"
+      "/evm-staff/vehicle-types"
     ),
     getItem(
-      "Quản lý kho & phân bổ xe",
-      "4",
-      <StockOutlined />,
+      "Danh mục mẫu xe",
+      "vehicle-catalog",
+      <CarOutlined />,
       null,
-      "/evm-staff/inventory"
+      "/evm-staff/vehicle-models"
+    ),
+  ]),
+  getItem("Quản lý kho", "4", <StockOutlined />, [
+    getItem("Kho hàng", "4-1", <InboxOutlined />, null, "/evm-staff/inventory"),
+    getItem(
+      "Phân bổ cho đại lý",
+      "4-2",
+      <SwapOutlined />,
+      null,
+      "/evm-staff/allocate-inventory"
     ),
   ]),
   getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
-    getItem(
-      "Danh sách khuyến mãi",
-      "7",
-      <ContactsOutlined />,
-      null,
-      "/evm-staff/promotion-list"
-    ),
     getItem(
       "Khuyến mãi cho đại lý",
       "8",
@@ -189,6 +195,7 @@ const EvmStaff = ({ children }) => {
           items={adminMenuItems}
           selectedKeys={[current]}
           className="border-0 h-full"
+          defaultOpenKeys={["9", "2", "4", "6"]}
           theme="light"
           onClick={handleMenuClick}
           style={{
@@ -251,7 +258,8 @@ const EvmStaff = ({ children }) => {
         >
           <div className="flex justify-center items-center">
             <span>
-              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được bảo lưu.
+              © {new Date().getFullYear()} Hệ thống EVM. Tất cả các quyền được
+              bảo lưu.
             </span>
           </div>
         </Footer>

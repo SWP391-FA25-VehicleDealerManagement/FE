@@ -35,8 +35,9 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [form] = Form.useForm();
+  const [passwordForm] = Form.useForm();
 
-  const { UpdateProfile, isLoading } = useUserStore();
+  const { UpdateProfile, changePassword, isLoading } = useUserStore();
   const { userDetail, initAuth } = useAuthen();
 
   useEffect(() => {
@@ -112,9 +113,33 @@ const UserProfile = () => {
     }
   };
 
-  const handlePasswordChange = (values) => {
-    // In a real app, this would call an API
-    message.success("Thay đổi mật khẩu thành công");
+  const handlePasswordChange = async (values) => {
+    try {
+      const passwordData = {
+        oldPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      };
+
+      console.log("Changing password...");
+
+      const result = await changePassword(passwordData);
+
+      if (result && result.success) {
+        passwordForm.resetFields();
+        toast.success("Thay đổi mật khẩu thành công", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast.error(error.response?.data?.message || "Đổi mật khẩu thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    }
   };
 
   const roleColorMap = {
@@ -276,7 +301,7 @@ const UserProfile = () => {
         <Tabs defaultActiveKey="security">
           <TabPane tab="Bảo mật" key="security">
             <Card title="Thay đổi mật khẩu" bordered={false}>
-              <Form layout="vertical" onFinish={handlePasswordChange}>
+              <Form form={passwordForm} layout="vertical" onFinish={handlePasswordChange}>
                 <Form.Item
                   label="Mật khẩu hiện tại"
                   name="currentPassword"
@@ -321,7 +346,7 @@ const UserProfile = () => {
                 >
                   <Input.Password prefix={<LockOutlined />} />
                 </Form.Item>
-                <Button type="primary" htmlType="submit">
+                <Button type="primary" htmlType="submit" loading={isLoading}>
                   Cập nhật mật khẩu
                 </Button>
               </Form>

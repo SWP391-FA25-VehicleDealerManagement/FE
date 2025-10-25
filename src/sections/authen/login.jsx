@@ -48,9 +48,9 @@ const Login = () => {
     try {
       const result = await login(values);
       console.log("Login result:", result);
-
+      console.log("ket qua", result);
       if (result.success) {
-        toast.success("Chào mừng bạn trở lại hệ thống EVM!", {
+        toast.success(`Chào mừng bạn trở lại hệ thống ${result.role}`, {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -64,17 +64,17 @@ const Login = () => {
 
         // Redirect based on user role
         switch (currentRole) {
-          case "admin":
+          case "ADMIN":
             navigate("/admin/dashboard");
             break;
-          case "evm_staff":
+          case "EVM_STAFF":
             navigate("/evm-staff/dealer-list");
             break;
-          case "dealer_manager":
+          case "DEALER_MANAGER":
             navigate("/dealer-manager/dashboard");
             break;
-          case "dealer_staff":
-            navigate("/dealer-staff/customer-list");
+          case "DEALER_STAFF":
+            navigate("/dealer-staff/appointments");
             break;
           default:
             navigate("/");
