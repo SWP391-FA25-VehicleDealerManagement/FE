@@ -1,34 +1,25 @@
 import axiosClient from "../config/axiosClient";
 
-const importInventory = (data) => {
-  return axiosClient.post("/api/inventory", data);
-};
 
 const getInventory = () => {
-  return axiosClient.get("/api/inventory");
+  return axiosClient.get("/api/vehicles/manufacturer/stock");
 };
 
-const updateInventory = (id, data) => {
-  return axiosClient.put(`/api/inventory/${id}`, data);
+const getDealerInventory = (id) => {
+  return axiosClient.get(`/api/vehicles/dealer/${id}/stock`);
 };
 
-const deleteInventory = (id) => {
-  return axiosClient.delete(`/api/inventory/${id}`);
+const recallInventory = (data) => {
+  return axiosClient.post(`/api/inventory/recall`, data);
 };
 
-const recallInventory = () => {
-  return axiosClient.oost(`/api/inventory/recall`);
-};
-
-const allocateInventory = () => {
-  return axiosClient.post(`/api/inventory/allocate`);
+const allocateInventory = (data) => {
+  return axiosClient.post(`/api/inventory/allocate`, data);
 };
 
 export {
-  importInventory,
   getInventory,
-  updateInventory,
-  deleteInventory,
   recallInventory,
   allocateInventory,
+  getDealerInventory,
 };

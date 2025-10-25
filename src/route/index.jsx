@@ -56,6 +56,11 @@ const StaffListPage = lazy(() =>
 const StaffDetailPage = lazy(() =>
   import("../page/dealer/manager/staffDetailPage.jsx")
 );
+const InventoryPage = lazy(() =>
+  import("../page/dealer/manager/inventoryListPage.jsx")
+);
+
+
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -238,8 +243,8 @@ const Routes = () => {
         { path: "request-list/:id", element: <RequestDetailPage /> },
         { path: "staff", element: <StaffListPage /> },
         { path: "staff/:staffId", element: <StaffDetailPage /> },
+        { path: "inventory", element: <InventoryPage /> },
         { path: "*", element: <Error404 /> },
-
       ],
     },
 
@@ -264,6 +269,7 @@ const Routes = () => {
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <DealerStaffVehicleListPage /> },
         { path: "vehicles/:vehicleId", element: <DealerStaffVehicleDetailPage /> },
+        { path: "inventory", element: <InventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

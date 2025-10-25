@@ -44,10 +44,17 @@ const { Option } = Select;
 const { TabPane } = Tabs;
 
 export default function InventoryManagement() {
-  const { inventory, isLoading, fetchInventory, importInventory, updateInventory, deleteInventoryById } = useInventoryStore();
+  const {
+    inventory,
+    isLoading,
+    fetchInventory,
+    importInventory,
+    updateInventory,
+    deleteInventoryById,
+  } = useInventoryStore();
   const { dealers, fetchDealers } = useDealerStore();
   const { vehicles, fetchVehicles } = useVehicleStore();
-  
+
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("1");
   const [isImportModalVisible, setIsImportModalVisible] = useState(false);
@@ -72,11 +79,7 @@ export default function InventoryManagement() {
 
   const fetchData = async () => {
     try {
-      await Promise.all([
-        fetchInventory(),
-        fetchDealers(),
-        fetchVehicles()
-      ]);
+      await Promise.all([fetchInventory(), fetchDealers(), fetchVehicles()]);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Không thể tải dữ liệu", {
@@ -99,10 +102,12 @@ export default function InventoryManagement() {
   const handleImportSubmit = async () => {
     try {
       const values = await importForm.validateFields();
-      
+
       // Find the selected vehicle and dealer objects
-      const selectedVehicle = vehicles.find(v => v.vehicleId === values.vehicleId);
-      
+      const selectedVehicle = vehicles.find(
+        (v) => v.vehicleId === values.vehicleId
+      );
+
       if (!selectedVehicle) {
         toast.error("Không tìm thấy thông tin xe", {
           position: "top-right",
@@ -110,7 +115,7 @@ export default function InventoryManagement() {
         });
         return;
       }
-     
+
       const importData = {
         vehicle: {
           vehicleId: selectedVehicle.vehicleId,
@@ -121,20 +126,20 @@ export default function InventoryManagement() {
           stock: selectedVehicle.stock,
           variant: selectedVehicle.variant,
           // dealer: selectedVehicle.dealer,
-          status: selectedVehicle.status
+          status: selectedVehicle.status,
         },
         quantity: values.quantity,
-        status: "AVAILABLE"
+        status: "AVAILABLE",
       };
 
       const response = await importInventory(importData);
-      
+
       if (response && response.status === 200) {
         toast.success("Nhập kho thành công", {
           position: "top-right",
           autoClose: 3000,
         });
-        
+
         setIsImportModalVisible(false);
         importForm.resetFields();
         await fetchInventory(); // Refresh data
@@ -151,7 +156,7 @@ export default function InventoryManagement() {
   const handleAddMoreSubmit = async () => {
     try {
       const values = await addMoreForm.validateFields();
-      
+
       if (!selectedInventoryItem) {
         toast.error("Không tìm thấy thông tin xe", {
           position: "top-right",
@@ -161,21 +166,28 @@ export default function InventoryManagement() {
       }
 
       // Tính tổng số lượng mới = số lượng hiện tại + số lượng thêm
-      const newTotalQuantity = selectedInventoryItem.quantity + values.addQuantity;
-      
+      const newTotalQuantity =
+        selectedInventoryItem.quantity + values.addQuantity;
+
       const updateData = {
         quantity: newTotalQuantity,
-        status: "AVAILABLE"
+        status: "AVAILABLE",
       };
 
-      const response = await updateInventory(selectedInventoryItem.stockId, updateData);
-      
+      const response = await updateInventory(
+        selectedInventoryItem.stockId,
+        updateData
+      );
+
       if (response && response.status === 200) {
-        toast.success(`Nhập thêm kho thành công! Số lượng mới: ${newTotalQuantity}`, {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        
+        toast.success(
+          `Nhập thêm kho thành công! Số lượng mới: ${newTotalQuantity}`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
+
         setIsAddMoreModalVisible(false);
         setSelectedInventoryItem(null);
         addMoreForm.resetFields();
@@ -200,8 +212,8 @@ export default function InventoryManagement() {
 
     setIsDeleting(true);
     try {
-      const response = await deleteInventoryById(itemToDelete.stockId);
-      
+      const response = await deleteInventoryById(itemToDelete.inventoryId);
+
       if (response && response.status === 200) {
         toast.success("Xóa kho thành công", {
           position: "top-right",
@@ -285,114 +297,65 @@ export default function InventoryManagement() {
 
   const inventoryColumns = [
     {
-      title: "Mã",
-      dataIndex: "stockId",
-      key: "stockId",
-      ...getColumnSearchProps("stockId"),
-      width: 100,
+      title: "STT",
+      dataIndex: "index",
+      key: "index",
+      width: "5%",
+      render: (_, __, index) =>
+        (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
-      title: "Xe",
-      dataIndex: "vehicleName",
-      key: "vehicleName",
-      ...getColumnSearchProps("vehicleName"),
-      width: 200,
+      title: "Mẫu xe",
+      dataIndex: "modelName",
+      key: "modelName",
+      ...getColumnSearchProps("modelName"),
+      width: "20%",
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
       ...getColumnSearchProps("variantName"),
-      width: 150,
-    },
-    {
-      title: "Màu sắc",
-      dataIndex: "color",
-      key: "color",
-      ...getColumnSearchProps("color"),
-      width: 150,
+      width: "20%",
     },
     {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: 100,
+      width: "20%",
       render: (quantity) => (
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 120,
-      filters: [
-        { text: "Có sẵn", value: "AVAILABLE" },
-        { text: "Đã đặt trước", value: "RESERVED" },
-        { text: "Đã bán", value: "SOLD" },
-        { text: "Đang vận chuyển", value: "IN_TRANSIT" },
-        { text: "Bảo trì", value: "MAINTENANCE" },
-      ],
-      onFilter: (value, record) => record.status === value,
-      render: (status) => {
-        let color = "default";
-        let text = status;
-        switch (status) {
-          case "AVAILABLE":
-            color = "green";
-            text = "Có sẵn";
-            break;
-          case "RESERVED":
-            color = "blue";
-            text = "Đã đặt trước";
-            break;
-          case "SOLD":
-            color = "red";
-            text = "Đã bán";
-            break;
-          case "IN_TRANSIT":
-            color = "orange";
-            text = "Đang vận chuyển";
-            break;
-          case "MAINTENANCE":
-            color = "purple";
-            text = "Bảo trì";
-            break;
-          default:
-            color = "default";
-        }
-        return <Tag color={color}>{text}</Tag>;
-      },
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 200,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            size="small"
-            icon={<ImportOutlined />}
-            onClick={() => {
-              setSelectedInventoryItem(record);
-              setIsAddMoreModalVisible(true);
-            }}
-          >
-            Nhập thêm
-          </Button>
-          <Button
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => showDeleteConfirm(record)}
-          >
-            Xóa
-          </Button>
-        </Space>
-      ),
-    },
+    // {
+    //   title: "Thao tác",
+    //   key: "action",
+    //   width: "20%",
+    //   render: (_, record) => (
+    //     <Space size="small">
+    //       <Button
+    //         type="primary"
+    //         size="small"
+    //         icon={<ImportOutlined />}
+    //         onClick={() => {
+    //           setSelectedInventoryItem(record);
+    //           setIsAddMoreModalVisible(true);
+    //         }}
+    //       >
+    //         Nhập thêm
+    //       </Button>
+    //       <Button
+    //         danger
+    //         size="small"
+    //         icon={<DeleteOutlined />}
+    //         onClick={() => showDeleteConfirm(record)}
+    //       >
+    //         Xóa
+    //       </Button>
+    //     </Space>
+    //   ),
+    // },
   ];
 
   const warehouseColumns = [
@@ -422,16 +385,6 @@ export default function InventoryManagement() {
       key: "phone",
       width: 150,
     },
-    {
-      title: "Tổng xe trong kho",
-      key: "totalVehicles",
-      width: 150,
-      render: (_, record) => {
-        const dealerInventory = inventory.filter(item => item.dealerId === record.dealerId);
-        const total = dealerInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        return <Tag color="blue">{total} xe</Tag>;
-      },
-    },
   ];
 
   return (
@@ -455,27 +408,20 @@ export default function InventoryManagement() {
       </div>
 
       <Row gutter={16} className="mb-6">
-        <Col span={8}>
-          <Card>
+        <Col span={12}>
+          <Card hoverable>
             <Statistic
               title="Tổng số lượng xe trong kho"
-              value={inventory.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+              value={inventory.reduce(
+                (sum, item) => sum + (item.quantity || 0),
+                0
+              )}
               prefix={<CarOutlined />}
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="Số lượng xe sẵn có"
-              value={inventory.filter(item => item.status === "AVAILABLE").reduce((sum, item) => sum + (item.quantity || 0), 0)}
-              valueStyle={{ color: "#3f8600" }}
-              prefix={<InboxOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
+        <Col span={12}>
+          <Card hoverable>
             <Statistic
               title="Tổng số đại lý"
               value={dealers.length}
@@ -506,8 +452,7 @@ export default function InventoryManagement() {
                 dataSource={inventory}
                 pagination={pagination}
                 onChange={(pagination) => setPagination(pagination)}
-                rowKey="stockId"
-                scroll={{ x: 1200 }}
+                rowKey="index"
               />
             )}
           </TabPane>
@@ -556,14 +501,16 @@ export default function InventoryManagement() {
             label="Xe"
             rules={[{ required: true, message: "Vui lòng chọn xe" }]}
           >
-            <Select 
+            <Select
               placeholder="Chọn xe"
               showSearch
               optionFilterProp="children"
               filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                (option?.label ?? "")
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
               }
-              options={vehicles.map(vehicle => ({
+              options={vehicles.map((vehicle) => ({
                 value: vehicle.vehicleId,
                 label: `${vehicle.name} - ${vehicle.modelName} (${vehicle.variantName})`,
               }))}
@@ -594,10 +541,14 @@ export default function InventoryManagement() {
             label="Số lượng"
             rules={[
               { required: true, message: "Vui lòng nhập số lượng" },
-              { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" }
+              { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
             ]}
           >
-            <InputNumber min={1} style={{ width: "100%" }} placeholder="Nhập số lượng" />
+            <InputNumber
+              min={1}
+              style={{ width: "100%" }}
+              placeholder="Nhập số lượng"
+            />
           </Form.Item>
 
           <Form.Item name="note" label="Ghi chú">
@@ -622,33 +573,41 @@ export default function InventoryManagement() {
       >
         {selectedInventoryItem && (
           <Form form={addMoreForm} layout="vertical">
-            <Divider orientation="left">Thông tin xe</Divider>
-            
+            <Divider orientation="center" className="py-2">
+              Thông tin xe
+            </Divider>
+
             <Row gutter={16}>
-              <Col span={12}>
+              {/* <Col span={12}>
                 <div style={{ marginBottom: 16 }}>
                   <Text strong>Tên xe: </Text>
                   <Text>{selectedInventoryItem.vehicleName}</Text>
                 </div>
-              </Col>
+              </Col> */}
               <Col span={12}>
                 <div style={{ marginBottom: 16 }}>
                   <Text strong>Model: </Text>
                   <Text>{selectedInventoryItem.modelName}</Text>
                 </div>
               </Col>
-            </Row>
-
-            <Row gutter={16}>
               <Col span={12}>
                 <div style={{ marginBottom: 16 }}>
                   <Text strong>Phiên bản: </Text>
                   <Text>{selectedInventoryItem.variantName}</Text>
                 </div>
               </Col>
+            </Row>
+
+            <Row gutter={16}>
+              {/* <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <Text strong>Phiên bản: </Text>
+                  <Text>{selectedInventoryItem.variantName}</Text>
+                </div>
+              </Col> */}
               <Col span={12}>
                 <div style={{ marginBottom: 16 }}>
-                  <Text strong>Đại lý: </Text>
+                  <Text strong>Kho: </Text>
                   <Text>{selectedInventoryItem.dealerName}</Text>
                 </div>
               </Col>
@@ -658,7 +617,10 @@ export default function InventoryManagement() {
               <Col span={12}>
                 <div style={{ marginBottom: 16 }}>
                   <Text strong>Số lượng hiện tại: </Text>
-                  <Text type="success" style={{ fontSize: 16, fontWeight: 'bold' }}>
+                  <Text
+                    type="success"
+                    style={{ fontSize: 16, fontWeight: "bold" }}
+                  >
                     {selectedInventoryItem.quantity}
                   </Text>
                 </div>
@@ -671,19 +633,21 @@ export default function InventoryManagement() {
               </Col>
             </Row>
 
-            <Divider orientation="left">Nhập thêm số lượng</Divider>
+            <Divider orientation="center" className="py-2">
+              Nhập thêm số lượng
+            </Divider>
 
             <Form.Item
               name="addQuantity"
               label="Số lượng cần nhập thêm"
               rules={[
                 { required: true, message: "Vui lòng nhập số lượng" },
-                { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" }
+                { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
               ]}
             >
-              <InputNumber 
-                min={1} 
-                style={{ width: "100%" }} 
+              <InputNumber
+                min={1}
+                style={{ width: "100%" }}
                 placeholder="Nhập số lượng cần thêm"
                 size="large"
               />
@@ -712,13 +676,13 @@ export default function InventoryManagement() {
           <div>
             <p>Bạn có chắc chắn muốn xóa?</p>
             <p>
-              <strong>Xe:</strong> {itemToDelete.vehicleName}
+              <p>
+                <strong>Model:</strong> {itemToDelete.modelName}
+              </p>
+              <strong>Loại xe:</strong> {itemToDelete.variantName}
             </p>
             <p>
-              <strong>Model:</strong> {itemToDelete.modelName}
-            </p>
-            <p>
-              <strong>Đại lý:</strong> {itemToDelete.dealerName}
+              <strong>Kho:</strong> {itemToDelete.dealerName}
             </p>
             <p>
               <strong>Số lượng:</strong> {itemToDelete.quantity}

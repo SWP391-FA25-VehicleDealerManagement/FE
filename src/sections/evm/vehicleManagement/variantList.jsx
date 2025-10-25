@@ -1,5 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Table, Card, Button, Space, Tag, Input, Typography, Spin, Modal, Form, Select, Upload, message } from "antd";
+import {
+  Table,
+  Card,
+  Button,
+  Space,
+  Input,
+  Typography,
+  Spin,
+  Modal,
+  Form,
+  Select,
+  Upload,
+  InputNumber,
+  Image,
+  Dropdown,
+  Menu,
+  Row,
+  Col,
+  Checkbox,
+} from "antd";
 import {
   EyeOutlined,
   SearchOutlined,
@@ -8,21 +27,27 @@ import {
   CarOutlined,
   UploadOutlined,
   EditOutlined,
+  EllipsisOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import useVariantStore from "../../../hooks/useVariant";
-
+import useModelStore from "../../../hooks/useModel";
+import axiosClient from "../../../config/axiosClient";
+const { TextArea } = Input;
 const { Title } = Typography;
 const { Option } = Select;
 
 export default function VariantList() {
-  const { variants, isLoading, fetchVariants, deleteVariant, createVariant } = useVariantStore();
+  const { variants, isLoading, fetchVariants, deleteVariant, createVariant } =
+    useVariantStore();
+  const { models, fetchModels } = useModelStore();
   const [searchText, setSearchText] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
@@ -31,10 +56,80 @@ export default function VariantList() {
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
-    fetchVariants();
-  }, [fetchVariants]);
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const objectUrlsToRevoke = [];
+
+    const fetchAllImages = async () => {
+      if (variants && variants.length > 0) {
+        const newImageUrls = {};
+
+        // Tạo mảng các promise để tải ảnh song song
+        const fetchPromises = variants.map(async (variant) => {
+          if (variant.defaultImageUrl) {
+            try {
+              const response = await axiosClient.get(variant.defaultImageUrl, {
+                responseType: "blob",
+              });
+              const objectUrl = URL.createObjectURL(response.data);
+              objectUrlsToRevoke.push(objectUrl);
+              return {
+                path: variant.defaultImageUrl,
+                url: objectUrl,
+              };
+            } catch (error) {
+              console.error(
+                "Không thể tải ảnh:",
+                variant.defaultImageUrl,
+                error
+              );
+              return {
+                path: variant.defaultImageUrl,
+                url: null, // Đánh dấu là lỗi
+              };
+            }
+          }
+          return null;
+        });
+
+        // Chờ tất cả ảnh được tải về
+        const results = await Promise.all(fetchPromises);
+
+        // Cập nhật state
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+
+        setImageUrls(newImageUrls);
+      }
+    };
+
+    fetchAllImages();
+
+    // Xóa các Object URL khi component unmount
+    return () => {
+      objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [variants]);
+
+  const fetchData = async () => {
+    try {
+      await Promise.all([fetchVariants(), fetchModels()]);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Không thể tải dữ liệu", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -57,7 +152,7 @@ export default function VariantList() {
     setIsDeleting(true);
     try {
       const response = await deleteVariant(selectedVariant.variantId);
-      
+
       if (response.data.success) {
         toast.success("Xóa phiên bản thành công", {
           position: "top-right",
@@ -97,22 +192,34 @@ export default function VariantList() {
   const handleAddCancel = () => {
     setIsAddModalOpen(false);
     form.resetFields();
+    setFileList([]);
   };
 
   const handleAddSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
-      // Tạo data object với URL ảnh
-      const data = {
-        name: values.name,
-        modelId: values.modelId,
-        image: values.image, // URL của ảnh
-      };
+
+      // Validate file upload
+      if (fileList.length === 0) {
+        toast.error("Vui lòng chọn hình ảnh", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Tạo FormData object
+      const formData = new FormData();
+
+      // Append từng field riêng lẻ thay vì object
+      formData.append("modelId", values.modelId);
+      formData.append("name", values.name);
+      formData.append("msrp", values.msrp);
+      formData.append("file", fileList[0].originFileObj);
 
       // Gọi API tạo variant
-      const response = await createVariant(data);
-      
+      const response = await createVariant(formData);
+
       if (response.data.success) {
         toast.success("Thêm phiên bản thành công", {
           position: "top-right",
@@ -121,6 +228,7 @@ export default function VariantList() {
         });
         setIsAddModalOpen(false);
         form.resetFields();
+        setFileList([]);
         fetchVariants();
       } else {
         toast.error(response.data.message || "Thêm phiên bản thất bại", {
@@ -135,6 +243,30 @@ export default function VariantList() {
         autoClose: 3000,
       });
     }
+  };
+
+  const handleUploadChange = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
+  };
+
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      toast.error("Chỉ được upload file hình ảnh!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return Upload.LIST_IGNORE;
+    }
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      toast.error("Hình ảnh phải nhỏ hơn 5MB!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return Upload.LIST_IGNORE;
+    }
+    return false;
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -186,6 +318,7 @@ export default function VariantList() {
         : "",
   });
 
+
   const columns = [
     {
       title: "ID",
@@ -196,16 +329,66 @@ export default function VariantList() {
     },
     {
       title: "Hình ảnh",
-      dataIndex: "image",
-      key: "image",
-      width: 100,
-      render: (image, record) => (
-        <img
-          src={image || "https://via.placeholder.com/60"}
-          alt={record.name}
-          style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 4 }}
-        />
-      ),
+      dataIndex: "defaultImageUrl",
+      key: "defaultImageUrl",
+      width: "20%",
+      render: (imagePath, record) => {
+        // imagePath là đường dẫn (ví dụ: /images/abc.jpg)
+        const blobUrl = imageUrls[imagePath];
+
+        if (!imagePath) {
+          // Trường hợp không có ảnh
+          return (
+            <div
+              style={{
+                width: 200,
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#f0f0f0",
+                borderRadius: 4,
+              }}
+            >
+              <CarOutlined style={{ fontSize: 24, color: "#999" }} />
+            </div>
+          );
+        }
+
+        if (blobUrl) {
+          // Trường hợp đã tải xong, dùng blobUrl
+          return (
+            <Image
+              src={blobUrl}
+              alt={record.name}
+              style={{
+                width: 200,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
+              preview={true}
+            />
+          );
+        }
+
+        // Trường hợp đang tải
+        return (
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f0f0f0",
+              borderRadius: 4,
+            }}
+          >
+            <Spin size="small" />
+          </div>
+        );
+      },
     },
     {
       title: "Tên phiên bản",
@@ -220,13 +403,6 @@ export default function VariantList() {
       key: "modelName",
       ...getColumnSearchProps("modelName"),
       sorter: (a, b) => a.modelName.localeCompare(b.modelName),
-    },
-    {
-      title: "Model ID",
-      dataIndex: "modelId",
-      key: "modelId",
-      width: 150,
-      sorter: (a, b) => a.modelId - b.modelId,
     },
     {
       title: "Thao tác",
@@ -316,9 +492,7 @@ export default function VariantList() {
           <Form.Item
             name="name"
             label="Tên phiên bản"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên phiên bản" },
-            ]}
+            rules={[{ required: true, message: "Vui lòng nhập tên phiên bản" }]}
           >
             <Input placeholder="Ví dụ: Vios G 1.5" />
           </Form.Item>
@@ -328,24 +502,64 @@ export default function VariantList() {
             label="Model"
             rules={[{ required: true, message: "Vui lòng chọn model" }]}
           >
-            <Select placeholder="Chọn model xe">
-              <Option value={1}>Toyota Vios</Option>
-              <Option value={2}>Ford Ranger</Option>
-              <Option value={3}>Hyundai Accent</Option>
-              <Option value={4}>VinFast Lux A2.0</Option>
-              <Option value={5}>Honda City</Option>
+            <Select
+              placeholder="Chọn mẫu xe"
+              loading={!models.length}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.children ?? "")
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+            >
+              {models.map((model) => (
+                <Option key={model.modelId} value={model.modelId}>
+                  {model.name}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
           <Form.Item
-            name="image"
-            label="URL Hình ảnh"
+            name="msrp"
+            label="Giá niêm yết (VND)"
             rules={[
-              { required: true, message: "Vui lòng nhập URL hình ảnh" },
-              { type: "url", message: "Vui lòng nhập URL hợp lệ" },
+              { required: true, message: "Vui lòng nhập giá niêm yết" },
+              { type: "number", min: 0, message: "Giá phải lớn hơn 0" },
             ]}
           >
-            <Input placeholder="https://example.com/image.jpg" />
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="Ví dụ: 500000000"
+              formatter={(value) =>
+                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+              }
+              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+              min={0}
+              step={1000000}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Hình ảnh"
+            required
+            help="Chọn file hình ảnh (JPG, PNG, GIF), tối đa 5MB"
+          >
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={handleUploadChange}
+              beforeUpload={beforeUpload}
+              maxCount={1}
+              accept="image/*"
+            >
+              {fileList.length === 0 && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
           </Form.Item>
         </Form>
       </Modal>
