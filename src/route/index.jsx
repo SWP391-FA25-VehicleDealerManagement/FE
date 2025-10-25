@@ -48,12 +48,6 @@ const RequestListPage = lazy(() =>
 const RequestDetailPage = lazy(() =>
   import("../sections/dealer/manager/vehicleManagement/requestDetail.jsx")
 );
-const StaffListPage = lazy(() =>
-  import("../page/dealer/manager/staffListPage.jsx")
-);
-const StaffDetailPage = lazy(() =>
-  import("../page/dealer/manager/staffDetailPage.jsx")
-);
 const InventoryPage = lazy(() =>
   import("../page/dealer/manager/inventoryListPage.jsx")
 );
@@ -103,12 +97,6 @@ const DealerStaffVehicleListPage = lazy(() =>
 );
 const DealerStaffVehicleDetailPage = lazy(() =>
   import("../page/dealer/staff/vehicleDetail.jsx")
-);
-const DealerStaffCustomerListPage = lazy(() =>
-  import("../page/dealer/staff/customerListPage.jsx")
-);
-const DealerStaffCustomerDetailPage = lazy(() =>
-  import("../page/dealer/staff/customerDetailPage.jsx")
 );
 const DealerStaffCustomerListPage = lazy(() =>
   import("../page/dealer/staff/customerListPage.jsx")
