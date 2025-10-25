@@ -38,6 +38,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   RollbackOutlined,
+  ImportOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useInventoryStore from "../../../hooks/useInventory";
@@ -52,8 +54,14 @@ const { TabPane } = Tabs;
 
 export default function VehicleAllocation() {
   const { userDetail } = useAuthen();
-  const { inventory, isLoading, fetchInventory, allocateInventory, recallInventory, isLoadingRecall } =
-    useInventoryStore();
+  const {
+    inventory,
+    isLoading,
+    fetchInventory,
+    allocateInventory,
+    recallInventory,
+    isLoadingRecall,
+  } = useInventoryStore();
   const {
     fetchVehicleRequests,
     fetchVehicleRequestDetail,
@@ -407,54 +415,66 @@ export default function VehicleAllocation() {
   };
 
   const inventoryColumns = [
-    // {
-    //   title: "Mã kho",
-    //   dataIndex: "manufacturerStockId",
-    //   key: "manufacturerStockId",
-    //   width: 100,
-    // },
+    {
+      title: "STT",
+      dataIndex: "index",
+      key: "index",
+      width: "5%",
+      render: (_, __, index) =>
+        (pagination.current - 1) * pagination.pageSize + index + 1,
+    },
     {
       title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
       ...getColumnSearchProps("modelName"),
-      width: 150,
+      width: "20%",
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
       ...getColumnSearchProps("variantName"),
-      width: 150,
-    },
-    {
-      title: "Màu sắc",
-      dataIndex: "color",
-      key: "color",
-      width: 100,
+      width: "20%",
     },
     {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: 120,
-      align: "center",
+      width: "20%",
       render: (quantity) => (
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 120,
-      // render: (status) => (
-      //   <Tag color={status === "AVAILABLE" ? "green" : "orange"}>
-      //     {status === "AVAILABLE" ? "Có sẵn" : "Đã phân bổ"}
-      //   </Tag>
-      // ),
-    },
+    // {
+    //   title: "Thao tác",
+    //   key: "action",
+    //   width: "20%",
+    //   render: (_, record) => (
+    //     <Space size="small">
+    //       <Button
+    //         type="primary"
+    //         size="small"
+    //         icon={<ImportOutlined />}
+    //         onClick={() => {
+    //           setSelectedInventoryItem(record);
+    //           setIsAddMoreModalVisible(true);
+    //         }}
+    //       >
+    //         Nhập thêm
+    //       </Button>
+    //       <Button
+    //         danger
+    //         size="small"
+    //         icon={<DeleteOutlined />}
+    //         onClick={() => showDeleteConfirm(record)}
+    //       >
+    //         Xóa
+    //       </Button>
+    //     </Space>
+    //   ),
+    // },
   ];
 
   const dealerColumns = [
@@ -594,7 +614,7 @@ export default function VehicleAllocation() {
           </Tag>
         );
       },
-       filters: [
+      filters: [
         { text: "Chờ duyệt", value: "PENDING" },
         { text: "Đã duyệt", value: "APPROVED" },
         { text: "Đang vận chuyển", value: "SHIPPED" },
@@ -1002,7 +1022,7 @@ export default function VehicleAllocation() {
               <>
                 <Table
                   columns={inventoryColumns}
-                  dataSource={inventory} // Bỏ filter tạm để xem tất cả data
+                  dataSource={inventory}
                   pagination={pagination}
                   onChange={(pagination) => setPagination(pagination)}
                   rowKey="manufacturerStockId"
@@ -1186,9 +1206,7 @@ export default function VehicleAllocation() {
                   title: "Màu sắc",
                   dataIndex: "color",
                   key: "color",
-                  render: (color) => (
-                    <Tag color="blue">{color}</Tag>
-                  ),
+                  render: (color) => <Tag color="blue">{color}</Tag>,
                 },
                 {
                   title: "Số lượng",

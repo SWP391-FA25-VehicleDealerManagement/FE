@@ -297,121 +297,65 @@ export default function InventoryManagement() {
 
   const inventoryColumns = [
     {
-      title: "Mã",
-      dataIndex: "manufacturerStockId",
-      key: "manufacturerStockId",
-      ...getColumnSearchProps("manufacturerStockId"),
-      width: 100,
+      title: "STT",
+      dataIndex: "index",
+      key: "index",
+      width: "5%",
+      render: (_, __, index) =>
+        (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
       title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
       ...getColumnSearchProps("modelName"),
-      width: 200,
+      width: "20%",
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
       ...getColumnSearchProps("variantName"),
-      width: 150,
-    },
-    {
-      title: "Màu sắc",
-      dataIndex: "color",
-      key: "color",
-      ...getColumnSearchProps("color"),
-      width: 150,
-    },
-    {
-      title: "Kho",
-      dataIndex: "dealerName",
-      key: "dealerName",
-      ...getColumnSearchProps("dealerName"),
-      width: 200,
+      width: "20%",
     },
     {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: "10%",
+      width: "20%",
       render: (quantity) => (
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 120,
-      filters: [
-        { text: "Có sẵn", value: "AVAILABLE" },
-        { text: "Đã đặt trước", value: "RESERVED" },
-        { text: "Đã bán", value: "SOLD" },
-        { text: "Đang vận chuyển", value: "IN_TRANSIT" },
-        { text: "Bảo trì", value: "MAINTENANCE" },
-      ],
-      onFilter: (value, record) => record.status === value,
-      render: (status) => {
-        let color = "default";
-        let text = status;
-        switch (status) {
-          case "AVAILABLE":
-            color = "green";
-            text = "Có sẵn";
-            break;
-          case "RESERVED":
-            color = "blue";
-            text = "Đã đặt trước";
-            break;
-          case "SOLD":
-            color = "red";
-            text = "Đã bán";
-            break;
-          case "IN_TRANSIT":
-            color = "orange";
-            text = "Đang vận chuyển";
-            break;
-          case "MAINTENANCE":
-            color = "purple";
-            text = "Bảo trì";
-            break;
-          default:
-            color = "default";
-        }
-        return <Tag color={color}>{text}</Tag>;
-      },
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 200,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            size="small"
-            icon={<ImportOutlined />}
-            onClick={() => {
-              setSelectedInventoryItem(record);
-              setIsAddMoreModalVisible(true);
-            }}
-          >
-            Nhập thêm
-          </Button>
-          <Button
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => showDeleteConfirm(record)}
-          >
-            Xóa
-          </Button>
-        </Space>
-      ),
-    },
+    // {
+    //   title: "Thao tác",
+    //   key: "action",
+    //   width: "20%",
+    //   render: (_, record) => (
+    //     <Space size="small">
+    //       <Button
+    //         type="primary"
+    //         size="small"
+    //         icon={<ImportOutlined />}
+    //         onClick={() => {
+    //           setSelectedInventoryItem(record);
+    //           setIsAddMoreModalVisible(true);
+    //         }}
+    //       >
+    //         Nhập thêm
+    //       </Button>
+    //       <Button
+    //         danger
+    //         size="small"
+    //         icon={<DeleteOutlined />}
+    //         onClick={() => showDeleteConfirm(record)}
+    //       >
+    //         Xóa
+    //       </Button>
+    //     </Space>
+    //   ),
+    // },
   ];
 
   const warehouseColumns = [
@@ -441,21 +385,6 @@ export default function InventoryManagement() {
       key: "phone",
       width: 150,
     },
-    {
-      title: "Tổng xe trong kho",
-      key: "totalVehicles",
-      width: 150,
-      render: (_, record) => {
-        const dealerInventory = inventory.filter(
-          (item) => item.dealerId === record.dealerId
-        );
-        const total = dealerInventory.reduce(
-          (sum, item) => sum + (item.quantity || 0),
-          0
-        );
-        return <Tag color="blue">{total} xe</Tag>;
-      },
-    },
   ];
 
   return (
@@ -479,7 +408,7 @@ export default function InventoryManagement() {
       </div>
 
       <Row gutter={16} className="mb-6">
-        <Col span={8}>
+        <Col span={12}>
           <Card>
             <Statistic
               title="Tổng số lượng xe trong kho"
@@ -491,19 +420,7 @@ export default function InventoryManagement() {
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="Số lượng xe sẵn có"
-              value={inventory
-                .filter((item) => item.status === "AVAILABLE")
-                .reduce((sum, item) => sum + (item.quantity || 0), 0)}
-              valueStyle={{ color: "#3f8600" }}
-              prefix={<InboxOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
+        <Col span={12}>
           <Card>
             <Statistic
               title="Tổng số đại lý"
@@ -535,8 +452,7 @@ export default function InventoryManagement() {
                 dataSource={inventory}
                 pagination={pagination}
                 onChange={(pagination) => setPagination(pagination)}
-                rowKey="stockId"
-                scroll={{ x: 1200 }}
+                rowKey="index"
               />
             )}
           </TabPane>

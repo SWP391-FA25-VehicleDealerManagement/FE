@@ -48,28 +48,22 @@ const adminMenuItems = [
   getItem("Quản lý sản phẩm", "2", <CarOutlined />, [
     getItem("Danh mục xe", "3", <CarOutlined />, null, "/evm-staff/vehicles"),
     getItem(
-      "Danh mục mẫu xe",
-      "vehicle-catalog",
-      <CarOutlined />,
-      null,
-      "/evm-staff/vehicle-models"
-    ),
-    getItem(
       "Danh mục loại xe",
       "vehicle-types",
       <TagOutlined />,
       null,
       "/evm-staff/vehicle-types"
     ),
+    getItem(
+      "Danh mục mẫu xe",
+      "vehicle-catalog",
+      <CarOutlined />,
+      null,
+      "/evm-staff/vehicle-models"
+    ),
   ]),
   getItem("Quản lý kho", "4", <StockOutlined />, [
-    getItem(
-      "Kho hàng",
-      "4-1",
-      <InboxOutlined />,
-      null,
-      "/evm-staff/inventory"
-    ),
+    getItem("Kho hàng", "4-1", <InboxOutlined />, null, "/evm-staff/inventory"),
     getItem(
       "Phân bổ cho đại lý",
       "4-2",

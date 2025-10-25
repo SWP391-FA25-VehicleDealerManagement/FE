@@ -11,7 +11,7 @@ import {
   Tag,
   Select,
   Form,
-  InputNumber,
+  Image,
 } from "antd";
 import {
   SearchOutlined,
@@ -26,18 +26,26 @@ import { toast } from "react-toastify";
 import useVehicleStore from "../../../hooks/useVehicle";
 import useModelStore from "../../../hooks/useModel";
 import useVariantStore from "../../../hooks/useVariant";
+import axiosClient from "../../../config/axiosClient";
 
 const { Title } = Typography;
 const { Option } = Select;
 
 export default function VehicleList() {
-  const { vehicles, isLoading, fetchVehicles } = useVehicleStore();
+  const {
+    vehicles,
+    isLoading,
+    fetchVehicles,
+    createNewVehicle,
+    deleteVehicleById,
+  } = useVehicleStore();
   const { variants, fetchVariants } = useVariantStore();
   const { models, fetchModels } = useModelStore();
   const [searchText, setSearchText] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedModelId, setSelectedModelId] = useState(null);
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
@@ -46,12 +54,66 @@ export default function VehicleList() {
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
     fetchVehicles();
     fetchModels();
     fetchVariants();
   }, [fetchVehicles, fetchModels, fetchVariants]);
+
+  useEffect(() => {
+    const objectUrlsToRevoke = [];
+
+    const fetchAllImages = async () => {
+      if (vehicles && vehicles.length > 0) {
+        const newImageUrls = {};
+
+        // Tạo mảng các promise để tải ảnh song song
+        const fetchPromises = vehicles.map(async (vehicle) => {
+          if (vehicle.variantImage) {
+            try {
+              const response = await axiosClient.get(vehicle.variantImage, {
+                responseType: "blob",
+              });
+              const objectUrl = URL.createObjectURL(response.data);
+              objectUrlsToRevoke.push(objectUrl);
+              return {
+                path: vehicle.variantImage,
+                url: objectUrl,
+              };
+            } catch (error) {
+              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+              return {
+                path: vehicle.variantImage,
+                url: null, // Đánh dấu là lỗi
+              };
+            }
+          }
+          return null;
+        });
+
+        // Chờ tất cả ảnh được tải về
+        const results = await Promise.all(fetchPromises);
+
+        // Cập nhật state
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+
+        setImageUrls(newImageUrls);
+      }
+    };
+
+    fetchAllImages();
+
+    // Xóa các Object URL khi component unmount
+    return () => {
+      objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [vehicles]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -70,20 +132,21 @@ export default function VehicleList() {
 
   const handleDelete = async () => {
     if (!selectedVehicle) return;
+    console.log("check id ", selectedVehicle.vehicleId);
 
     try {
-      // TODO: Implement API call to delete vehicle
-      // await deleteVehicle(selectedVehicle.vehicleId);
+      const response = await deleteVehicleById(selectedVehicle.vehicleId);
+      if (response && response.status === 200) {
+        setIsDeleteModalOpen(false);
+        setSelectedVehicle(null);
+        fetchVehicles();
 
-      setIsDeleteModalOpen(false);
-      setSelectedVehicle(null);
-      fetchVehicles(); // Refresh the list
-
-      toast.success("Xóa phương tiện thành công", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+        toast.success("Xóa phương tiện thành công", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
     } catch (error) {
       toast.error("Xóa phương tiện thất bại", {
         position: "top-right",
@@ -104,24 +167,25 @@ export default function VehicleList() {
   const handleAddCancel = () => {
     setIsAddModalOpen(false);
     form.resetFields();
+    setSelectedModelId(null);
   };
 
   const handleAddSubmit = async () => {
     try {
       const values = await form.validateFields();
+      console.log("check vaulue", values);
 
-      // TODO: Implement API call to add vehicle
-      // await addVehicle(values);
-
-      setIsAddModalOpen(false);
-      form.resetFields();
-      fetchVehicles(); // Refresh the list
-
-      toast.success("Thêm phương tiện thành công", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      const response = await createNewVehicle(values);
+      if (response && response.status === 200) {
+        setIsAddModalOpen(false);
+        form.resetFields();
+        fetchVehicles();
+        toast.success("Thêm phương tiện thành công", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
     } catch (error) {
       toast.error("Thêm phương tiện thất bại", {
         position: "top-right",
@@ -181,23 +245,85 @@ export default function VehicleList() {
 
   const columns = [
     {
-      title: "Mã phương tiện",
+      title: "Mã",
       dataIndex: "vehicleId",
       key: "vehicleId",
+      width: "10%",
       ...getColumnSearchProps("vehicleId"),
       sorter: (a, b) => a.vehicleId - b.vehicleId,
     },
-    // {
-    //   title: "Tên xe",
-    //   dataIndex: "name",
-    //   key: "name",
-    //   ...getColumnSearchProps("name"),
-    //   sorter: (a, b) => a.name.localeCompare(b.name),
-    // },
     {
-      title: "Model",
+      title: "Số VIN",
+      dataIndex: "vinNumber",
+      key: "vinNumber",
+      width: "15%",
+      ...getColumnSearchProps("vinNumber"),
+    },
+    {
+      title: "Hình ảnh",
+      dataIndex: "variantImage",
+      key: "variantImage",
+      width: "25%",
+      render: (imagePath, record) => {
+        const blobUrl = imageUrls[imagePath];
+        if (!imagePath) {
+          return (
+            <div
+              style={{
+                width: 200,
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#f0f0f0",
+                borderRadius: 4,
+              }}
+            >
+              <CarOutlined style={{ fontSize: 24, color: "#999" }} />
+            </div>
+          );
+        }
+
+        if (blobUrl) {
+          // Trường hợp đã tải xong, dùng blobUrl
+          return (
+            <Image
+              src={blobUrl}
+              alt={record.name}
+              style={{
+                width: 200,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
+              preview={true}
+            />
+          );
+        }
+
+        // Trường hợp đang tải
+        return (
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f0f0f0",
+              borderRadius: 4,
+            }}
+          >
+            <Spin size="small" />
+          </div>
+        );
+      },
+    },
+    {
+      title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
+      width: "15%",
       ...getColumnSearchProps("modelName"),
       sorter: (a, b) => a.modelName.localeCompare(b.modelName),
     },
@@ -205,12 +331,28 @@ export default function VehicleList() {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
+      width: "15%",
       ...getColumnSearchProps("variantName"),
+    },
+    {
+      title: "Hãng sản xuất",
+      dataIndex: "manufacturer",
+      key: "manufacturer",
+      width: "15%",
+      ...getColumnSearchProps("manufacturer"),
+    },
+    {
+      title: "Kiểu dáng",
+      dataIndex: "bodyType",
+      key: "bodyType",
+      width: "10%",
+      ...getColumnSearchProps("bodyType"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
+      width: "10%",
       filters: [
         { text: "Black", value: "Black" },
         { text: "White", value: "White" },
@@ -223,36 +365,43 @@ export default function VehicleList() {
     },
     {
       title: "Giá (VNĐ)",
-      dataIndex: "price",
-      key: "price",
+      dataIndex: "msrp",
+      key: "msrp",
+      width: "15%",
       sorter: (a, b) => {
-        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
-        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
-        return priceA - priceB;
+        const msrpA = a.msrp ? parseFloat(a.msrp.replace(/[^0-9]/g, "")) : 0;
+        const msrpB = b.msrp ? parseFloat(b.msrp.replace(/[^0-9]/g, "")) : 0;
+        return msrpA - msrpB;
       },
-      render: (price) => price || "N/A",
+      render: (msrp) => {
+        if (!msrp) {
+          return "N/A";
+        }
+        return msrp.toLocaleString("vi-VN");
+      },
     },
-    // {
-    //   title: "Tồn kho",
-    //   dataIndex: "stock",
-    //   key: "stock",
-    //   sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
-    //   render: (stock) => (
-    //     <Tag color={stock > 0 ? "green" : "red"}>
-    //       {stock !== null ? stock : "N/A"}
-    //     </Tag>
-    //   ),
-    // },
-    // {
-    //   title: "Đại lý",
-    //   dataIndex: "dealerName",
-    //   key: "dealerName",
-    //   ...getColumnSearchProps("dealerName"),
-    //   render: (dealerName) => dealerName || "Chưa phân bổ",
-    // },
+    {
+      title: "Ngày SX",
+      dataIndex: "manufactureDate",
+      key: "manufactureDate",
+      width: "15%",
+      render: (text) =>
+        text ? new Date(text).toLocaleDateString("vi-VN") : "N/A",
+      sorter: (a, b) =>
+        new Date(a.manufactureDate) - new Date(b.manufactureDate),
+    },
+    {
+      title: "Năm",
+      dataIndex: "year",
+      key: "year",
+      width: "10%",
+      sorter: (a, b) => a.year - b.year,
+    },
     {
       title: "Thao tác",
       key: "action",
+      fixed: "right",
+      width: "15%",
       render: (_, record) => (
         <Space size="middle">
           <Link to={`/evm-staff/vehicles/${record.vehicleId}`}>
@@ -296,6 +445,7 @@ export default function VehicleList() {
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
+            scroll={{ x: 2000 }}
           />
         )}
       </Card>
@@ -333,160 +483,73 @@ export default function VehicleList() {
         width={800}
       >
         <Form form={form} layout="vertical">
-          {/* <Form.Item
-            name="name"
-            label="Tên xe"
-            rules={[{ required: true, message: "Vui lòng nhập tên xe" }]}
-          >
-            <Input placeholder="Nhập tên xe" />
-          </Form.Item> */}
-
+          {/* === BƯỚC 1: CHỌN MODEL (ĐỂ LỌC) === */}
           <Form.Item
-            name="vehicleName"
-            label="Tên phương tiện"
-            rules={[{ required: true, message: "Vui lòng nhập tên phương tiện" }]}
-          >
-            <Input placeholder="Nhập tên phương tiện" />
-          </Form.Item>
-
-          {/* <Form.Item
-            name="vehicleType"
-            label="Loại xe"
-            rules={[{ required: true, message: "Vui lòng nhập loại xe" }]}
-          >
-            <Input placeholder="Nhập loại xe" />
-          </Form.Item> */}
-
-          <Form.Item
-            name="variantId"
-            label="Phiên bản"
-            rules={[{ required: true, message: "Vui lòng chọn phiên bản" }]}
+            label="Model"
+            // Lưu ý: KHÔNG CÓ 'name' prop, nên sẽ không được submit
+            rules={[{ required: true, message: "Vui lòng chọn model" }]}
           >
             <Select
-              placeholder="Chọn phiên bản"
-              loading={!variants.length}
+              placeholder="Chọn model xe để lọc phiên bản"
+              loading={!models.length}
               showSearch
               filterOption={(input, option) =>
                 (option?.children ?? "")
                   .toLowerCase()
                   .includes(input.toLowerCase())
               }
+              onChange={(value) => {
+                // 1. Cập nhật state để lọc
+                setSelectedModelId(value);
+                // 2. Xóa lựa chọn "Phiên bản" cũ
+                form.setFieldsValue({ variantId: undefined });
+              }}
             >
-              {variants.map((variant) => (
-                <Option key={variant.variantId} value={variant.variantId}>
-                  {variant.name}
+              {models.map((model) => (
+                <Option key={model.modelId} value={model.modelId}>
+                  {model.name}
                 </Option>
               ))}
             </Select>
           </Form.Item>
 
+          {/* === BƯỚC 2: CHỌN PHIÊN BẢN (ĐÃ LỌC) === */}
+          <Form.Item
+            name="variantId"
+            label="Phiên bản"
+            rules={[{ required: true, message: "Vui lòng chọn phiên bản" }]}
+          >
+            <Select
+              placeholder={
+                selectedModelId ? "Chọn phiên bản" : "Vui lòng chọn model trước"
+              }
+              loading={!variants.length}
+              showSearch
+              disabled={!selectedModelId} // <-- Bị vô hiệu hóa nếu chưa chọn model
+              filterOption={(input, option) =>
+                (option?.children ?? "")
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+            >
+              {/* Lọc danh sách 'variants' dựa trên 'selectedModelId' */}
+              {variants
+                .filter((variant) => variant.modelId === selectedModelId)
+                .map((variant) => (
+                  <Option key={variant.variantId} value={variant.variantId}>
+                    {variant.name}
+                  </Option>
+                ))}
+            </Select>
+          </Form.Item>
+
+          {/* === BƯỚC 3: CHỌN MÀU SẮC === */}
           <Form.Item
             name="color"
             label="Màu sắc"
             rules={[{ required: true, message: "Vui lòng chọn màu sắc" }]}
           >
-           <Input placeholder="Nhập màu sắc xe" />
-          </Form.Item>
-
-          <Form.Item
-            name="image"
-            label="Link ảnh"
-            rules={[{ required: true, message: "Vui lòng nhập link ảnh" }]}
-          >
-            <Input placeholder="Nhập link ảnh xe" />
-          </Form.Item>
-
-          <Form.Item
-            name="price"
-            label="Giá (VNĐ)"
-            rules={[{ required: true, message: "Vui lòng nhập giá xe" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-              placeholder="Nhập giá xe"
-              min={0.1}
-              step={0.1}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="stock"
-            label="Số lượng tồn kho"
-            rules={[{ required: true, message: "Vui lòng nhập số lượng tồn kho" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="Nhập số lượng"
-              min={0}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="dealerId"
-            label="Mã đại lý"
-            rules={[{ required: true, message: "Vui lòng nhập mã đại lý" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="Nhập mã đại lý"
-              min={0}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="stockId"
-            label="Mã kho"
-            rules={[{ required: true, message: "Vui lòng nhập mã kho" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="Nhập mã kho"
-              min={0}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="vinNumber"
-            label="Số VIN"
-            rules={[{ required: true, message: "Vui lòng nhập số VIN" }]}
-          >
-            <Input placeholder="Nhập số VIN" />
-          </Form.Item>
-
-          {/* <Form.Item
-            name="licensePlate"
-            label="Biển số xe"
-            rules={[{ required: true, message: "Vui lòng nhập biển số xe" }]}
-          >
-            <Input placeholder="Nhập biển số xe" />
-          </Form.Item> */}
-
-          <Form.Item
-            name="description"
-            label="Mô tả"
-            rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
-          >
-            <Input.TextArea rows={3} placeholder="Nhập mô tả xe" />
-          </Form.Item>
-
-          <Form.Item
-            name="manufactureDate"
-            label="Ngày sản xuất"
-            rules={[{ required: true, message: "Vui lòng nhập ngày sản xuất" }]}
-          >
-            <Input type="date" />
-          </Form.Item>
-
-          <Form.Item
-            name="warrantyExpiryDate"
-            label="Ngày hết hạn bảo hành"
-            rules={[{ required: true, message: "Vui lòng nhập ngày hết hạn bảo hành" }]}
-          >
-            <Input type="date" />
+            <Input placeholder="Nhập màu sắc xe" />
           </Form.Item>
         </Form>
       </Modal>

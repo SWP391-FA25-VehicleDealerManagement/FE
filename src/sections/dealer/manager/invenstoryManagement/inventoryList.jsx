@@ -20,10 +20,14 @@ import {
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useDealerInventory from "../../../../hooks/useDealerInventory";
+import useAuthen from "../../../../hooks/useAuthen";
 
 const { Title, Text } = Typography;
 
 export default function InventoryList() {
+  const { userDetail } = useAuthen();
+  const dealerId = userDetail?.dealer?.dealerId;
+  console.log("check dealer id", dealerId);
   const { inventory, isLoading, fetchDealerInventory } = useDealerInventory();
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({
@@ -40,13 +44,17 @@ export default function InventoryList() {
 
   const fetchData = async () => {
     try {
-      await fetchDealerInventory();
+      await fetchDealerInventory(dealerId);
     } catch (error) {
-      console.error("Error fetching dealer inventory:", error);
-      toast.error("Không thể tải dữ liệu kho hàng", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      console.error("Error fetching inventory data:", error);
+      toast.error(
+        error.response?.data?.message || "Lấy dữ liệu kho hàng thất bại!",
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        }
+      );
     }
   };
 

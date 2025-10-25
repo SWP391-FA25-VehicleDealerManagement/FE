@@ -1,95 +1,57 @@
 import React, { useEffect, useState } from "react";
-import {
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Row,
-  Col,
-  Checkbox,
-  Upload,
-  Button,
-} from "antd";
-import { EditOutlined, UploadOutlined, PlusOutlined } from "@ant-design/icons";
-import { toast } from "react-toastify";
-const { Option } = Select;
+import { Modal, Form, Input, InputNumber, Row, Col, Checkbox } from "antd";
+import { EditOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 
-export default function VehicleEditModal({
+export default function VariantEditModal({
   open,
   onCancel,
   onSubmit,
   form,
-  vehicle,
-  dealers,
-  variants,
+  variantDetails,
   isLoading,
 }) {
-  const [fileList, setFileList] = useState([]);
-
   useEffect(() => {
-    if (open && vehicle) {
+    if (open && variantDetails) {
       console.log("=== SETTING FORM VALUES ===");
-      console.log("vehicle.vehicleDetails:", vehicle.vehicleDetails);
+      console.log("vehicle.vehicleDetails:", variantDetails);
 
       form.setFieldsValue({
-        name: vehicle.name,
-        color: vehicle.color,
-        price: vehicle.price,
-        variantId: vehicle.variantId,
-        dealerId: vehicle.dealerId,
-        description: vehicle.description,
-        vehicleType: vehicle.vehicleType,
-
-        // Vehicle Details
-        dimensionsMm: vehicle.vehicleDetails?.dimensionsMm,
-        wheelbaseMm: vehicle.vehicleDetails?.wheelbaseMm,
-        groundClearanceMm: vehicle.vehicleDetails?.groundClearanceMm,
-        curbWeightKg: vehicle.vehicleDetails?.curbWeightKg,
-        seatingCapacity: vehicle.vehicleDetails?.seatingCapacity,
-        trunkCapacityLiters: vehicle.vehicleDetails?.trunkCapacityLiters,
-        engineType: vehicle.vehicleDetails?.engineType,
-        maxPower: vehicle.vehicleDetails?.maxPower,
-        maxTorque: vehicle.vehicleDetails?.maxTorque,
-        topSpeedKmh: vehicle.vehicleDetails?.topSpeedKmh,
-        drivetrain: vehicle.vehicleDetails?.drivetrain,
-        driveModes: vehicle.vehicleDetails?.driveModes,
+        // Variant Details
+        dimensionsMm: variantDetails?.dimensionsMm,
+        wheelbaseMm: variantDetails?.wheelbaseMm,
+        groundClearanceMm: variantDetails?.groundClearanceMm,
+        curbWeightKg: variantDetails?.curbWeightKg,
+        seatingCapacity: variantDetails?.seatingCapacity,
+        trunkCapacityLiters: variantDetails?.trunkCapacityLiters,
+        engineType: variantDetails?.engineType,
+        maxPower: variantDetails?.maxPower,
+        maxTorque: variantDetails?.maxTorque,
+        topSpeedKmh: variantDetails?.topSpeedKmh,
+        drivetrain: variantDetails?.drivetrain,
+        driveModes: variantDetails?.driveModes,
 
         // ✅ PIN & SẠC
-        batteryCapacityKwh: vehicle.vehicleDetails?.batteryCapacityKwh,
-        rangePerChargeKm: vehicle.vehicleDetails?.rangePerChargeKm,
-        chargingTime: vehicle.vehicleDetails?.chargingTime,
+        batteryCapacityKwh: variantDetails?.batteryCapacityKwh,
+        rangePerChargeKm: variantDetails?.rangePerChargeKm,
+        chargingTime: variantDetails?.chargingTime,
 
-        exteriorFeatures: vehicle.vehicleDetails?.exteriorFeatures,
-        interiorFeatures: vehicle.vehicleDetails?.interiorFeatures,
-        airbags: vehicle.vehicleDetails?.airbags,
-        brakingSystem: vehicle.vehicleDetails?.brakingSystem,
-        hasEsc: vehicle.vehicleDetails?.hasEsc,
-        hasHillStartAssist: vehicle.vehicleDetails?.hasHillStartAssist,
-        hasTpms: vehicle.vehicleDetails?.hasTpms,
-        hasRearCamera: vehicle.vehicleDetails?.hasRearCamera,
-        hasChildLock: vehicle.vehicleDetails?.hasChildLock,
+        exteriorFeatures: variantDetails?.exteriorFeatures,
+        interiorFeatures: variantDetails?.interiorFeatures,
+        airbags: variantDetails?.airbags,
+        brakingSystem: variantDetails?.brakingSystem,
+        hasEsc: variantDetails?.hasEsc,
+        hasTpms: variantDetails?.hasTpms,
+        hasRearCamera: variantDetails?.hasRearCamera,
+        hasChildLock: variantDetails?.hasChildLock,
       });
 
       // ✅ LOG FORM VALUES AFTER SET
       console.log("Form values after set:", form.getFieldsValue());
-
-      if (vehicle.image) {
-        setFileList([
-          {
-            uid: "-1",
-            name: "image.png",
-            status: "done",
-            url: vehicle.image,
-          },
-        ]);
-      }
     } else {
       form.resetFields();
-      setFileList([]);
     }
-  }, [open, vehicle, form]);
+  }, [open, variantDetails, form]);
 
   return (
     <Modal
@@ -110,126 +72,6 @@ export default function VehicleEditModal({
       bodyStyle={{ maxHeight: "calc(100vh - 200px)", overflowY: "auto" }}
     >
       <Form form={form} layout="vertical">
-        {/* Thông tin cơ bản */}
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
-            Thông tin cơ bản
-          </h3>
-        </div>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="name"
-              label="Tên xe"
-              rules={[{ required: true, message: "Vui lòng nhập tên xe" }]}
-            >
-              <Input placeholder="Nhập tên xe" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="color"
-              label="Màu sắc"
-              rules={[{ required: true, message: "Vui lòng nhập màu sắc" }]}
-            >
-              <Input placeholder="Nhập màu sắc" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item
-          name="image"
-          label="Hình ảnh xe"
-          valuePropName="file"
-          getValueFromEvent={(e) => {
-            if (Array.isArray(e)) {
-              return e;
-            }
-            return e?.fileList;
-          }}
-          rules={[{ required: true, message: "Vui lòng tải lên hình ảnh xe" }]}
-          extra="Chỉ hỗ trợ file ảnh (JPG, PNG, GIF). Kích thước tối đa: 5MB"
-        >
-          <Upload
-            listType="picture-card"
-            fileList={fileList}
-            onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-            beforeUpload={(file) => {
-              // Validate file type
-              const isImage = file.type.startsWith("image/");
-              if (!isImage) {
-                toast.error("Vui lòng chỉ tải lên file ảnh (JPG, PNG, GIF)", {
-                  position: "top-right",
-                  autoClose: 3000,
-                  hideProgressBar: false,
-                });
-                return Upload.LIST_IGNORE;
-              }
-              // Validate file size (max 1MB)
-              const isLt5M = file.size / 1024 / 1024 < 1;
-              if (!isLt5M) {
-                toast.error("Kích thước file không được vượt quá 1MB", {
-                  position: "top-right",
-                  autoClose: 3000,
-                  hideProgressBar: false,
-                });
-                return Upload.LIST_IGNORE;
-              }
-              return false; // Prevent auto upload
-            }}
-            onPreview={async (file) => {
-              let src = file.url;
-              if (!src) {
-                src = await new Promise((resolve) => {
-                  const reader = new FileReader();
-                  reader.readAsDataURL(file.originFileObj);
-                  reader.onload = () => resolve(reader.result);
-                });
-              }
-              const image = new Image();
-              image.src = src;
-              const imgWindow = window.open(src);
-              imgWindow?.document.write(image.outerHTML);
-            }}
-            maxCount={1}
-          >
-            {fileList.length < 1 && (
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải lên</div>
-              </div>
-            )}
-          </Upload>
-        </Form.Item>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="price" label="Giá (VNĐ)">
-              <Input placeholder="Nhập giá" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="variantId" label="Phiên bản">
-              <Select
-                placeholder="Chọn phiên bản"
-                showSearch
-                optionFilterProp="children"
-              >
-                {variants.map((variant) => (
-                  <Option key={variant.variantId} value={variant.variantId}>
-                    {variant.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item name="description" label="Mô tả">
-          <TextArea rows={3} placeholder="Nhập mô tả phương tiện" />
-        </Form.Item>
-
         {/* Kích thước & Trọng lượng */}
         <div style={{ marginTop: 24, marginBottom: 16 }}>
           <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
@@ -439,22 +281,6 @@ export default function VehicleEditModal({
             </Col>
             <Col span={12}>
               <Form.Item
-                name="hasHillStartAssist"
-                valuePropName="checked"
-                style={{ marginBottom: 0 }}
-              >
-                <Checkbox style={{ fontSize: "14px" }}>
-                  <span style={{ fontWeight: 500 }}>
-                    Hỗ trợ khởi hành ngang dốc
-                  </span>
-                </Checkbox>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={[16, 12]} style={{ marginTop: "12px" }}>
-            <Col span={12}>
-              <Form.Item
                 name="hasTpms"
                 valuePropName="checked"
                 style={{ marginBottom: 0 }}
@@ -464,6 +290,8 @@ export default function VehicleEditModal({
                 </Checkbox>
               </Form.Item>
             </Col>
+          </Row>
+          <Row gutter={[16, 12]} style={{ marginTop: "12px" }}>
             <Col span={12}>
               <Form.Item
                 name="hasRearCamera"
@@ -475,9 +303,6 @@ export default function VehicleEditModal({
                 </Checkbox>
               </Form.Item>
             </Col>
-          </Row>
-
-          <Row gutter={[16, 12]} style={{ marginTop: "12px" }}>
             <Col span={12}>
               <Form.Item
                 name="hasChildLock"
@@ -489,6 +314,7 @@ export default function VehicleEditModal({
                 </Checkbox>
               </Form.Item>
             </Col>
+            <Col span={12}></Col>
           </Row>
         </div>
       </Form>
