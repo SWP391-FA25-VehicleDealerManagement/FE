@@ -79,7 +79,12 @@ export default function RequestDetail() {
         icon: <CloseCircleOutlined />,
         text: "Từ chối",
       },
-      COMPLETED: {
+      SHIPPED: {
+        color: "blue",
+        icon: <CheckCircleOutlined spin />,
+        text: "Đang vận chuyển",
+      },
+      DELIVERED: {
         color: "blue",
         icon: <CheckCircleOutlined />,
         text: "Hoàn thành",
@@ -97,7 +102,11 @@ export default function RequestDetail() {
       <Tag
         color={config.color}
         icon={config.icon}
-        style={{ fontSize: "14px", padding: "4px 12px" }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "4px",
+        }}
       >
         {config.text}
       </Tag>

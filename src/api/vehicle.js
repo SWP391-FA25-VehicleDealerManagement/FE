@@ -9,11 +9,11 @@ const getVehicleById = (id) => {
 };
 
 const getVehicleDealers = (id) => {
-  return axiosClient.get(`/api/vehicles/dealer/${id}`);
+  return axiosClient.get(`/api/vehicles/dealer/${id}/vehicles`);
 };
 
 const createVehicle = (data) => {
-  return axiosClient.post("/api/vehicles/create", data);
+  return axiosClient.post("/api/vehicles", data);
 };
 
 const updateVehicle = (id, formData) => {
@@ -25,7 +25,7 @@ const updateVehicle = (id, formData) => {
 };
 
 const deleteVehicle = (id) => {
-  return axiosClient.delete(`/api/vehicles/delete/${id}`);
+  return axiosClient.delete(`/api/vehicles/${id}`);
 };
 
 export {

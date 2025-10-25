@@ -27,6 +27,7 @@ import {
   CloseCircleOutlined,
   CheckSquareOutlined,
   CheckOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -40,7 +41,13 @@ const { Option } = Select;
 
 export default function RequestList() {
   const navigate = useNavigate();
-  const { requestLists, isLoading, fetchRequestsByDealer, confirmRequestReceived, isLoadingConfirmRequest } = useDealerRequest();
+  const {
+    requestLists,
+    isLoading,
+    fetchRequestsByDealer,
+    confirmRequestReceived,
+    isLoadingConfirmRequest,
+  } = useDealerRequest();
   const { userDetail } = useAuthen();
 
   const [searchText, setSearchText] = useState("");
@@ -142,19 +149,15 @@ export default function RequestList() {
 
   const handleConfirm = async () => {
     try {
-      const values = await confirmForm.validateFields();
-      const confirmerName = values.confirmerName || userDetail?.fullName;
-
-      await confirmRequestReceived(selectedRequest.requestId, confirmerName);
-
-      toast.success("Xác nhận đã nhận xe thành công", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-
-      setIsConfirmModalVisible(false);
-      confirmForm.resetFields();
-      loadData(); // Refresh danh sách
+      const response = await confirmRequestReceived(selectedRequest.requestId);
+      if (response && response.status === 200) {
+        toast.success("Xác nhận đã nhận xe thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setIsConfirmModalVisible(false);
+        loadData(); // Refresh danh sách
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Xác nhận thất bại", {
         position: "top-right",
@@ -162,6 +165,8 @@ export default function RequestList() {
       });
     }
   };
+
+  const handleCancelRequest = async () => {};
 
   const handleConfirmCancel = () => {
     setIsConfirmModalVisible(false);
@@ -198,7 +203,7 @@ export default function RequestList() {
         icon: <CheckCircleOutlined spin />,
         text: "Đang vận chuyển",
       },
-      ALLOCATED: {
+      DELIVERED: {
         color: "success",
         icon: <CheckOutlined />,
         text: "Hoàn thành",
@@ -226,7 +231,7 @@ export default function RequestList() {
     const priorityConfig = {
       HIGH: { color: "red", text: "Cao" },
       NORMAL: { color: "blue", text: "Bình thường" },
-      LOW: { color: "default", text: "Thấp" },
+      LOW: { color: "green", text: "Thấp" },
     };
 
     const config = priorityConfig[priority] || {
@@ -350,6 +355,16 @@ export default function RequestList() {
           >
             Chi tiết
           </Button>
+          {record.status === "PENDING" && (
+            <Button
+              danger
+              icon={<CloseOutlined />}
+              size="small"
+              onClick={() => showConfirmModal(record)}
+            >
+              Huỷ
+            </Button>
+          )}
           {record.status === "SHIPPED" && (
             <Button
               type="primary"
@@ -386,7 +401,7 @@ export default function RequestList() {
       {/* Statistics Cards */}
       <Row gutter={16} className="mb-6">
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Tổng yêu cầu"
               value={stats.total}
@@ -396,7 +411,7 @@ export default function RequestList() {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Chờ duyệt"
               value={stats.pending}
@@ -530,7 +545,14 @@ export default function RequestList() {
             <Input placeholder="Nhập tên người xác nhận" disabled />
           </Form.Item>
 
-          <div style={{ marginTop: 16, padding: 12, backgroundColor: "#e6f7ff", borderRadius: 4 }}>
+          <div
+            style={{
+              marginTop: 16,
+              padding: 12,
+              backgroundColor: "#e6f7ff",
+              borderRadius: 4,
+            }}
+          >
             <p style={{ margin: 0, color: "#0958d9" }}>
               ℹ️ Xác nhận rằng đại lý đã nhận đầy đủ xe từ nhà sản xuất
             </p>

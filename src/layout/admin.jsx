@@ -167,6 +167,7 @@ const Admin = ({ children }) => {
           defaultSelectedKeys={defaultSelectedKeys}
           mode="inline"
           className="border-0 h-full"
+          defaultOpenKeys={["reports"]}
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",

@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Table, Input, Button, Space, Card, Typography, Spin, Tag } from "antd";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Card,
+  Typography,
+  Spin,
+  Tag,
+  Image,
+} from "antd";
 import { SearchOutlined, EyeOutlined, CarOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
+import axiosClient from "../../../../config/axiosClient";
 const { Title } = Typography;
 
 export default function VehicleList() {
   const navigate = useNavigate();
   const { userDetail } = useAuthen();
   const { fetchVehicleDealers, dealerCarLists } = useVehicleStore();
-  const [vehicles, setVehicles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({
@@ -21,12 +30,63 @@ export default function VehicleList() {
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
     if (userDetail && userDetail.dealer && userDetail.dealer.dealerId) {
       fetchVehicleDealers(userDetail.dealer.dealerId);
     }
   }, [userDetail, fetchVehicleDealers]);
+
+  useEffect(() => {
+    const objectUrlsToRevoke = [];
+
+    const fetchAllImages = async () => {
+      if (dealerCarLists && dealerCarLists.length > 0) {
+        const newImageUrls = {};
+
+        const fetchPromises = dealerCarLists.map(async (vehicle) => {
+          // *** SỬA ĐỔI 1: Đổi 'vehicle.imageUrl' thành 'vehicle.variantImage' ***
+          if (vehicle.variantImage) {
+            try {
+              const response = await axiosClient.get(vehicle.variantImage, {
+                responseType: "blob",
+              });
+              const objectUrl = URL.createObjectURL(response.data);
+              objectUrlsToRevoke.push(objectUrl);
+              return {
+                path: vehicle.variantImage,
+                url: objectUrl,
+              };
+            } catch (error) {
+              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+              return {
+                path: vehicle.variantImage,
+                url: null,
+              };
+            }
+          }
+          return null;
+        });
+
+        const results = await Promise.all(fetchPromises);
+
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+
+        setImageUrls(newImageUrls);
+      }
+    };
+
+    fetchAllImages();
+
+    return () => {
+      objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [dealerCarLists]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -93,94 +153,163 @@ export default function VehicleList() {
 
   const columns = [
     {
-      title: "Mã xe",
+      title: "Mã",
       dataIndex: "vehicleId",
       key: "vehicleId",
-      width: 100,
+      width: "10%",
+      ...getColumnSearchProps("vehicleId"),
       sorter: (a, b) => a.vehicleId - b.vehicleId,
     },
     {
-      title: "Hình ảnh",
-      dataIndex: "imageUrl",
-      key: "imageUrl",
-      width: 100,
-      render: (imageUrl, record) => (
-        <img
-          src={imageUrl || "https://via.placeholder.com/80"}
-          alt={record.variantName}
-          style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 4 }}
-        />
-      ),
+      title: "Số VIN",
+      dataIndex: "vinNumber",
+      key: "vinNumber",
+      width: "15%",
+      ...getColumnSearchProps("vinNumber"),
     },
     {
-      title: "Tên xe",
+      title: "Hình ảnh",
+      dataIndex: "variantImage",
+      key: "variantImage",
+      width: "25%",
+      render: (imagePath, record) => {
+        const blobUrl = imageUrls[imagePath];
+        if (!imagePath) {
+          return (
+            <div
+              style={{
+                width: 200,
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#f0f0f0",
+                borderRadius: 4,
+              }}
+            >
+              <CarOutlined style={{ fontSize: 24, color: "#999" }} />
+            </div>
+          );
+        }
+
+        if (blobUrl) {
+          // Trường hợp đã tải xong, dùng blobUrl
+          return (
+            <Image
+              src={blobUrl}
+              alt={record.name}
+              style={{
+                width: 200,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
+              preview={true}
+            />
+          );
+        }
+
+        // Trường hợp đang tải
+        return (
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f0f0f0",
+              borderRadius: 4,
+            }}
+          >
+            <Spin size="small" />
+          </div>
+        );
+      },
+    },
+    {
+      title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
+      width: "15%",
       ...getColumnSearchProps("modelName"),
-      sorter: (a, b) => (a.modelName || "").localeCompare(b.modelName || ""),
+      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
     },
     {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
+      width: "15%",
       ...getColumnSearchProps("variantName"),
+    },
+    {
+      title: "Hãng sản xuất",
+      dataIndex: "manufacturer",
+      key: "manufacturer",
+      width: "15%",
+      ...getColumnSearchProps("manufacturer"),
+    },
+    {
+      title: "Kiểu dáng",
+      dataIndex: "bodyType",
+      key: "bodyType",
+      width: "10%",
+      ...getColumnSearchProps("bodyType"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
+      width: "10%",
       filters: [
-        { text: "Đen", value: "Đen" },
-        { text: "Trắng", value: "Trắng" },
-        { text: "Đỏ", value: "Đỏ" },
-        { text: "Xanh", value: "Xanh" },
-        { text: "Bạc", value: "Bạc" },
-        { text: "Green", value: "Green" },
         { text: "Black", value: "Black" },
         { text: "White", value: "White" },
+        { text: "Red", value: "Red" },
+        { text: "Green", value: "Green" },
+        { text: "Đen", value: "Đen" },
       ],
       onFilter: (value, record) => record.color === value,
-    },
-    {
-      title: "VIN Number",
-      dataIndex: "vinNumber",
-      key: "vinNumber",
-      ...getColumnSearchProps("vinNumber"),
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "Giá (VNĐ)",
-      dataIndex: "listingPrice",
-      key: "listingPrice",
+      dataIndex: "msrp",
+      key: "msrp",
+      width: "15%",
       sorter: (a, b) => {
-        const priceA = a.listingPrice ? parseFloat(a.listingPrice.replace(/[^0-9]/g, "")) : 0;
-        const priceB = b.listingPrice ? parseFloat(b.listingPrice.replace(/[^0-9]/g, "")) : 0;
-        return priceA - priceB;
+        const msrpA = a.msrp ? parseFloat(a.msrp.replace(/[^0-9]/g, "")) : 0;
+        const msrpB = b.msrp ? parseFloat(b.msrp.replace(/[^0-9]/g, "")) : 0;
+        return msrpA - msrpB;
       },
-      render: (listingPrice) => listingPrice || "N/A",
+      render: (msrp) => {
+        if (!msrp) {
+          return "N/A";
+        }
+        return msrp.toLocaleString("vi-VN");
+      },
     },
     {
-      title: "Bảo hành đến",
-      dataIndex: "warrantyExpiryDate",
-      key: "warrantyExpiryDate",
-      sorter: (a, b) => new Date(a.warrantyExpiryDate) - new Date(b.warrantyExpiryDate),
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : "N/A",
+      title: "Ngày SX",
+      dataIndex: "manufactureDate",
+      key: "manufactureDate",
+      width: "15%",
+      render: (text) =>
+        text ? new Date(text).toLocaleDateString("vi-VN") : "N/A",
+      sorter: (a, b) =>
+        new Date(a.manufactureDate) - new Date(b.manufactureDate),
     },
     {
-      title: "Tồn kho",
-      dataIndex: "stock",
-      key: "stock",
-      width: 120,
-      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
-      render: (stock) => (
-        <Tag color={stock > 0 ? "green" : "red"}>
-          {stock !== null && stock !== undefined ? stock : "N/A"}
-        </Tag>
-      ),
+      title: "Năm",
+      dataIndex: "year",
+      key: "year",
+      width: "10%",
+      sorter: (a, b) => a.year - b.year,
     },
     {
       title: "Thao tác",
       key: "action",
       width: 150,
+      fixed: "right",
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -216,6 +345,7 @@ export default function VehicleList() {
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
+            scroll={{ x: 2000 }}
           />
         )}
       </Card>

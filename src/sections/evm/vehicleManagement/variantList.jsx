@@ -4,7 +4,6 @@ import {
   Card,
   Button,
   Space,
-  Tag,
   Input,
   Typography,
   Spin,
@@ -12,8 +11,13 @@ import {
   Form,
   Select,
   Upload,
-  message,
   InputNumber,
+  Image,
+  Dropdown,
+  Menu,
+  Row,
+  Col,
+  Checkbox,
 } from "antd";
 import {
   EyeOutlined,
@@ -23,12 +27,14 @@ import {
   CarOutlined,
   UploadOutlined,
   EditOutlined,
+  EllipsisOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import useVariantStore from "../../../hooks/useVariant";
 import useModelStore from "../../../hooks/useModel";
-
+import axiosClient from "../../../config/axiosClient";
+const { TextArea } = Input;
 const { Title } = Typography;
 const { Option } = Select;
 
@@ -50,10 +56,68 @@ export default function VariantList() {
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const objectUrlsToRevoke = [];
+
+    const fetchAllImages = async () => {
+      if (variants && variants.length > 0) {
+        const newImageUrls = {};
+
+        // Tạo mảng các promise để tải ảnh song song
+        const fetchPromises = variants.map(async (variant) => {
+          if (variant.defaultImageUrl) {
+            try {
+              const response = await axiosClient.get(variant.defaultImageUrl, {
+                responseType: "blob",
+              });
+              const objectUrl = URL.createObjectURL(response.data);
+              objectUrlsToRevoke.push(objectUrl);
+              return {
+                path: variant.defaultImageUrl,
+                url: objectUrl,
+              };
+            } catch (error) {
+              console.error(
+                "Không thể tải ảnh:",
+                variant.defaultImageUrl,
+                error
+              );
+              return {
+                path: variant.defaultImageUrl,
+                url: null, // Đánh dấu là lỗi
+              };
+            }
+          }
+          return null;
+        });
+
+        // Chờ tất cả ảnh được tải về
+        const results = await Promise.all(fetchPromises);
+
+        // Cập nhật state
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+
+        setImageUrls(newImageUrls);
+      }
+    };
+
+    fetchAllImages();
+
+    // Xóa các Object URL khi component unmount
+    return () => {
+      objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [variants]);
 
   const fetchData = async () => {
     try {
@@ -188,15 +252,21 @@ export default function VariantList() {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ được upload file hình ảnh!");
+      toast.error("Chỉ được upload file hình ảnh!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return Upload.LIST_IGNORE;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      toast.error("Hình ảnh phải nhỏ hơn 5MB!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return Upload.LIST_IGNORE;
     }
-    return false; // Prevent auto upload
+    return false;
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -248,6 +318,7 @@ export default function VariantList() {
         : "",
   });
 
+
   const columns = [
     {
       title: "ID",
@@ -260,14 +331,64 @@ export default function VariantList() {
       title: "Hình ảnh",
       dataIndex: "defaultImageUrl",
       key: "defaultImageUrl",
-      width: 100,
-      render: (image, record) => (
-        <img
-          src={image || "https://via.placeholder.com/60"}
-          alt={record.name}
-          style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 4 }}
-        />
-      ),
+      width: "20%",
+      render: (imagePath, record) => {
+        // imagePath là đường dẫn (ví dụ: /images/abc.jpg)
+        const blobUrl = imageUrls[imagePath];
+
+        if (!imagePath) {
+          // Trường hợp không có ảnh
+          return (
+            <div
+              style={{
+                width: 200,
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#f0f0f0",
+                borderRadius: 4,
+              }}
+            >
+              <CarOutlined style={{ fontSize: 24, color: "#999" }} />
+            </div>
+          );
+        }
+
+        if (blobUrl) {
+          // Trường hợp đã tải xong, dùng blobUrl
+          return (
+            <Image
+              src={blobUrl}
+              alt={record.name}
+              style={{
+                width: 200,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
+              preview={true}
+            />
+          );
+        }
+
+        // Trường hợp đang tải
+        return (
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f0f0f0",
+              borderRadius: 4,
+            }}
+          >
+            <Spin size="small" />
+          </div>
+        );
+      },
     },
     {
       title: "Tên phiên bản",
@@ -282,13 +403,6 @@ export default function VariantList() {
       key: "modelName",
       ...getColumnSearchProps("modelName"),
       sorter: (a, b) => a.modelName.localeCompare(b.modelName),
-    },
-    {
-      title: "Model ID",
-      dataIndex: "modelId",
-      key: "modelId",
-      width: 150,
-      sorter: (a, b) => a.modelId - b.modelId,
     },
     {
       title: "Thao tác",

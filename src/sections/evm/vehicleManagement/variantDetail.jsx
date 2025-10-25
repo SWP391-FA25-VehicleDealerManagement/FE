@@ -16,6 +16,9 @@ import {
   Form,
   Input,
   Select,
+  Upload,
+  Checkbox,
+  InputNumber,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -23,38 +26,114 @@ import {
   EditOutlined,
   DeleteOutlined,
   TagOutlined,
+  UploadOutlined,
+  ExclamationCircleOutlined,
+  CheckCircleOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useVariantStore from "../../../hooks/useVariant";
+import useModelStore from "../../../hooks/useModel";
+import axiosClient from "../../../config/axiosClient";
+import VariantEditModal from "./variantEditModal";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TextArea } = Input;
 
 export default function VariantDetail() {
   const { variantId } = useParams();
   const navigate = useNavigate();
-  const { variants, isLoading, fetchVariants, deleteVariant, updateVariant } = useVariantStore();
-  const [variant, setVariant] = useState(null);
+  const {
+    variantDetail,
+    isLoading,
+    fetchVariantById,
+    variantDetails,
+    fetchVariantDetails,
+    deleteVariant,
+    updateVariant,
+    createVariantDetails,
+    updateVariantDetail,
+  } = useVariantStore();
+  const { models, fetchModels } = useModelStore();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [form] = Form.useForm();
+  const [detailForm] = Form.useForm();
+  const [createDetailForm] = Form.useForm();
+  const [fileList, setFileList] = useState([]);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (variants.length === 0) {
-      fetchVariants();
+    if (variantId) {
+      const fetchDataParallel = async () => {
+        try {
+          useVariantStore.setState({ variantDetails: null });
+
+          await Promise.all([fetchVariantById(variantId), fetchModels()]);
+        } catch (error) {
+          console.error("Lỗi khi fetch dữ liệu song song:", error);
+        }
+      };
+
+      fetchDataParallel();
     }
-  }, [variants.length, fetchVariants]);
+  }, [variantId, fetchVariantById, fetchModels]);
 
   useEffect(() => {
-    if (variants.length > 0 && variantId) {
-      const foundVariant = variants.find(
-        (v) => v.variantId === parseInt(variantId)
-      );
-      setVariant(foundVariant);
+    if (variantDetail?.variantId) {
+      fetchVariantDetails(variantDetail.variantId);
     }
-  }, [variants, variantId]);
+  }, [variantDetail, fetchVariantDetails]);
+
+  useEffect(() => {
+    let objectUrl = null;
+
+    const fetchImage = async () => {
+      if (variantDetail?.defaultImageUrl) {
+        try {
+          // Dùng axiosClient để get, vì nó đã có interceptor gắn token
+          const response = await axiosClient.get(
+            variantDetail.defaultImageUrl,
+            {
+              responseType: "blob",
+            }
+          );
+          // Tạo URL tạm thời từ blob
+          objectUrl = URL.createObjectURL(response.data);
+          setImageUrl(objectUrl);
+        } catch (error) {
+          console.error("Không thể tải ảnh bảo vệ:", error);
+          setImageUrl(null);
+        }
+      } else {
+        setImageUrl(null); // Reset nếu không có ảnh
+      }
+    };
+
+    fetchImage();
+
+    // Cleanup: Xóa object URL khi component unmount hoặc ảnh thay đổi
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [variantDetail?.defaultImageUrl]);
+
+  useEffect(() => {
+    // Hàm 'return' này sẽ tự động chạy khi component bị "unmount"
+    return () => {
+      useVariantStore.setState({
+        variantDetail: null,
+        variantDetails: null,
+      });
+    };
+  }, []);
 
   const showDeleteModal = () => {
     setIsDeleteModalOpen(true);
@@ -66,10 +145,11 @@ export default function VariantDetail() {
 
   const showEditModal = () => {
     form.setFieldsValue({
-      name: variant?.name,
-      modelId: variant?.modelId,
-      image: variant?.image,
+      name: variantDetail?.name,
+      msrp: variantDetail?.msrp,
+      modelId: variantDetail?.modelId,
     });
+    setFileList([]);
     setIsEditModalOpen(true);
   };
 
@@ -78,20 +158,117 @@ export default function VariantDetail() {
     form.resetFields();
   };
 
+  const showEditDetailsModal = () => {
+    setIsEditDetailsModalOpen(true);
+  };
+
+  const handleEditDetailsSubmit = async () => {
+    try {
+      const values = await detailForm.validateFields();
+      setIsUpdating(true);
+
+      const response = await updateVariantDetail(variantId, values);
+
+      if (response && response.status === 200) {
+        toast.success("Cập nhật chi tiết phiên bản thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setIsEditDetailsModalOpen(false);
+        await fetchVariantDetails(variantId);
+      } else {
+        toast.error(response.data?.message || "Cập nhật chi tiết thất bại", {
+          position: "top-right",
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật chi tiết:", error);
+      toast.error(
+        error.response?.data?.message || "Lỗi khi gửi form, vui lòng thử lại",
+        { position: "top-right" }
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const showCreateDetailsModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddDetailsCancel = () => {
+    setIsAddModalOpen(false);
+    createDetailForm.resetFields();
+  };
+
+  const handleAddDetailsSubmit = async () => {
+    try {
+      const values = await createDetailForm.validateFields();
+      setIsUpdating(true);
+
+      console.log("check value", values);
+      console.log("check id", variantId);
+      const response = await createVariantDetails(variantId, values);
+      console.log("response", response);
+
+      if (response && response.status == 200) {
+        toast.success("Tạo chi tiết phiên bản thành công", {
+          position: "top-right",
+        });
+        handleAddDetailsCancel();
+        await fetchVariantDetails(variantId);
+
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo chi tiết:", error);
+      toast.error(error.response?.data?.message || "Lỗi, không thể gửi form", {
+        position: "top-right",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEditDetailsCancel = () => {
+    setIsEditDetailsModalOpen(false);
+  };
+
+  const handleUploadChange = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
+  };
+
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      toast.error("Chỉ được upload file hình ảnh!", {
+        position: "top-right",
+      });
+      return Upload.LIST_IGNORE;
+    }
+    const isLt5M = file.size / 1024 / 1024 < 1;
+    if (!isLt5M) {
+      toast.error("Hình ảnh phải nhỏ hơn 1MB!", {
+        position: "top-right",
+      });
+      return Upload.LIST_IGNORE;
+    }
+    return false;
+  };
+
   const handleUpdate = async () => {
     try {
       const values = await form.validateFields();
       setIsUpdating(true);
-
-      const data = {
-        name: values.name,
-        modelId: values.modelId,
-        image: values.image,
-      };
-
-      const response = await updateVariant(variantId, data);
-
-      if (response.data.success) {
+      const formData = new FormData();
+      formData.append("name", values.name);
+      formData.append("modelId", values.modelId);
+      formData.append("msrp", values.msrp);
+      if (fileList && fileList.length > 0 && fileList[0].originFileObj) {
+        formData.append("image", fileList[0].originFileObj);
+      }
+      console.log("check form", formData);
+      const response = await updateVariant(variantId, formData);
+      if (response && response.status === 200) {
         toast.success("Cập nhật phiên bản thành công", {
           position: "top-right",
           autoClose: 3000,
@@ -100,19 +277,17 @@ export default function VariantDetail() {
         setIsEditModalOpen(false);
         form.resetFields();
         // Refresh data
-        await fetchVariants();
-      } else {
-        toast.error(response.data.message || "Cập nhật phiên bản thất bại", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        await fetchVariantById(variantId);
       }
     } catch (error) {
       console.error("Error updating variant:", error);
-      toast.error(error.response?.data?.message || "Cập nhật phiên bản thất bại", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(
+        error.response?.data?.message || "Cập nhật phiên bản thất bại",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -124,24 +299,15 @@ export default function VariantDetail() {
     setIsDeleting(true);
     try {
       const response = await deleteVariant(variantId);
-      
-      if (response.data.success) {
+      console.log("repsonse", response);
+      if (response && response.status === 200) {
         toast.success("Xóa phiên bản thành công", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
         });
 
-        // Redirect to variant list page
-        setTimeout(() => {
-          navigate("/evm-staff/vehicle-types");
-        }, 1000);
-      } else {
-        toast.error(response.data.message || "Xóa phiên bản thất bại", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        setIsDeleting(false);
+        navigate("/evm-staff/vehicle-types");
       }
     } catch (error) {
       console.error("Error deleting variant:", error);
@@ -156,6 +322,13 @@ export default function VariantDetail() {
     }
   };
 
+  const formatVnd = (value) => {
+    if (value === null || value === undefined) return null;
+    const n = Number(value);
+    if (!isFinite(n)) return null;
+    return new Intl.NumberFormat("vi-VN").format(n);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-20">
@@ -164,7 +337,7 @@ export default function VariantDetail() {
     );
   }
 
-  if (!variant) {
+  if (!variantDetail) {
     return (
       <div className="flex justify-center items-center p-20">
         <Card>
@@ -189,13 +362,34 @@ export default function VariantDetail() {
             </Button>
           </Link>
           <Title level={2} style={{ margin: 0 }}>
-            Chi tiết phiên bản: {variant?.name}
+            Chi tiết phiên bản: {variantDetail?.name}
           </Title>
         </div>
         <Space>
-          <Button type="primary" icon={<EditOutlined />} onClick={showEditModal}>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={showEditModal}
+          >
             Chỉnh sửa
           </Button>
+          {variantDetails ? (
+            <Button
+              type="default"
+              icon={<EditOutlined />}
+              onClick={showEditDetailsModal}
+            >
+              Chỉnh sửa chi tiết
+            </Button>
+          ) : (
+            <Button
+              type="default"
+              icon={<PlusOutlined />}
+              onClick={showCreateDetailsModal}
+            >
+              Tạo chi tiết
+            </Button>
+          )}
           <Button danger icon={<DeleteOutlined />} onClick={showDeleteModal}>
             Xóa
           </Button>
@@ -206,14 +400,13 @@ export default function VariantDetail() {
         <Col span={8}>
           <Card title="Hình ảnh phiên bản" bordered={false}>
             <div className="flex flex-col items-center mb-6">
-              {variant?.defaultImageUrl ? (
+              {variantDetail?.defaultImageUrl ? (
                 <Image
                   width={250}
                   height={200}
-                  src={variant.defaultImageUrl}
-                  alt={variant.name}
+                  src={imageUrl}
+                  alt={variantDetail.name}
                   style={{ objectFit: "cover", borderRadius: 8 }}
-                  fallback="data:image/png;base64,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"
                 />
               ) : (
                 <div
@@ -231,9 +424,9 @@ export default function VariantDetail() {
                 </div>
               )}
               <Title level={3} style={{ marginTop: 16, marginBottom: 0 }}>
-                {variant?.name}
+                {variantDetail?.name}
               </Title>
-              <Text type="secondary">{variant?.modelName}</Text>
+              <Text type="secondary">{variantDetail?.modelName}</Text>
             </div>
           </Card>
         </Col>
@@ -255,7 +448,7 @@ export default function VariantDetail() {
                   </span>
                 }
               >
-                <Tag color="blue">{variant?.variantId}</Tag>
+                <Tag color="blue">{variantDetail?.variantId}</Tag>
               </Descriptions.Item>
               <Descriptions.Item
                 label={
@@ -271,32 +464,183 @@ export default function VariantDetail() {
                   </span>
                 }
               >
-                <Tag color="green">{variant?.modelId}</Tag>
+                <Tag color="green">{variantDetail?.modelId || "N/A"}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Tên phiên bản" span={2}>
-                {variant?.name}
+                {variantDetail?.name}
               </Descriptions.Item>
-              <Descriptions.Item label="Model xe" span={2}>
-                {variant?.modelName}
+              <Descriptions.Item label="Mẫu xe" span={2}>
+                {variantDetail?.modelName}
               </Descriptions.Item>
-              <Descriptions.Item label="Đường link hình ảnh" span={2}>
-                {variant?.image || "Chưa có hình ảnh"}
+              <Descriptions.Item label="Giá niêm yết (VNĐ)" span={2}>
+                {formatVnd(variantDetail?.msrp) ?? "Chưa có thông tin"}
               </Descriptions.Item>
             </Descriptions>
 
-            <Divider />
+            {variantDetails ? (
+              <>
+                {/* Kích thước & Trọng lượng */}
+                <Descriptions
+                  title="Kích thước & Trọng lượng"
+                  bordered
+                  column={2}
+                  style={{ marginBottom: 24, marginTop: 24 }}
+                >
+                  <Descriptions.Item label="Kích thước (DxRxC)" span={2}>
+                    {variantDetails?.dimensionsMm || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Chiều dài cơ sở">
+                    {variantDetails?.wheelbaseMm
+                      ? `${variantDetails.wheelbaseMm} mm`
+                      : "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Khoảng sáng gầm">
+                    {variantDetails?.groundClearanceMm
+                      ? `${variantDetails.groundClearanceMm} mm`
+                      : "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Trọng lượng">
+                    {variantDetails?.curbWeightKg
+                      ? `${variantDetails.curbWeightKg} kg`
+                      : "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Số chỗ ngồi">
+                    {variantDetails?.seatingCapacity || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Dung tích cốp" span={2}>
+                    {variantDetails?.trunkCapacityLiters
+                      ? `${variantDetails.trunkCapacityLiters} lít`
+                      : "N/A"}
+                  </Descriptions.Item>
+                </Descriptions>
 
-            <div className="mt-4">
-              <Title level={4}>Thông tin bổ sung</Title>
-              <Descriptions bordered column={1}>
-                <Descriptions.Item label="Ngày tạo">
-                  Chưa có thông tin
-                </Descriptions.Item>
-                <Descriptions.Item label="Ngày cập nhật">
-                  Chưa có thông tin
-                </Descriptions.Item>
-              </Descriptions>
-            </div>
+                {/* Động cơ & Hiệu suất */}
+                <Descriptions
+                  title="Động cơ & Hiệu suất"
+                  bordered
+                  column={2}
+                  style={{ marginBottom: 24 }}
+                >
+                  <Descriptions.Item label="Loại động cơ" span={2}>
+                    {variantDetails?.engineType || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Công suất tối đa">
+                    {variantDetails?.maxPower || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mô-men xoắn tối đa">
+                    {variantDetails?.maxTorque || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Tốc độ tối đa">
+                    {variantDetails?.topSpeedKmh
+                      ? `${variantDetails.topSpeedKmh} km/h`
+                      : "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hệ dẫn động">
+                    {variantDetails?.drivetrain || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Chế độ lái" span={2}>
+                    {variantDetails?.driveModes || "N/A"}
+                  </Descriptions.Item>
+
+                  {/* Battery Info - Only show if exists */}
+                  {(variantDetails?.batteryCapacityKwh ||
+                    variantDetails?.rangePerChargeKm ||
+                    variantDetails?.chargingTime) && (
+                    <>
+                      <Descriptions.Item label="Dung lượng pin">
+                        {variantDetails?.batteryCapacityKwh
+                          ? `${variantDetails.batteryCapacityKwh} kWh`
+                          : "N/A"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Phạm vi hoạt động">
+                        {variantDetails?.rangePerChargeKm
+                          ? `${variantDetails.rangePerChargeKm} km`
+                          : "N/A"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Thời gian sạc" span={2}>
+                        {variantDetails?.chargingTime || "N/A"}
+                      </Descriptions.Item>
+                    </>
+                  )}
+                </Descriptions>
+
+                {/* Ngoại thất & Nội thất */}
+                <Descriptions
+                  title="Ngoại thất & Nội thất"
+                  bordered
+                  column={1}
+                  style={{ marginBottom: 24 }}
+                >
+                  <Descriptions.Item label="Tính năng ngoại thất">
+                    {variantDetails?.exteriorFeatures || "Chưa có thông tin"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Tính năng nội thất">
+                    {variantDetails?.interiorFeatures || "Chưa có thông tin"}
+                  </Descriptions.Item>
+                </Descriptions>
+
+                {/* An toàn */}
+                <Descriptions title="Hệ thống an toàn" bordered column={2}>
+                  <Descriptions.Item label="Túi khí">
+                    {variantDetails?.airbags || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hệ thống phanh">
+                    {variantDetails?.brakingSystem || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Kiểm soát ổn định (ESC)">
+                    <Tag color={variantDetails?.hasEsc ? "green" : "red"}>
+                      {variantDetails?.hasEsc ? (
+                        <CheckCircleOutlined />
+                      ) : (
+                        <ExclamationCircleOutlined />
+                      )}
+                      {variantDetails?.hasEsc ? " Có" : " Không"}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Cảm biến áp suất lốp">
+                    <Tag color={variantDetails?.hasTpms ? "green" : "red"}>
+                      {variantDetails?.hasTpms ? (
+                        <CheckCircleOutlined />
+                      ) : (
+                        <ExclamationCircleOutlined />
+                      )}
+                      {variantDetails?.hasTpms ? " Có" : " Không"}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Camera lùi">
+                    <Tag
+                      color={variantDetails?.hasRearCamera ? "green" : "red"}
+                    >
+                      {variantDetails?.hasRearCamera ? (
+                        <CheckCircleOutlined />
+                      ) : (
+                        <ExclamationCircleOutlined />
+                      )}
+                      {variantDetails?.hasRearCamera ? " Có" : " Không"}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Khóa cửa trẻ em" span={2}>
+                    <Tag color={variantDetails?.hasChildLock ? "green" : "red"}>
+                      {variantDetails?.hasChildLock ? (
+                        <CheckCircleOutlined />
+                      ) : (
+                        <ExclamationCircleOutlined />
+                      )}
+                      {variantDetails?.hasChildLock ? " Có" : " Không"}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+              </>
+            ) : (
+              <div style={{ marginTop: 24 }}>
+                <Card>
+                  <Text type="primary">
+                    Không tìm thấy thông tin chi tiết cho xe{" "}
+                    {variantDetail?.modelName} phiên bản {variantDetail?.name}.
+                  </Text>
+                </Card>
+              </div>
+            )}
           </Card>
         </Col>
       </Row>
@@ -316,7 +660,7 @@ export default function VariantDetail() {
         <p>
           Bạn có chắc chắn muốn xóa phiên bản{" "}
           <strong>
-            {variant?.name} - {variant?.variantId}
+            {variantDetail?.name} - {variantDetail?.variantId}
           </strong>{" "}
           không?
         </p>
@@ -339,9 +683,7 @@ export default function VariantDetail() {
           <Form.Item
             name="name"
             label="Tên phiên bản"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên phiên bản" },
-            ]}
+            rules={[{ required: true, message: "Vui lòng nhập tên phiên bản" }]}
           >
             <Input placeholder="Ví dụ: Vios G 1.5" />
           </Form.Item>
@@ -351,27 +693,334 @@ export default function VariantDetail() {
             label="Model"
             rules={[{ required: true, message: "Vui lòng chọn model" }]}
           >
-            <Select placeholder="Chọn model xe">
-              <Option value={1}>Toyota Vios</Option>
-              <Option value={2}>Ford Ranger</Option>
-              <Option value={3}>Hyundai Accent</Option>
-              <Option value={4}>VinFast Lux A2.0</Option>
-              <Option value={5}>Honda City</Option>
-            </Select>
+            {models.length > 0 ? (
+              <Select placeholder="Chọn model">
+                {models.map((model) => (
+                  <Option key={model.modelId} value={model.modelId}>
+                    {model.name}
+                  </Option>
+                ))}
+              </Select>
+            ) : (
+              <span>Không có model nào</span>
+            )}
+          </Form.Item>
+
+          <Form.Item label="Giá niêm yết mới (VND)" name="msrp">
+            <InputNumber
+              placeholder="Nhập giá niêm yết mới"
+              style={{ width: "100%" }}
+              min={0}
+            />
           </Form.Item>
 
           <Form.Item
             name="image"
-            label="URL Hình ảnh"
-            rules={[
-              { required: true, message: "Vui lòng nhập URL hình ảnh" },
-              { type: "url", message: "Vui lòng nhập URL hợp lệ" },
-            ]}
+            label="Hình ảnh (tải lên)"
+            extra={
+              variantDetail?.defaultImageUrl ? (
+                <div style={{ marginTop: 8 }}>
+                  <div>Hình hiện tại:</div>
+                  <Image width={150} src={imageUrl} alt={variantDetail.name} />
+                </div>
+              ) : (
+                <div style={{ marginTop: 8 }}>Chưa có hình ảnh</div>
+              )
+            }
+            rules={[]}
           >
-            <Input placeholder="https://example.com/image.jpg" />
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={handleUploadChange}
+              beforeUpload={beforeUpload}
+              maxCount={1}
+              accept="image/*"
+            >
+              {fileList.length === 0 && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Modal tạo chi tiết xe */}
+      <Modal
+        title={`Tạo chi tiết phiên bản ${variantDetail?.name}`}
+        open={isAddModalOpen}
+        onOk={handleAddDetailsSubmit}
+        onCancel={handleAddDetailsCancel}
+        confirmLoading={isUpdating}
+        destroyOnClose
+        width={999}
+        centered
+        bodyStyle={{ maxHeight: "calc(100vh - 200px)", overflowY: "auto" }}
+      >
+        <Form form={createDetailForm} layout="vertical">
+          {/* Kích thước & Trọng lượng */}
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
+            <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
+              Kích thước & Trọng lượng
+            </h3>
+          </div>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="dimensionsMm" label="Kích thước (DxRxC)">
+                <Input placeholder="VD: 4.678 x 1.802 x 1.415" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="wheelbaseMm" label="Chiều dài cơ sở (mm)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 2735"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="groundClearanceMm" label="Khoảng sáng gầm (mm)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 134"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="curbWeightKg" label="Trọng lượng (kg)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 1306"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="seatingCapacity" label="Số chỗ ngồi">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 5"
+                  min={1}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="trunkCapacityLiters" label="Dung tích cốp (lít)">
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="VD: 495"
+              min={0}
+            />
+          </Form.Item>
+
+          {/* Động cơ & Hiệu suất */}
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
+            <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
+              Động cơ & Hiệu suất
+            </h3>
+          </div>
+
+          <Form.Item name="engineType" label="Loại động cơ">
+            <TextArea
+              rows={2}
+              placeholder="VD: 1.5L DOHC VTEC TURBO, 4 xi-lanh thẳng hàng..."
+            />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="maxPower" label="Công suất tối đa">
+                <Input placeholder="VD: 176 Hp @ 6.000 rpm" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxTorque" label="Mô-men xoắn tối đa">
+                <Input placeholder="VD: 240 Nm @ 1.700-4.500 rpm" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="topSpeedKmh" label="Tốc độ tối đa (km/h)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 200"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="drivetrain" label="Hệ dẫn động">
+                <Input placeholder="VD: Cầu trước" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="driveModes" label="Chế độ lái">
+                <Input placeholder="VD: Normal, ECON, Sport" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Pin & Sạc (cho xe điện) */}
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
+            <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
+              Pin & Sạc (Xe điện - tùy chọn)
+            </h3>
+          </div>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="batteryCapacityKwh" label="Dung lượng pin (kWh)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="Nhập dung lượng pin"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="rangePerChargeKm" label="Phạm vi hoạt động (km)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="Nhập phạm vi hoạt động"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="chargingTime" label="Thời gian sạc">
+                <Input placeholder="VD: 8 giờ/30 phút" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Ngoại thất & Nội thất */}
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
+            <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
+              Ngoại thất & Nội thất
+            </h3>
+          </div>
+
+          <Form.Item name="exteriorFeatures" label="Tính năng ngoại thất">
+            <TextArea
+              rows={3}
+              placeholder="VD: Cụm đèn trước LED, La-zăng hợp kim 18 inch..."
+            />
+          </Form.Item>
+
+          <Form.Item name="interiorFeatures" label="Tính năng nội thất">
+            <TextArea
+              rows={3}
+              placeholder="VD: Màn hình cảm ứng 9 inch, Sạc không dây..."
+            />
+          </Form.Item>
+
+          {/* An toàn */}
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
+            <h3 style={{ borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>
+              An toàn
+            </h3>
+          </div>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="airbags" label="Túi khí">
+                <Input placeholder="VD: 6 túi khí" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="brakingSystem" label="Hệ thống phanh">
+                <Input placeholder="VD: ABS, EBD, BA" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div
+            style={{
+              background: "#f5f5f5",
+              padding: "16px",
+              borderRadius: "8px",
+              marginTop: "8px",
+            }}
+          >
+            <Row gutter={[16, 12]}>
+              <Col span={12}>
+                <Form.Item
+                  name="hasEsc"
+                  valuePropName="checked"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Checkbox style={{ fontSize: "14px" }}>
+                    <span style={{ fontWeight: 500 }}>
+                      Kiểm soát ổn định (ESC)
+                    </span>
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="hasTpms"
+                  valuePropName="checked"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Checkbox style={{ fontSize: "14px" }}>
+                    <span style={{ fontWeight: 500 }}>
+                      Cảm biến áp suất lốp
+                    </span>
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={[16, 12]} style={{ marginTop: "12px" }}>
+              <Col span={12}>
+                <Form.Item
+                  name="hasRearCamera"
+                  valuePropName="checked"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Checkbox style={{ fontSize: "14px" }}>
+                    <span style={{ fontWeight: 500 }}>Camera lùi</span>
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="hasChildLock"
+                  valuePropName="checked"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Checkbox style={{ fontSize: "14px" }}>
+                    <span style={{ fontWeight: 500 }}>Khóa cửa trẻ em</span>
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Modal chỉnh sửa chi tiết xe */}
+      <VariantEditModal
+        open={isEditDetailsModalOpen}
+        onCancel={handleEditDetailsCancel}
+        onSubmit={handleEditDetailsSubmit}
+        variantId={variantId}
+        variantDetails={variantDetails}
+        isLoading={isUpdating}
+        form={detailForm}
+      />
     </div>
   );
 }
