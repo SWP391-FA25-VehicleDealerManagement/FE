@@ -6,6 +6,8 @@ import {
   getDebt,
   makePayment,
   getPaymentHistory,
+  confirmDebtPayment,
+  rejectDebtPayment,
 } from "../api/dealerdebt";
 const useDealerDebt = create((set) => ({
   dealerDebt: [],
@@ -89,12 +91,35 @@ const useDealerDebt = create((set) => ({
   clearPaymentHistory: () =>
     set({ paymentHistory: [], isLoadingPaymentHistory: false }),
 
-  confirmDebtPayment: async (debtId, paymentData) => {
-    
+  isLoadingConfirmPayment: false,
+  confirmDebtPayment: async (debtId, paymentId, confirmedBy) => {
+    set({ isLoadingConfirmPayment: true });
+    try {
+      const response = await confirmDebtPayment(debtId, paymentId, confirmedBy);
+      if (response && response.status === 200) {
+        set({ isLoadingConfirmPayment: false });
+      }
+      return response;
+    } catch (error) {
+      console.error("Error confirming debt payment:", error);
+      set({ isLoadingConfirmPayment: false });
+      throw error;
+    }
   },
-
-  rejectDebtPayment: async (debtId, reason) => {
-
+  isLoadingRejectPayment: false,
+  rejectDebtPayment: async (debtId, paymentId, rejectedBy, reason) => {
+    set({ isLoadingRejectPayment: true });
+    try {
+      const response = await rejectDebtPayment(debtId, paymentId, rejectedBy, reason);
+      if (response && response.status === 200) {
+        set({ isLoadingRejectPayment: false });
+      }
+      return response;
+    } catch (error) {
+      console.error("Error rejecting debt payment:", error);
+      set({ isLoadingRejectPayment: false });
+      throw error;
+    }
   },
 
   // của dealer manager

@@ -25,50 +25,41 @@ function getItem(label, key, icon, children, path) {
   };
 }
 const menuItems = [
-  getItem(
-    "Quản lý lịch hẹn",
-    "1",
-    <PieChartOutlined />,
-    null,
-    "/dealer-staff/appointments"
-  ),
-  getItem(
-    "Quản lý đơn hàng",
-    "5",
-    <FileOutlined />,
-    null,
-    "/dealer-staff/orders"
-  ),
-  getItem(
-    "Quản lý xe",
-    "2",
-    <CarOutlined />,
-    null,
-    "/dealer-staff/vehicles"
-  ),
-  getItem(
-    "Quản lý kho",
-    "sub3",
-    <InboxOutlined />,
-    null,
-    "/dealer-staff/inventory"
-  ),
-  getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
-    getItem("Khách hàng", "3", null, null, "/dealer-staff/customer-list"),
-    getItem("Hợp đồng với khách", "4", null, null, "/dealer-staff/customer-contract")
-  ]),
-  getItem("Quản lý công nợ khách", "sub1", <FileOutlined/>, [
-    getItem("Công nợ", "5", null, null, "/dealer-staff/debt-list")
-  ]),
-  getItem("Báo cáo", "sub2", <TeamOutlined />, [
-    getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),
+  getItem("Quản lý lịch hẹn", "1", <PieChartOutlined />, [
     getItem(
-      "Báo cáo công nợ khách hàng",
+      "Danh sách lịch hẹn",
+      "2",
+      null,
+      null,
+      "/dealer-staff/appointments"
+    ),
+    getItem("Danh sách đánh giá", "3", null, null, "/dealer-staff/reviews"),
+  ]),
+  getItem("Quản lý đơn hàng", "5", <FileOutlined />, [
+    getItem("Danh sách đơn hàng", "6", null, null, "/dealer-staff/orders"),
+    getItem(
+      "Quản lý giao hàng",
       "7",
       null,
       null,
-      "/dealer-staff/customer-debt-report"
+      "/dealer-staff/delivery-management"
     ),
+  ]),
+  getItem("Danh sách xe đại lý", "2", <CarOutlined />, null, "/dealer-staff/vehicles"),
+  getItem("Quản lý khách hàng", "sub1", <UserOutlined />, [
+    getItem("Khách hàng", "3", null, null, "/dealer-staff/customer-list"),
+    getItem(
+      "Hợp đồng với khách",
+      "4",
+      null,
+      null,
+      "/dealer-staff/customer-contract"
+    ),
+    getItem("Công nợ", "5", null, null, "/dealer-staff/debt-list"),
+  ]),
+  getItem("Báo cáo", "sub2", <TeamOutlined />, [
+    getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),
+    getItem("Báo cáo kho", "7", null, null, "/dealer-staff/inventory"),
   ]),
 ];
 
@@ -167,7 +158,7 @@ const DealerStaff = ({ children }) => {
         <Menu
           theme="light"
           defaultSelectedKeys={defaultSelectedKeys}
-          defaultOpenKeys={["sub1", "sub2"]}
+          defaultOpenKeys={["sub1", "sub2", "1", "5"]}
           mode="inline"
           className="border-0 h-full"
           style={{

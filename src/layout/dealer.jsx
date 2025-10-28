@@ -222,7 +222,7 @@ const Dealer = ({ children }) => {
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
-            overflow: "auto",
+            overflowY: "auto",
           }}
           overflowedIndicator={false}
         >

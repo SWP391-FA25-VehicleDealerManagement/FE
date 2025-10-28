@@ -76,7 +76,9 @@ const AllocateInventoryPage = lazy(() =>
 const ContractsTargetsPage = lazy(() =>
   import("../page/evm/contractsTargetsPage.jsx")
 );
-const EvmDealerDebtsPage = lazy(() => import("../page/evm/dealerDebtsPage.jsx"));
+const EvmDealerDebtsPage = lazy(() =>
+  import("../page/evm/dealerDebtsPage.jsx")
+);
 const VehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
 const VehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
 const VehicleTypeList = lazy(() =>
@@ -90,6 +92,9 @@ const VehicleModelList = lazy(() =>
 );
 const VehicleModelDetail = lazy(() =>
   import("../page/evm/vehicleModelDetailPage.jsx")
+);
+const EVMDealerDebtDetailPage = lazy(() =>
+  import("../page/evm/dealerDebtDetailPage.jsx")
 );
 
 //User Profile
@@ -110,6 +115,13 @@ const DealerStaffCustomerListPage = lazy(() =>
 const DealerStaffCustomerDetailPage = lazy(() =>
   import("../page/dealer/staff/customerDetailPage.jsx")
 );
+const CustomerOrderPage = lazy(() =>
+  import("../page/dealer/staff/customerOrderPage.jsx")
+);
+const CustomerOrderDetailPage = lazy(() =>
+  import("../page/dealer/staff/customerOrderDetailPage.jsx")
+);
+const QuotePage = lazy(() => import("../page/dealer/staff/QuotePage.jsx"));
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -206,6 +218,7 @@ const Routes = () => {
         { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
         { path: "contracts-targets", element: <ContractsTargetsPage /> },
         { path: "debts", element: <EvmDealerDebtsPage /> },
+        { path: "debts/:debtId", element: <EVMDealerDebtDetailPage /> },
         { path: "vehicles", element: <VehicleList /> },
         { path: "vehicles/:vehicleId", element: <VehicleDetail /> },
         { path: "vehicle-types", element: <VehicleTypeList /> },
@@ -235,7 +248,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <CustomerListPage /> },
-        { path: "customer-list/:id", element: <CustomerDetail />},
+        { path: "customer-list/:id", element: <CustomerDetail /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
@@ -282,6 +295,9 @@ const Routes = () => {
           element: <DealerStaffVehicleDetailPage />,
         },
         { path: "inventory", element: <InventoryPage /> },
+        { path: "orders", element: <CustomerOrderPage /> },
+        { path: "orders/:orderId", element: <CustomerOrderDetailPage /> },
+        { path: "quote/:orderId", element: <QuotePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

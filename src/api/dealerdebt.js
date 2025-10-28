@@ -13,6 +13,16 @@ const getDealerDebtShedule = (id) => {
   return axiosClient.get(`/api/debts/${id}/schedules`);
 };
 
+
+const confirmDebtPayment = (debtId, paymentId, confirmedBy) => {
+  return axiosClient.put(`/api/debts/${debtId}/payments/${paymentId}/confirm?confirmedBy=${confirmedBy}`);
+}
+
+const rejectDebtPayment = (debtId, paymentId, rejectedBy, reason) => {
+  return axiosClient.put(`/api/debts/${debtId}/payments/${paymentId}/reject?rejectedBy=${rejectedBy}&reason=${reason}`);
+}
+
+
 // của dealer manager
 const getDebt = (id) => {
   return axiosClient.get(`/api/debts/dealer/${id}`);
@@ -33,4 +43,6 @@ export {
   getDebt,
   makePayment,
   getPaymentHistory,
+  confirmDebtPayment,
+  rejectDebtPayment,
 };

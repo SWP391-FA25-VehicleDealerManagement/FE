@@ -20,6 +20,7 @@ import { toast } from "react-toastify";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import axiosClient from "../../../../config/axiosClient";
+import CompareEVModal from "./compareEVModal";
 
 const { Title } = Typography;
 
@@ -37,6 +38,7 @@ export default function VehicleList() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
   const [imageUrls, setImageUrls] = useState({});
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
   useEffect(() => {
     if (userDetail && userDetail.dealer && userDetail.dealer.dealerId) {
@@ -109,26 +111,21 @@ export default function VehicleList() {
   };
 
   const handleCompare = () => {
-    if (selectedVehicles.length < 2) {
-      toast.warning("Vui lòng chọn ít nhất 2 xe để so sánh", {
+    if (selectedVehicles.length !== 2) {
+      toast.warning("Vui lòng chọn chính xác 2 xe để so sánh.", {
         position: "top-right",
-        autoClose: 3000,
+        autoClose: 2000,
       });
       return;
     }
-
-    if (selectedVehicles.length > 3) {
-      toast.warning("Chỉ có thể so sánh tối đa 3 xe", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
-
-    // Navigate to compare page with selected vehicle IDs
-    const vehicleIds = selectedVehicles.join(",");
-    navigate(`/dealer-staff/vehicle-compare?vehicles=${vehicleIds}`);
+    setIsCompareModalOpen(true);
   };
+
+  const vehiclesToCompare = React.useMemo(() => {
+    return dealerCarLists.filter((vehicle) =>
+      selectedVehicles.includes(vehicle.vehicleId)
+    );
+  }, [dealerCarLists, selectedVehicles]);
 
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
@@ -382,9 +379,9 @@ export default function VehicleList() {
           type="primary"
           icon={<SwapOutlined />}
           onClick={handleCompare}
-          disabled={selectedVehicles.length < 2}
+          disabled={selectedVehicles.length !== 2}
         >
-          So sánh xe ({selectedVehicles.length}/3)
+          So sánh xe ({selectedVehicles.length}/2)
         </Button>
       </div>
 
@@ -405,6 +402,12 @@ export default function VehicleList() {
           />
         )}
       </Card>
+      <CompareEVModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        vehicles={vehiclesToCompare}
+        imageUrls={imageUrls}
+      />
     </div>
   );
 }

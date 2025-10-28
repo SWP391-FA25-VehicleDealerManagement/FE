@@ -405,34 +405,6 @@ export default function VehicleAllocation() {
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),
     },
-    // {
-    //   title: "Thao tác",
-    //   key: "action",
-    //   width: "20%",
-    //   render: (_, record) => (
-    //     <Space size="small">
-    //       <Button
-    //         type="primary"
-    //         size="small"
-    //         icon={<ImportOutlined />}
-    //         onClick={() => {
-    //           setSelectedInventoryItem(record);
-    //           setIsAddMoreModalVisible(true);
-    //         }}
-    //       >
-    //         Nhập thêm
-    //       </Button>
-    //       <Button
-    //         danger
-    //         size="small"
-    //         icon={<DeleteOutlined />}
-    //         onClick={() => showDeleteConfirm(record)}
-    //       >
-    //         Xóa
-    //       </Button>
-    //     </Space>
-    //   ),
-    // },
   ];
 
   const dealerColumns = [
@@ -553,6 +525,10 @@ export default function VehicleAllocation() {
             text = "Đang phân vận chuyển";
             icon = <SyncOutlined spin />;
             break;
+          case "DELIVERED":
+            color = "success";
+            text = "Hoàn thành";
+            icon = <CheckOutlined />;
           default:
             color = "default";
             text = status;
@@ -1093,8 +1069,8 @@ export default function VehicleAllocation() {
                       ? "error"
                       : vehicleRequestDetail.status === "SHIPPED"
                       ? "blue"
-                      : vehicleRequestDetail.status === "ALLOCATED"
-                      ? "processing"
+                      : vehicleRequestDetail.status === "DELIVERED"
+                      ? "success"
                       : "default"
                   }
                   icon={
@@ -1106,8 +1082,8 @@ export default function VehicleAllocation() {
                       <CloseOutlined />
                     ) : vehicleRequestDetail.status === "SHIPPED" ? (
                       <SyncOutlined spin />
-                    ) : vehicleRequestDetail.status === "ALLOCATED" ? (
-                      <CheckCircleOutlined />
+                    ) : vehicleRequestDetail.status === "DELIVERED" ? (
+                      <CheckOutlined />
                     ) : null
                   }
                   style={{
@@ -1124,8 +1100,8 @@ export default function VehicleAllocation() {
                     ? "Từ chối"
                     : vehicleRequestDetail.status === "SHIPPED"
                     ? "Đang vận chuyển"
-                    : vehicleRequestDetail.status === "ALLOCATED"
-                    ? "Đã phân bổ"
+                    : vehicleRequestDetail.status === "DELIVERED"
+                    ? "Hoàn thành"
                     : vehicleRequestDetail.status}
                 </Tag>
               </Descriptions.Item>
