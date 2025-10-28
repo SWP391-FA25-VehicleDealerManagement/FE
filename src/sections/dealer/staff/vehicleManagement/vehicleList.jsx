@@ -320,13 +320,13 @@ export default function VehicleList() {
     },
     {
       title: "Giá (VNĐ)",
-      dataIndex: "msrp",
-      key: "msrp",
+      dataIndex: "price",
+      key: "price",
       width: "15%",
       sorter: (a, b) => {
-        const msrpA = a.msrp ? parseFloat(a.msrp.replace(/[^0-9]/g, "")) : 0;
-        const msrpB = b.msrp ? parseFloat(b.msrp.replace(/[^0-9]/g, "")) : 0;
-        return msrpA - msrpB;
+        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
+        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
+        return priceA - priceB;
       },
       render: (msrp) => {
         if (!msrp) {

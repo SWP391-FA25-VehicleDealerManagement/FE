@@ -173,6 +173,7 @@ const DealerStaff = ({ children }) => {
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
+            overflow: "auto",
           }}
         >
           {renderMenuItems(menuItems)}

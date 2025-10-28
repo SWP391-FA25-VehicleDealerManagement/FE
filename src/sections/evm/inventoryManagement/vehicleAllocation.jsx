@@ -93,7 +93,6 @@ export default function VehicleAllocation() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
 
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -242,7 +241,7 @@ export default function VehicleAllocation() {
 
       setIsRecallModalVisible(false);
       recallForm.resetFields();
-      fetchVehicleRequests(); // Refresh danh sách
+      fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Thu hồi thất bại", {
         position: "top-right",
@@ -390,11 +389,18 @@ export default function VehicleAllocation() {
       width: "20%",
     },
     {
+      title: "Màu sắc",
+      dataIndex: "color",
+      key: "color",
+      ...getColumnSearchProps("color"),
+      width: "15%",
+    },
+    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: "20%",
+      width: "15%",
       render: (quantity) => (
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),

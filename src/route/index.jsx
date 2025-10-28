@@ -57,6 +57,12 @@ const StaffListPage = lazy(() =>
 const StaffDetailPage = lazy(() =>
   import("../page/dealer/manager/staffDetailPage.jsx")
 );
+const DealerDebtPage = lazy(() =>
+  import("../page/dealer/manager/dealerDebtPage.jsx")
+);
+const DealerDebtDetailPage = lazy(() =>
+  import("../page/dealer/manager/dealerDebtDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -70,7 +76,7 @@ const AllocateInventoryPage = lazy(() =>
 const ContractsTargetsPage = lazy(() =>
   import("../page/evm/contractsTargetsPage.jsx")
 );
-const DealerDebtsPage = lazy(() => import("../page/evm/dealerDebtsPage.jsx"));
+const EvmDealerDebtsPage = lazy(() => import("../page/evm/dealerDebtsPage.jsx"));
 const VehicleList = lazy(() => import("../page/evm/vehicleListPage.jsx"));
 const VehicleDetail = lazy(() => import("../page/evm/vehicleDetailPage.jsx"));
 const VehicleTypeList = lazy(() =>
@@ -199,7 +205,7 @@ const Routes = () => {
         { path: "profile", element: <UserProfilePage /> },
         { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
         { path: "contracts-targets", element: <ContractsTargetsPage /> },
-        { path: "debts", element: <DealerDebtsPage /> },
+        { path: "debts", element: <EvmDealerDebtsPage /> },
         { path: "vehicles", element: <VehicleList /> },
         { path: "vehicles/:vehicleId", element: <VehicleDetail /> },
         { path: "vehicle-types", element: <VehicleTypeList /> },
@@ -242,6 +248,8 @@ const Routes = () => {
         { path: "staff", element: <StaffListPage /> },
         { path: "staff/:staffId", element: <StaffDetailPage /> },
         { path: "inventory", element: <InventoryPage /> },
+        { path: "dealer-debt", element: <DealerDebtPage /> },
+        { path: "dealer-debt/:debtId", element: <DealerDebtDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

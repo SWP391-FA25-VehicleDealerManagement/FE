@@ -8,4 +8,8 @@ const changePassword = (data) => {
   return axiosClient.post(`/api/auth/change-password`, data);
 };
 
-export { updateUser, changePassword };
+const getDealerAccounts = (id) => {
+  return axiosClient.get(`/api/users/dealer/${id}`);
+};
+
+export { updateUser, changePassword, getDealerAccounts };

@@ -14,7 +14,6 @@ const useDealerStore = create((set) => ({
     try {
       set({ isLoading: true });
       const response = await getAllDealers();
-      console.log("Fetched dealers:", response);
       if (response && response.status === 200) {
         set({ isLoading: false, dealers: response.data.data || [] });
       }
@@ -65,10 +64,10 @@ const useDealerStore = create((set) => ({
     try {
       set({ isLoading: true });
       const response = await createDealer(dealerData);
-      if (response && response.status === 201) {
+      if (response && response.status === 200) {
         set({ isLoading: false });
-        return response.data;
       }
+      return response;
     } catch (error) {
       console.error("Error creating dealer:", error);
       set({ isLoading: false });
