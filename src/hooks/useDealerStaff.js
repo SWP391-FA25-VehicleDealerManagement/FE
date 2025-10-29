@@ -1,98 +1,53 @@
 import { create } from "zustand";
-import {
-  getAllStaffs,
-  getStaffById,
-  deleteStaff,
-  createStaff,
-  updateStaff,
-} from "../api/staff"; // <-- nhớ tạo file api/staff.js giống dealer
-import { toast } from "react-toastify";
+import { getDealerStaffByDealerId, getUserById } from "../api/dealerStaff";
 
-const useStaffStore = create((set) => ({
+const useDealerStaff = create((set) => ({
   staffs: [],
-  isLoading: false,
-
-  fetchStaffs: async () => {
-    try {
-      set({ isLoading: true });
-      const response = await getAllStaffs();
-      console.log("Fetched staffs:", response);
-      if (response && response.status === 200) {
-        set({ isLoading: false, staffs: response.data.data || [] });
-      }
-    } catch (error) {
-      console.error("Error fetching staffs:", error);
-      set({ isLoading: false });
-    }
-  },
-
   staffDetail: {},
-  fetchStaffById: async (id) => {
+  isLoading: false,
+  error: null,
+
+  // Lấy danh sách nhân viên theo dealerId
+  fetchStaffs: async (dealerId) => {
     try {
-      set({ isLoading: true });
-      const response = await getStaffById(id);
-      if (response && response.status === 200) {
-        set({ isLoading: false, staffDetail: response.data.data || {} });
-      }
-    } catch (error) {
-      console.error("Error fetching staff by id:", error);
-      set({ isLoading: false });
+      set({ isLoading: true, error: null });
+      const res = await getDealerStaffByDealerId(dealerId);
+      set({ staffs: res?.data?.data || [], isLoading: false });
+    } catch (err) {
+      console.error("Error fetching dealer staff:", err);
+      set({ isLoading: false, error: err, staffs: [] });
+      toast.error("Không tải được danh sách nhân viên.");
     }
   },
 
-  deleteStaff: async (id) => {
+  // Lấy chi tiết 1 nhân viên theo userId
+  fetchStaffById: async (userId) => {
     try {
-      set({ isLoading: true });
-      const response = await deleteStaff(id);
-      if (response && response.status === 200) {
-        set({ isLoading: false });
-        toast.success("Xoá nhân viên thành công", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting staff:", error);
-      toast.error(error.response?.data?.message || "Failed to delete staff", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-      set({ isLoading: false });
+      set({ isLoading: true, error: null });
+      const res = await getUserById(userId);
+      set({ staffDetail: res?.data?.data || {}, isLoading: false });
+    } catch (err) {
+      console.error("Error fetching staff by id:", err);
+      set({ isLoading: false, error: err });
+      toast.error("Không tải được chi tiết nhân viên.");
     }
   },
 
-  createStaff: async (staffData) => {
-    try {
-      set({ isLoading: true });
-      const response = await createStaff(staffData);
-      if (response && response.status === 201) {
-        set({ isLoading: false });
-        return response.data;
-      }
-    } catch (error) {
-      console.error("Error creating staff:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+  // Các API chưa có backend — giữ stub để không vỡ UI
+  deleteStaff: async () => {
+    toast.info("Xoá nhân viên hiện chưa được hỗ trợ bởi API.");
+    return Promise.reject(new Error("Not supported"));
   },
 
-  updateStaff: async (id, staffData) => {
-    try {
-      set({ isLoading: true });
-      const response = await updateStaff(id, staffData);
-      if (response && response.status === 200) {
-        set({ isLoading: false });
-        set({ staffDetail: response.data.data || {} });
-        return response;
-      }
-    } catch (error) {
-      console.error("Error updating staff:", error);
-      set({ isLoading: false });
-      throw error;
-    }
+  createStaff: async () => {
+    toast.info("Tạo nhân viên hiện chưa được hỗ trợ bởi API.");
+    return Promise.reject(new Error("Not supported"));
+  },
+
+  updateStaff: async () => {
+    toast.info("Cập nhật nhân viên hiện chưa được hỗ trợ bởi API.");
+    return Promise.reject(new Error("Not supported"));
   },
 }));
 
-export default useStaffStore;
+export default useDealerStaff;

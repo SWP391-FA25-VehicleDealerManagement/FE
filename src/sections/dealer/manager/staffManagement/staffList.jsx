@@ -2,13 +2,18 @@ import React, { useEffect, useState } from "react";
 import { Table, Input, Button, Space, Card, Typography, Spin, Modal } from "antd";
 import { SearchOutlined, UserAddOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import useStaffStore from "../../../../hooks/useDealerStaff";   
-import CreateStaffModal from "./createStaffModal";        
+
+import useDealerStaff from "../../../../hooks/useDealerStaff";   // <- store mới
+import useAuthen from "../../../../hooks/useAuthen";             // <- lấy dealerId
+import CreateStaffModal from "./createStaffModal";
 
 const { Title } = Typography;
 
 export default function StaffList() {
-  const { staffs, isLoading, fetchStaffs, deleteStaff } = useStaffStore();
+  const { userDetail } = useAuthen();
+  const dealerId = userDetail?.dealer?.dealerId;
+
+  const { staffs, isLoading, fetchStaffs, deleteStaff } = useDealerStaff();
 
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
@@ -18,14 +23,18 @@ export default function StaffList() {
 
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 5,
+    pageSize: 10,
     showSizeChanger: true,
     pageSizeOptions: ["5", "10", "20", "50"],
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
 
-  useEffect(() => { fetchStaffs(); }, [fetchStaffs]);
+  // Fetch theo dealerId
+  useEffect(() => {
+    if (dealerId) fetchStaffs(dealerId);
+  }, [dealerId, fetchStaffs]);
 
+  // Tìm kiếm cột
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
       <div style={{ padding: 8 }}>
@@ -33,61 +42,151 @@ export default function StaffList() {
           placeholder={`Tìm ${dataIndex}`}
           value={selectedKeys[0]}
           onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => { confirm(); setSearchText(selectedKeys[0]); setSearchedColumn(dataIndex); }}
+          onPressEnter={() => {
+            confirm();
+            setSearchText(selectedKeys[0]);
+            setSearchedColumn(dataIndex);
+          }}
           style={{ marginBottom: 8, display: "block" }}
         />
         <Space>
-          <Button type="primary" onClick={() => { confirm(); setSearchText(selectedKeys[0]); setSearchedColumn(dataIndex); }} icon={<SearchOutlined />} size="small" style={{ width: 90 }}>
+          <Button
+            type="primary"
+            onClick={() => {
+              confirm();
+              setSearchText(selectedKeys[0]);
+              setSearchedColumn(dataIndex);
+            }}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
             Tìm kiếm
           </Button>
-          <Button onClick={() => { clearFilters(); setSearchText(""); }} size="small" style={{ width: 90 }}>
+          <Button
+            onClick={() => {
+              clearFilters();
+              setSearchText("");
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
             Đặt lại
           </Button>
         </Space>
       </div>
     ),
-    filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />,
-    onFilter: (value, record) => record[dataIndex]?.toString()?.toLowerCase().includes(value.toLowerCase()),
+    filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />,
+    onFilter: (value, record) =>
+      String(record?.[dataIndex] ?? "")
+        .toLowerCase()
+        .includes(String(value).toLowerCase()),
   });
 
+  // Vì API user-account trả staff theo user schema, map an toàn các field
   const columns = [
-    { title: "ID", dataIndex: "staffId", key: "staffId", sorter: (a, b) => a.staffId - b.staffId },
-    { title: "Tên Nhân viên", dataIndex: "staffName", key: "staffName", ...getColumnSearchProps("staffName"), sorter: (a, b) => a.staffName.localeCompare(b.staffName), render: (t) => <a>{t}</a> },
-    { title: "Số điện thoại", dataIndex: "phone", key: "phone", ...getColumnSearchProps("phone") },
-    { title: "Địa chỉ", dataIndex: "address", key: "address", ...getColumnSearchProps("address") },
+    {
+      title: "ID",
+      dataIndex: "staffId",
+      key: "id",
+      render: (_, r) => r.staffId ?? r.userId ?? r.id,
+      sorter: (a, b) => (a.staffId ?? a.userId ?? 0) - (b.staffId ?? b.userId ?? 0),
+      width: 100,
+    },
+    {
+      title: "Tên Nhân viên",
+      dataIndex: "staffName",
+      key: "name",
+      ...getColumnSearchProps("staffName"),
+      render: (_, r) => r.staffName ?? r.fullName ?? r.userName ?? "—",
+      sorter: (a, b) =>
+        (a.staffName ?? a.fullName ?? a.userName ?? "").localeCompare(
+          b.staffName ?? b.fullName ?? b.userName ?? ""
+        ),
+    },
+    {
+      title: "Số điện thoại",
+      dataIndex: "phone",
+      key: "phone",
+      ...getColumnSearchProps("phone"),
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      ...getColumnSearchProps("email"),
+    },
     {
       title: "Thao tác",
       key: "action",
-      render: (_, record) => (
-        <Space size="middle">
-          <Link to={`/dealer-manager/staff/${record.staffId}`}>
-            <Button type="primary" icon={<EyeOutlined />} size="small">Xem</Button>
-          </Link>
-          <Button danger icon={<DeleteOutlined />} size="small" onClick={() => { setSelectedStaff(record); setIsDeleteOpen(true); }}>
-            Xóa
-          </Button>
-        </Space>
-      ),
+      render: (_, r) => {
+        const id = r.staffId ?? r.userId ?? r.id;
+        return (
+          <Space size="middle">
+            <Link to={`/dealer-manager/staff/${id}`}>
+              <Button type="primary" icon={<EyeOutlined />} size="small">
+                Xem
+              </Button>
+            </Link>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              onClick={() => {
+                setSelectedStaff(r);
+                setIsDeleteOpen(true);
+              }}
+            >
+              Xóa
+            </Button>
+          </Space>
+        );
+      },
+      width: 160,
     },
   ];
 
   return (
     <div>
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <Title level={2}>Danh sách Nhân viên</Title>
-        <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsCreateModalOpen(true)}>
+        <div>
+          <Title level={2} style={{ margin: 0 }}>
+            Danh sách Nhân viên
+          </Title>
+          <p style={{ color: "#888", marginTop: 4 }}>
+            Quản lý danh sách nhân viên thuộc đại lý của bạn
+          </p>
+        </div>
+
+        {/* Giữ nút như yêu cầu – để dành khi backend có API create */}
+        <Button
+          type="primary"
+          icon={<UserAddOutlined />}
+          size="large"
+          style={{
+            borderRadius: 8,
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+            background: "linear-gradient(90deg, #1677ff, #4096ff)",
+            fontWeight: 500,
+          }}
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           Thêm Nhân viên mới
         </Button>
       </div>
 
+      {/* Table */}
       <Card>
         {isLoading ? (
-          <div className="flex justify-center items-center p-10"><Spin size="large" /></div>
+          <div className="flex justify-center items-center p-10">
+            <Spin size="large" />
+          </div>
         ) : (
           <Table
             columns={columns}
             dataSource={staffs}
-            rowKey="staffId"
+            rowKey={(r) => r.staffId ?? r.userId ?? r.id}
             pagination={pagination}
             onChange={(pg) => setPagination(pg)}
           />
@@ -97,20 +196,37 @@ export default function StaffList() {
       {/* Confirm delete */}
       <Modal
         title="Xác nhận xóa nhân viên"
-        open={isDeleteOpen}                 // AntD v5
-        onOk={async () => { await deleteStaff(selectedStaff?.staffId); setIsDeleteOpen(false); setSelectedStaff(null); fetchStaffs(); }}
-        onCancel={() => { setIsDeleteOpen(false); setSelectedStaff(null); }}
-        okText="Xóa" cancelText="Hủy" okType="danger" closable={false}
+        open={isDeleteOpen}
+        onOk={async () => {
+          try {
+            await deleteStaff(selectedStaff?.staffId ?? selectedStaff?.userId);
+          } finally {
+            setIsDeleteOpen(false);
+            setSelectedStaff(null);
+            if (dealerId) fetchStaffs(dealerId); // refetch đúng dealer
+          }
+        }}
+        onCancel={() => {
+          setIsDeleteOpen(false);
+          setSelectedStaff(null);
+        }}
+        okText="Xóa"
+        cancelText="Hủy"
+        okType="danger"
+        closable={false}
       >
-        <p>Bạn có chắc chắn muốn xóa nhân viên <strong>{selectedStaff?.staffName}</strong> không?</p>
+        <p>
+          Bạn có chắc chắn muốn xóa nhân viên{" "}
+          <strong>{selectedStaff?.staffName ?? selectedStaff?.fullName ?? selectedStaff?.userName}</strong> không?
+        </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
 
-      {/* Create Staff */}
+      {/* Create Staff – giữ nguyên nút & modal để sau gắn API */}
       <CreateStaffModal
-        isOpen={isCreateModalOpen}          // truyền đúng prop
+        isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => fetchStaffs()}
+        onSuccess={() => dealerId && fetchStaffs(dealerId)}
       />
     </div>
   );
