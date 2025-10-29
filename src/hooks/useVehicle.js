@@ -71,14 +71,15 @@ const useVehicleStore = create((set) => ({
   },
 
   dealerCarLists: [],
+  isLoadingVehicleDealers: false,
   fetchVehicleDealers: async (id) => {
     try {
-      set({ isLoading: true });
+      set({ isLoadingVehicleDealers: true });
       const response = await getVehicleDealers(id);
-      set({ isLoading: false, dealerCarLists: response.data.data });
+      set({ isLoadingVehicleDealers: false, dealerCarLists: response.data.data });
       return response;
     } catch (error) {
-      set({ isLoading: false });
+      set({ isLoadingVehicleDealers: false });
       console.error("Error fetching vehicle dealers:", error);
       throw error;
     }
