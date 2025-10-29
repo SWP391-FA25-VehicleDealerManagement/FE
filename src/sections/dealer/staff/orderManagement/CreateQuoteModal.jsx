@@ -1,5 +1,5 @@
-// components/order/createOrderModal.jsx
-import React, { useState, useEffect, useCallback } from "react";
+// components/order/CreateQuoteModal.jsx
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Form,
@@ -12,42 +12,42 @@ import {
   Typography,
   Empty,
 } from "antd";
-import { UserOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  FileSearchOutlined,
+} from "@ant-design/icons"; // Added FileSearchOutlined
 import { toast } from "react-toastify";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
-import { debounce } from "lodash";
+import { useNavigate } from "react-router-dom";
 
 const { Option } = Select;
 const { Text } = Typography;
 
-export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
+export default function CreateQuoteModal({ isOpen, onClose }) {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
   const { userDetail } = useAuthen();
   const {
     dealerCarLists,
     fetchVehicleDealers,
     isLoading: isLoadingVehicles,
   } = useVehicleStore();
-  const {
-    createDealerOrder,
-    isLoadingCreateOrder,
-    Customer,
-    getCustomer,
-    isLoadingCustomer,
-  } = useDealerOrder();
+  const { Customer, getCustomer, isLoadingCustomer } = useDealerOrder();
   const [customerInfo, setCustomerInfo] = useState(null);
   const dealerId = userDetail?.dealer?.dealerId;
 
   useEffect(() => {
     if (isOpen && dealerId) {
       fetchVehicleDealers(dealerId);
+      if (!Customer || Customer.length === 0) {
+        getCustomer(dealerId);
+      }
     }
-    if (!Customer || Customer.length === 0) {
-      getCustomer(dealerId);
-    }
-  }, [isOpen, dealerId, fetchVehicleDealers, getCustomer, Customer]);
+  }, [isOpen, dealerId, fetchVehicleDealers, getCustomer, Customer]); //
 
   const handlePhoneChange = (e) => {
     const phone = e.target.value;
@@ -56,6 +56,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     form.resetFields(["customerName", "customerEmail"]);
 
     if (phone && phone.length >= 10) {
+      if (isLoadingCustomer) return;
+
       const foundCustomer = Customer.find((cust) => cust.phone === phone);
 
       if (foundCustomer) {
@@ -64,6 +66,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
           customerName: foundCustomer.customerName,
           customerEmail: foundCustomer.email,
         });
+
+        form.setFields([{ name: "customerPhone", errors: [] }]);
       } else {
         form.setFields([
           {
@@ -75,7 +79,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     }
   };
 
-  const handleSubmit = async (values) => {
+  const handleViewQuote = async (values) => {
     if (!customerInfo) {
       form.setFields([
         {
@@ -85,48 +89,74 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
       ]);
       toast.error("Vui lòng tìm khách hàng hợp lệ bằng SĐT.");
       return;
+    } 
+
+    const vehicleIds = values.vehicleIds; 
+
+    if (!customerInfo || !vehicleIds || vehicleIds.length === 0 || !dealerId) {
+      toast.error(
+        "Vui lòng chọn khách hàng, ít nhất một xe và đảm bảo thông tin đại lý hợp lệ."
+      );
+      return;
+    } 
+
+    // 1. Lấy thông tin chi tiết đầy đủ của các xe đã chọn từ dealerCarLists
+    const selectedVehiclesDetails = dealerCarLists.filter((vehicle) =>
+      vehicleIds.includes(vehicle.vehicleId)
+    );
+
+    // Kiểm tra xem có lấy đủ thông tin xe không
+    if (selectedVehiclesDetails.length !== vehicleIds.length) {
+      toast.error(
+        "Lỗi: Không tìm thấy thông tin đầy đủ cho một số xe đã chọn."
+      );
+      return;
     }
 
-    const payload = {
-      customerId: customerInfo.customerId,
-      userId: userDetail.userId,
-      dealerId: userDetail.dealer.dealerId,
-      orderDetails: values.vehicleIds.map((vehicleId) => {
-        const vehicle = dealerCarLists.find((v) => v.vehicleId === vehicleId);
-        return {
-          vehicleId: vehicleId,
-          promotionId: null,
-          quantity: 1,
-          price: vehicle.price,
-        };
-      }),
+    // 2. Chuẩn bị dữ liệu đầy đủ để truyền đi
+    const quotePreviewData = {
+      customer: customerInfo, 
+      items: selectedVehiclesDetails.map((vehicle) => ({
+        vehicleId: vehicle.vehicleId,
+        quantity: 1,
+        price: vehicle?.price,
+
+        totalPrice: vehicle?.price,
+
+        vehicle: {
+          modelName: vehicle.modelName,
+          variantName: vehicle.variantName,
+          vinNumber: vehicle.vinNumber,
+          color: vehicle.color,
+          msrp: vehicle.price,
+          variantImage: vehicle.variantImage,
+        },
+      })),
+      dealerInfo: {
+        name: userDetail?.dealer?.dealerName || `Đại lý #${dealerId}`,
+        address: userDetail?.dealer?.address,
+      },
+      quoteDate: new Date().toISOString(),
     };
 
-    try {
-      console.log("check payload", payload);
-      const response = await createDealerOrder(payload);
-      if (response && response.status === 200) {
-        toast.success("Tạo đơn hàng thành công!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        form.resetFields();
-        setCustomerInfo(null);
-        onOrderCreated();
-      }
-    } catch (error) {
-      toast.error(error.response.data.message, {
-        position: "top-right",
-        autoClose: 3000,
-      });
-    }
+    navigate(`/dealer-staff/quote-preview`, {
+      state: { quoteData: quotePreviewData },
+    });
+
+    form.resetFields(); 
+    setCustomerInfo(null); 
+    onClose(); 
   };
 
   return (
     <Modal
-      title="Tạo đơn hàng mới"
+      title="Tạo Báo Giá"
       open={isOpen}
-      onCancel={onClose}
+      onCancel={() => {
+        form.resetFields();
+        setCustomerInfo(null);
+        onClose();
+      }}
       width={800}
       footer={[
         <Button
@@ -142,14 +172,15 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         <Button
           key="submit"
           type="primary"
-          loading={isLoadingCreateOrder}
           onClick={() => form.submit()}
+          icon={<FileSearchOutlined />}
         >
-          Tạo đơn hàng
+          Xem Báo Giá
         </Button>,
       ]}
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+      <Form form={form} layout="vertical" onFinish={handleViewQuote}>
+        {/* Customer Phone Input (same) */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -164,15 +195,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 placeholder="Nhập SĐT để tìm..."
                 disabled={isLoadingCustomer}
               />
-              {}
             </Form.Item>
             {isLoadingCustomer && (
               <Spin size="small" style={{ marginLeft: 8 }} />
             )}
           </Col>
         </Row>
-
-        {customerInfo && (
+        {customerInfo && ( //
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="customerName" label="Tên khách hàng">
@@ -186,7 +215,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             </Col>
           </Row>
         )}
-
         <Form.Item
           name="vehicleIds"
           label="Chọn xe"
@@ -211,22 +239,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
               .filter((vehicle) => vehicle.status === "IN_DEALER_STOCK")
               .map((vehicle) => ({
                 value: vehicle.vehicleId,
-                label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`, //
+                label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`,
               }))}
-          >
-            {dealerCarLists.map((vehicle) => (
-              <Option
-                key={vehicle.vehicleId}
-                value={vehicle.vehicleId}
-                disabled={vehicle.status !== "IN_DEALER_STOCK"}
-              >
-                {`${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`}
-                {vehicle.status !== "IN_DEALER_STOCK" && (
-                  <Text type="danger"> (Đã bán)</Text>
-                )}
-              </Option>
-            ))}
-          </Select>
+          />
         </Form.Item>
       </Form>
     </Modal>

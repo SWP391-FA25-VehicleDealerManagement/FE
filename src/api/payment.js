@@ -7,4 +7,5 @@ const getPayment = () => {
 const createPayment = (data) => {
   return axiosClient.post("/api/payments", data);
 };
+
 export { getPayment, createPayment };

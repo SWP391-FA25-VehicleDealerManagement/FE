@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Card,
   Spin,
@@ -12,6 +12,7 @@ import {
   Col,
   Tag,
   Space,
+  Image,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -19,121 +20,166 @@ import {
   UserOutlined,
   FileTextOutlined,
   CarOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import useAuthen from "../../../../hooks/useAuthen";
-import useDealerOrder from "../../../../hooks/useDealerOrder"; //
-import useVehicleStore from "../../../../hooks/useVehicle"; //
+import useDealerOrder from "../../../../hooks/useDealerOrder";
+import { toast } from "react-toastify";
+import axiosClient from "../../../../config/axiosClient";
 
 const { Title, Text } = Typography;
 
 export default function Quote() {
-  const { orderId } = useParams();
-  const [searchParams] = useSearchParams();
-  const customerId = searchParams.get("customerId");
   const navigate = useNavigate();
+  const location = useLocation();
   const { userDetail } = useAuthen();
-
-  // State từ các store
-  const {
-    CustomerOrder,
-    getCustomerOrders,
-    CustomerDetail,
-    isLoadingCustomerDetail,
-    getCustomerById,
-    CustomerOrderDetail,
-    isLoadingOrderDetail,
-    fetchCustomerOrderById,
-  } = useDealerOrder();
-  const { fetchVehicleById } = useVehicleStore();
-
-  // State local để lưu chi tiết xe
-  const [vehicleDetails, setVehicleDetails] = useState([]);
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
-
-  const dealerId = userDetail?.dealer?.dealerId;
+  const { createDealerOrder, isLoadingCreateOrder } = useDealerOrder();
+  const [quoteData, setQuoteData] = useState(location.state?.quoteData || null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [vehicleImageUrls, setVehicleImageUrls] = useState({});
 
   useEffect(() => {
-    if (orderId && customerId && dealerId) {
-      fetchCustomerOrderById(orderId);
-      getCustomerById(customerId);
-      getCustomerOrders(dealerId);
-    }
-  }, [
-    orderId,
-    customerId,
-    dealerId,
-    fetchCustomerOrderById,
-    getCustomerById,
-    getCustomerOrders,
-  ]);
-
-  // 2. Tải chi tiết xe (sau khi đã tải xong OrderDetail)
-  useEffect(() => {
-    if (CustomerOrderDetail && CustomerOrderDetail.length > 0) {
-      const fetchVehicles = async () => {
-        setIsLoadingVehicles(true);
-        try {
-          const vehiclePromises = CustomerOrderDetail.map(
-            (item) => fetchVehicleById(item.vehicleId) 
-          );
-          const vehicles = await Promise.all(vehiclePromises);
-          setVehicleDetails(vehicles); 
-        } catch (error) {
-          console.error("Lỗi khi tải chi tiết xe:", error);
-        } finally {
-          setIsLoadingVehicles(false);
-        }
-      };
-      fetchVehicles();
-    }
-  }, [CustomerOrderDetail, fetchVehicleById]);
-
-  // 3. Gộp tất cả dữ liệu lại
-  const quoteData = useMemo(() => {
-    if (
-      !CustomerOrderDetail ||
-      !CustomerDetail ||
-      !CustomerOrder ||
-      vehicleDetails.length === 0
-    ) {
-      return null;
-    }
-
-    // Tìm đơn hàng chính từ danh sách
-    const order = CustomerOrder.find((o) => o.orderId == orderId);
-    if (!order) return null;
-    const items = CustomerOrderDetail.map((item) => {
-      const vehicle = vehicleDetails.find((v) => v.vehicleId == item.vehicleId);
-      return { ...item, vehicle }; //
-    });
-
-    return {
-      order,
-      customer: CustomerDetail, 
-      items,
+    let objectUrlsToRevoke = [];
+    const fetchAllImages = async () => {
+      if (quoteData?.items && quoteData.items.length > 0) {
+        const newImageUrls = { ...vehicleImageUrls };
+        const pathsToFetch = quoteData.items
+          .map((item) => item.vehicle?.variantImage)
+          .filter(Boolean)
+          .filter((path) => !newImageUrls[path]);
+        if (pathsToFetch.length === 0) return;
+        const fetchPromises = pathsToFetch.map(async (imagePath) => {
+          try {
+            const response = await axiosClient.get(imagePath, {
+              responseType: "blob",
+            });
+            const objectUrl = URL.createObjectURL(response.data);
+            objectUrlsToRevoke.push(objectUrl);
+            return { path: imagePath, url: objectUrl };
+          } catch (error) {
+            console.error(`Không thể tải ảnh: ${imagePath}`, error);
+            return { path: imagePath, url: null };
+          }
+        });
+        const results = await Promise.all(fetchPromises);
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+        setVehicleImageUrls(newImageUrls);
+      }
     };
-  }, [
-    CustomerOrderDetail,
-    CustomerDetail,
-    CustomerOrder,
-    vehicleDetails,
-    orderId,
-  ]);
+
+    fetchAllImages();
+    return () => {
+      objectUrlsToRevoke.forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [quoteData]);
+
+  // Hàm xử lý tạo đơn hàng
+  const handleCreateOrder = async () => {
+    if (
+      !quoteData ||
+      !quoteData.customer ||
+      !quoteData.items ||
+      !userDetail?.dealer?.dealerId ||
+      !userDetail?.userId
+    ) {
+      toast.error("Thiếu thông tin để tạo đơn hàng.");
+      return;
+    }
+    setIsLoading(true);
+    const payload = {
+      customerId: quoteData.customer.customerId,
+      userId: userDetail.userId,
+      dealerId: userDetail.dealer.dealerId,
+      orderDetails: quoteData.items.map((item) => ({
+        vehicleId: item.vehicleId,
+        promotionId: null,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    };
+
+    try {
+      const response = await createDealerOrder(payload);
+      if (response && response.status === 200) {
+        toast.success("Tạo đơn hàng thành công!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        navigate("/dealer-staff/orders");
+      }
+      s;
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Tạo đơn hàng thất bại.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const itemColumns = [
     {
       title: "Xe",
       key: "vehicle",
-      render: (_, record) => (
-        <div>
-          <Text strong>
-            {record.vehicle?.modelName} {record.vehicle?.variantName}
-          </Text>
-          <br />
-          <Text type="secondary">VIN: {record.vehicle?.vinNumber}</Text>
-        </div>
-      ),
+      render: (_, record) => {
+        // Lấy URL ảnh từ state
+        const imageUrl = record.vehicle?.variantImage
+          ? vehicleImageUrls[record.vehicle.variantImage]
+          : null;
+        const isImageLoading =
+          record.vehicle?.variantImage &&
+          !(record.vehicle.variantImage in vehicleImageUrls);
+        return (
+          <Space>
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#f0f0f0",
+                borderRadius: "4px",
+              }}
+            >
+              {isImageLoading ? (
+                <Spin size="small" />
+              ) : imageUrl ? (
+                <Image
+                  src={imageUrl}
+                  alt={record.vehicle?.variantName}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "4px",
+                  }}
+                  preview={true}
+                />
+              ) : (
+                // Nếu không có ảnh/lỗi -> Icon placeholder
+                <CarOutlined style={{ fontSize: 32, color: "#999" }} />
+              )}
+            </div>
+            {/* Tên và VIN */}
+            <div>
+              <Text strong>
+                {record.vehicle?.modelName} {record.vehicle?.variantName}
+              </Text>
+              <br />
+              <Text type="secondary">VIN: {record.vehicle?.vinNumber}</Text>
+            </div>
+          </Space>
+        );
+      },
     },
     {
       title: "Màu sắc",
@@ -168,54 +214,51 @@ export default function Quote() {
     },
   ];
 
-  const isLoading =
-    isLoadingOrderDetail || isLoadingCustomerDetail || isLoadingVehicles;
-
+  // Hàm render nội dung chính của trang
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center p-20">
-          <Spin size="large" />
-        </div>
-      );
-    }
-
     if (!quoteData) {
       return (
         <Card>
           <Typography.Title level={4}>
-            Không tìm thấy dữ liệu báo giá.
+            Không có dữ liệu báo giá để hiển thị. Vui lòng quay lại và tạo báo
+            giá.
           </Typography.Title>
           <Button onClick={() => navigate(-1)}>Quay lại</Button>
         </Card>
       );
     }
 
-    const { order, customer, items } = quoteData;
-
+    // Lấy dữ liệu từ quoteData đã được truyền vào
+    const { customer, items, dealerInfo, quoteDate } = quoteData;
+    // Tính toán tổng tiền
+    const subtotal = items.reduce(
+      (sum, item) => sum + (item.totalPrice || 0),
+      0
+    );
+    const discount = 0;
+    const totalPayment = subtotal - discount;
     return (
       <Card id="quote-to-print">
-        {/* Tiêu đề */}
+        {/* Tiêu đề Báo Giá và Thông tin Đại lý */}
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               BÁO GIÁ
             </Title>
             <Text type="secondary">
-              Mã đơn hàng: #{order.orderId} | Ngày:{" "}
-              {dayjs(order.createdDate).format("DD/MM/YYYY")}
+              Ngày: {dayjs(quoteDate).format("DD/MM/YYYY")}
             </Text>
           </Col>
           <Col>
             <Title level={4} style={{ margin: 0, textAlign: "right" }}>
-              {userDetail?.dealer?.dealerName || "Đại lý EVM"}
+              {dealerInfo?.name || "Đại lý EVM"}
             </Title>
+            {dealerInfo?.address && <Text block>{dealerInfo.address}</Text>}
           </Col>
         </Row>
-
         <Divider />
 
-        {/* Thông tin khách hàng và đơn hàng */}
+        {/* Thông tin khách hàng */}
         <Row gutter={32}>
           <Col span={12}>
             <Descriptions
@@ -235,58 +278,45 @@ export default function Quote() {
               <Descriptions.Item label="Số điện thoại">
                 {customer.phone}
               </Descriptions.Item>
-            </Descriptions>
-          </Col>
-          <Col span={12}>
-            <Descriptions
-              title={
-                <Space>
-                  <FileTextOutlined /> Đơn hàng
-                </Space>
-              }
-              column={1}
-            >
-              <Descriptions.Item label="Phương thức thanh toán">
-                {order.paymentMethod}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
-                <Tag color="blue">{order.status}</Tag>
-              </Descriptions.Item>
+              {customer.address && (
+                <Descriptions.Item label="Địa chỉ">
+                  {customer.address}
+                </Descriptions.Item>
+              )}
             </Descriptions>
           </Col>
         </Row>
-
         <Divider />
 
-        {/* Chi tiết xe */}
+        {/* Bảng chi tiết sản phẩm */}
         <Title level={4} style={{ marginTop: 24 }}>
           <CarOutlined /> Chi tiết sản phẩm
         </Title>
         <Table
           columns={itemColumns}
           dataSource={items}
-          rowKey="orderDetailId"
+          rowKey="vehicleId"
           pagination={false}
           bordered
         />
 
-        {/* Tổng kết */}
+        {/* Phần tổng kết tiền */}
         <Row justify="end" style={{ marginTop: 24 }}>
           <Col span={8}>
             <Descriptions column={1} bordered size="small">
               <Descriptions.Item label="Tổng tiền hàng">
                 <Text strong style={{ fontSize: 16 }}>
-                  {(order.totalPrice || 0).toLocaleString("vi-VN")} VNĐ
+                  {subtotal.toLocaleString("vi-VN")} VNĐ
                 </Text>
               </Descriptions.Item>
               <Descriptions.Item label="Giảm giá">
                 <Text strong style={{ fontSize: 16, color: "green" }}>
-                  - 0 VNĐ
+                  - {discount.toLocaleString("vi-VN")} VNĐ
                 </Text>
               </Descriptions.Item>
               <Descriptions.Item label="Tổng thanh toán">
                 <Text strong type="danger" style={{ fontSize: 20 }}>
-                  {(order.totalAmount || 0).toLocaleString("vi-VN")} VNĐ
+                  {totalPayment.toLocaleString("vi-VN")} VNĐ
                 </Text>
               </Descriptions.Item>
             </Descriptions>
@@ -298,20 +328,31 @@ export default function Quote() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      {/* Các nút hành động */}
+      <Space className="action-buttons-container" style={{ marginBottom: 16 }}>
         <Button onClick={() => navigate(-1)} icon={<ArrowLeftOutlined />}>
           Quay lại
         </Button>
         <Button
-          type="primary"
+          type="default"
           icon={<PrinterOutlined />}
           onClick={() => window.print()}
-          disabled={isLoading || !quoteData}
+          disabled={!quoteData}
         >
           In báo giá
         </Button>
-      </Space>
 
+        <Button
+          type="primary"
+          icon={<CheckCircleOutlined />}
+          onClick={handleCreateOrder}
+          loading={isLoadingCreateOrder || isLoading}
+          disabled={!quoteData}
+          style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+        >
+          Xác nhận & Tạo Đơn Hàng
+        </Button>
+      </Space>
       {renderContent()}
     </div>
   );

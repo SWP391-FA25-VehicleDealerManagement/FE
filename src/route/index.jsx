@@ -297,7 +297,7 @@ const Routes = () => {
         { path: "inventory", element: <InventoryPage /> },
         { path: "orders", element: <CustomerOrderPage /> },
         { path: "orders/:orderId", element: <CustomerOrderDetailPage /> },
-        { path: "quote/:orderId", element: <QuotePage /> },
+        { path: "quote-preview", element: <QuotePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

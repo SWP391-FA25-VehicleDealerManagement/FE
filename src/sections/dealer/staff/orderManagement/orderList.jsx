@@ -8,12 +8,14 @@ import {
   CloseCircleOutlined,
   FileTextOutlined,
   ContainerOutlined,
+  FormOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
 import CreateOrderModal from "./createOrderModal";
+import CreateQuoteModal from "./CreateQuoteModal.jsx";
 
 const { Title } = Typography;
 
@@ -29,6 +31,7 @@ export default function OrderList() {
     isLoadingCustomer,
   } = useDealerOrder();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [mergedOrders, setMergedOrders] = useState([]);
 
   const dealerId = userDetail?.dealer?.dealerId;
@@ -86,9 +89,11 @@ export default function OrderList() {
     });
   };
 
-  const handleCreateQuote = (record) => {
-    navigate(`/dealer-staff/quote/${record.orderId}?customerId=${record.customerId}`);
-  };
+  // const handleCreateQuote = (record) => {
+  //   navigate(
+  //     `/dealer-staff/quote/${record.orderId}?customerId=${record.customerId}`
+  //   );
+  // };
 
   const columns = [
     {
@@ -163,14 +168,6 @@ export default function OrderList() {
             Thanh toán
           </Button>
           <Button
-            type="dashed"
-            icon={<FileTextOutlined />}
-            size="small"
-            onClick={() => handleCreateQuote(record)}
-          >
-            Tạo báo giá
-          </Button>
-          <Button
             danger
             icon={<CloseCircleOutlined />}
             size="small"
@@ -186,21 +183,30 @@ export default function OrderList() {
     },
   ];
 
-  console.log("mergedata order", mergedOrders);
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
           <ContainerOutlined style={{ marginRight: 8 }} /> Quản lý đơn hàng
         </Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setIsModalOpen(true)}
-        >
-          Tạo đơn hàng mới
-        </Button>
+        <div className="flex space-x-4">
+          <Button
+            type="primary"
+            icon={<FormOutlined />}
+            onClick={() => setIsQuoteModalOpen(true)}
+            disabled={isLoadingCustomer}
+          >
+            Tạo Báo Giá
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalOpen(true)}
+            disabled={isLoadingCustomer}
+          >
+            Tạo đơn hàng mới
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -222,11 +228,16 @@ export default function OrderList() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onOrderCreated={() => {
-          if (userDetail && userDetail.dealerId) {
-            getCustomerOrders(userDetail.dealerId);
+          if (dealerId) {
+            getCustomerOrders(dealerId);
           }
           setIsModalOpen(false);
         }}
+      />
+
+      <CreateQuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
       />
     </div>
   );

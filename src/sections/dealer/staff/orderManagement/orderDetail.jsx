@@ -1,5 +1,4 @@
-// components/order/orderDetail.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Spin,
@@ -13,7 +12,7 @@ import {
   List,
   Avatar,
   Tag,
-  Divider,
+  Image,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -27,22 +26,186 @@ import {
   CarOutlined,
 } from "@ant-design/icons";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
+import useAuthen from "../../../../hooks/useAuthen";
+import useVehicleStore from "../../../../hooks/useVehicle";
 import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import axiosClient from "../../../../config/axiosClient";
 
 const { Title, Text } = Typography;
 
 export default function OrderDetail() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { fetchCustomerOrderById, CustomerOrderDetail, isLoadingOrderDetail } =
-    useDealerOrder();
+  const { userDetail } = useAuthen();
 
+  const {
+    CustomerOrder,
+    isLoadingCustomerOrder,
+    getCustomerOrders,
+    CustomerDetail,
+    isLoadingCustomerDetail,
+    getCustomerById,
+    CustomerOrderDetail,
+    isLoadingOrderDetail,
+    fetchCustomerOrderById,
+  } = useDealerOrder();
+  const { fetchVehicleById } = useVehicleStore();
+  const [orderInfo, setOrderInfo] = useState(null);
+  const [vehicleDetails, setVehicleDetails] = useState([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const [error, setError] = useState(null);
+  const [vehicleImageUrls, setVehicleImageUrls] = useState({});
+
+  const dealerId = userDetail?.dealer?.dealerId;
+
+  // 3. Fetch Order Details (Items) first
   useEffect(() => {
     if (orderId) {
       fetchCustomerOrderById(orderId);
     }
   }, [orderId, fetchCustomerOrderById]);
 
+  useEffect(() => {
+    const fetchOrderAndCustomer = async () => {
+      if (!orderId || !dealerId) return;
+
+      try {
+        await getCustomerOrders(dealerId); //
+      } catch (err) {
+        console.error("Error fetching order list:", err);
+        setError("Không thể tải danh sách đơn hàng.");
+      }
+    };
+    fetchOrderAndCustomer();
+  }, [orderId, dealerId, getCustomerOrders]);
+
+  useEffect(() => {
+    if (CustomerOrder && CustomerOrder.length > 0) {
+      const currentOrder = CustomerOrder.find((o) => o.orderId == orderId);
+      if (currentOrder) {
+        setOrderInfo(currentOrder);
+        if (currentOrder.customerId) {
+          getCustomerById(currentOrder.customerId);
+        } else {
+          console.warn("Order found, but no customerId associated.");
+        }
+      } else {
+        console.warn(`Order with ID ${orderId} not found in the list.`);
+      }
+    }
+  }, [orderId, CustomerOrder, getCustomerById]);
+
+  useEffect(() => {
+    if (Array.isArray(CustomerOrderDetail) && CustomerOrderDetail.length > 0) {
+      const fetchVehicles = async () => {
+        setIsLoadingVehicles(true);
+        setError(null);
+        try {
+          const vehiclePromises = CustomerOrderDetail.map((item) =>
+            fetchVehicleById(item.vehicleId)
+          );
+
+          const vehiclesData = await Promise.all(vehiclePromises);
+
+          setVehicleDetails(vehiclesData.filter(Boolean));
+        } catch (err) {
+          console.error("Error fetching vehicle details:", err);
+          setError("Không thể tải chi tiết một số xe.");
+          setVehicleDetails([]);
+        } finally {
+          setIsLoadingVehicles(false);
+        }
+      };
+      fetchVehicles();
+    } else {
+      setVehicleDetails([]);
+    }
+  }, [CustomerOrderDetail, fetchVehicleById]);
+
+  useEffect(() => {
+    let objectUrlsToRevoke = [];
+
+    const fetchAllImages = async () => {
+      if (vehicleDetails && vehicleDetails.length > 0) {
+        const newImageUrls = { ...vehicleImageUrls };
+        const pathsToFetch = vehicleDetails
+          .map((v) => v?.variantImage)
+          .filter(Boolean)
+          .filter((path) => !newImageUrls[path]);
+
+        if (pathsToFetch.length === 0) return;
+        const fetchPromises = pathsToFetch.map(async (imagePath) => {
+          try {
+            const response = await axiosClient.get(imagePath, {
+              responseType: "blob",
+            });
+            const objectUrl = URL.createObjectURL(response.data);
+            objectUrlsToRevoke.push(objectUrl);
+            return { path: imagePath, url: objectUrl };
+          } catch (error) {
+            console.error(`Không thể tải ảnh: ${imagePath}`, error);
+            return { path: imagePath, url: null };
+          }
+        });
+
+        const results = await Promise.all(fetchPromises);
+
+        results.forEach((result) => {
+          if (result) {
+            newImageUrls[result.path] = result.url;
+          }
+        });
+        setVehicleImageUrls(newImageUrls);
+      }
+    };
+
+    fetchAllImages();
+
+    // Hàm cleanup: Thu hồi tất cả Object URL đã tạo trong useEffect này
+    return () => {
+      objectUrlsToRevoke.forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+      objectUrlsToRevoke = [];
+    };
+  }, [vehicleDetails]);
+
+  // 6. Combine all data once available
+  const mergedData = useMemo(() => {
+    if (
+      !orderInfo ||
+      !CustomerDetail ||
+      !Array.isArray(CustomerOrderDetail) ||
+      CustomerOrderDetail.length === 0 ||
+      vehicleDetails.length === 0 ||
+      vehicleDetails.length !== CustomerOrderDetail.length
+    ) {
+      return null;
+    }
+    const itemsWithVehicles = CustomerOrderDetail.map((item) => {
+      const vehicle = vehicleDetails.find(
+        (v) => v.vehicleId === item.vehicleId
+      );
+      return {
+        ...item,
+        vehicle: vehicle || null,
+      };
+    });
+
+    return {
+      order: orderInfo,
+      customer: CustomerDetail,
+      items: itemsWithVehicles,
+    };
+  }, [orderInfo, CustomerDetail, CustomerOrderDetail, vehicleDetails]);
+
+  const isLoading =
+    isLoadingOrderDetail ||
+    isLoadingCustomerDetail ||
+    isLoadingCustomerOrder ||
+    isLoadingVehicles ||
+    !mergedData;
   const handlePayment = () => {
     toast.info(`Thực hiện thanh toán cho đơn hàng ${orderId}`);
   };
@@ -51,11 +214,8 @@ export default function OrderDetail() {
     toast.warn(`Thực hiện huỷ đơn hàng ${orderId}`);
   };
 
-  const handleCreateQuote = () => {
-    toast.info(`Tạo báo giá cho đơn hàng ${orderId}`);
-  };
 
-  if (isLoadingOrderDetail || !CustomerOrderDetail) {
+  if (isLoading && !error) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Spin size="large" />
@@ -63,23 +223,51 @@ export default function OrderDetail() {
     );
   }
 
-  const { customer, vehicles, totalAmount, status, orderDate } = CustomerOrderDetail; // Giả định cấu trúc data
+  if (error) {
+    return (
+      <Card>
+        <Title level={4} type="danger">
+          Lỗi tải dữ liệu
+        </Title>
+        <Text>{error}</Text>
+        <Button onClick={() => navigate(-1)} style={{ marginTop: "16px" }}>
+          Quay lại
+        </Button>
+      </Card>
+    );
+  }
 
-  const isActionDisabled = status === "COMPLETED" || status === "CANCELLED";
+  if (!mergedData) {
+    return (
+      <Card>
+        <Title level={4}>Không tìm thấy chi tiết đơn hàng</Title>
+        <Text>Không thể tìm thấy thông tin cho mã đơn hàng #{orderId}.</Text>
+        <Button onClick={() => navigate(-1)} style={{ marginTop: "16px" }}>
+          Quay lại
+        </Button>
+      </Card>
+    );
+  }
+
+  const { order, customer, items } = mergedData;
+  const isActionDisabled =
+    order.status === "COMPLETED" || order.status === "CANCELLED"; 
 
   return (
     <div>
+      {/* Button Quay lại */}
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/dealer-staff/orders")}
+        onClick={() => navigate("/dealer-staff/orders")} //
         className="mb-4"
       >
         Quay lại danh sách
       </Button>
 
+      {/* Header và nút Action */}
       <div className="flex justify-between items-center mb-6">
-        <Title level={2}>Chi tiết đơn hàng: #{orderDetail.orderId}</Title>
+        <Title level={2}>Chi tiết đơn hàng: #{order.orderId}</Title>
         <Space>
           <Button
             type="primary"
@@ -88,13 +276,6 @@ export default function OrderDetail() {
             disabled={isActionDisabled}
           >
             Thanh toán
-          </Button>
-          <Button
-            type="dashed"
-            icon={<FileTextOutlined />}
-            onClick={handleCreateQuote}
-          >
-            Tạo báo giá
           </Button>
           <Button
             danger
@@ -108,13 +289,12 @@ export default function OrderDetail() {
       </div>
 
       <Row gutter={[16, 16]}>
-        {/* Thông tin khách hàng */}
         <Col span={10}>
-          <Card title="Thông tin khách hàng" icon={<UserOutlined />}>
+          <Card title="Thông tin khách hàng">
             {customer ? (
               <Descriptions column={1} layout="horizontal">
                 <Descriptions.Item label={<UserOutlined />}>
-                  {customer.fullName}
+                  {customer.customerName}
                 </Descriptions.Item>
                 <Descriptions.Item label={<PhoneOutlined />}>
                   {customer.phone}
@@ -123,7 +303,7 @@ export default function OrderDetail() {
                   {customer.email}
                 </Descriptions.Item>
                 <Descriptions.Item label={<HomeOutlined />}>
-                  {customer.address}
+                  {customer.address || "Chưa có địa chỉ"}
                 </Descriptions.Item>
               </Descriptions>
             ) : (
@@ -137,24 +317,25 @@ export default function OrderDetail() {
           <Card title="Thông tin đơn hàng">
             <Descriptions column={2}>
               <Descriptions.Item label="Ngày tạo">
-                {new Date(orderDate).toLocaleString("vi-VN")}
+                {/* Use correct field name and format */}
+                {dayjs(order.createdDate).format("DD/MM/YYYY HH:mm")}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 <Tag
                   color={
                     isActionDisabled
-                      ? status === "COMPLETED"
+                      ? order.status === "COMPLETED"
                         ? "success"
                         : "error"
                       : "processing"
                   }
                 >
-                  {status}
+                  {order.status}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Tổng tiền" span={2}>
                 <Title level={3} style={{ color: "red" }}>
-                  {(totalAmount || 0).toLocaleString("vi-VN")} VNĐ
+                  {(order.totalPrice || 0).toLocaleString("vi-VN")} VNĐ
                 </Title>
               </Descriptions.Item>
             </Descriptions>
@@ -166,32 +347,78 @@ export default function OrderDetail() {
           <Card title="Danh sách xe trong đơn hàng">
             <List
               itemLayout="horizontal"
-              dataSource={vehicles || []}
-              renderItem={(vehicle) => (
-                <List.Item
-                  actions={[
-                    <Text strong>
-                      {(vehicle.price || 0).toLocaleString("vi-VN")} VNĐ
-                    </Text>,
-                    <Link to={`/dealer-staff/vehicles/${vehicle.vehicleId}`}>
-                      Xem chi tiết xe
-                    </Link>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        shape="square"
-                        size={64}
-                        icon={<CarOutlined />}
-                        src={vehicle.variantImage} // Giả định
-                      />
-                    }
-                    title={`${vehicle.modelName} ${vehicle.variantName}`}
-                    description={`Màu: ${vehicle.color} - VIN: ${vehicle.vinNumber}`}
-                  />
-                </List.Item>
-              )}
+              dataSource={items || []}
+              renderItem={(item) => {
+                // Lấy URL ảnh từ state, dựa vào path ảnh của xe
+                const imageUrl = item.vehicle?.variantImage
+                  ? vehicleImageUrls[item.vehicle.variantImage]
+                  : null;
+                // Xác định trạng thái loading cho ảnh này
+                const isImageLoading =
+                  item.vehicle?.variantImage &&
+                  !(item.vehicle.variantImage in vehicleImageUrls);
+
+                return (
+                  <List.Item
+                    actions={[
+                      <Text strong>
+                        {(item.price || 0).toLocaleString("vi-VN")} VNĐ
+                      </Text>,
+                      item.vehicle ? (
+                        <Link
+                          to={`/dealer-staff/vehicles/${item.vehicle.vehicleId}`}
+                        >
+                          Xem chi tiết xe
+                        </Link>
+                      ) : (
+                        <Text type="secondary">Chi tiết xe không có</Text>
+                      ),
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <div
+                          style={{
+                            width: 64,
+                            height: 64,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "#f0f0f0",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {isImageLoading ? (
+                            <Spin size="small" />
+                          ) : imageUrl ? (
+                            <Image // Dùng Image để có preview
+                              src={imageUrl}
+                              alt={item.vehicle?.variantName}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                borderRadius: "4px",
+                              }}
+                              preview={true} // Bật preview
+                            />
+                          ) : (
+                            <CarOutlined
+                              style={{ fontSize: 32, color: "#999" }}
+                            /> // Icon placeholder
+                          )}
+                        </div>
+                      }
+                      title={`${item.vehicle?.modelName || "N/A"} ${
+                        item.vehicle?.variantName || "N/A"
+                      }`} //
+                      description={`Màu: ${
+                        item.vehicle?.color || "N/A"
+                      } - VIN: ${item.vehicle?.vinNumber || "N/A"}`} //
+                    />
+                  </List.Item>
+                );
+              }}
             />
           </Card>
         </Col>
