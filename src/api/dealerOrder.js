@@ -20,10 +20,16 @@ const getCustomerOrderById = (id) => {
   return axiosClient.get(`/api/orders/${id}/details`);
 };
 
+const CancelCustomerOrderById = (id) => {
+  return axiosClient.put(`/api/orders/${id}/status?status=CANCELLED`);
+}
+
+
 export {
   createDealerOrder,
   getCustomerOrders,
   getCustomerOrderById,
   getCustomer,
   getCustomerById,
+  CancelCustomerOrderById,
 };

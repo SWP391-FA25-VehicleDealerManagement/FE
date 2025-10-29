@@ -265,6 +265,15 @@ export default function DeaerDebtDetail() {
       dataIndex: "paymentMethod",
       key: "paymentMethod",
       width: 120,
+      render: (method) => {
+        if (method === "CASH") {
+          return "Tiền mặt";
+        }
+        if (method === "BANK_TRANSFER") {
+          return "Chuyển khoản";
+        }
+        return method;
+      },
     },
     {
       title: "Trạng thái",

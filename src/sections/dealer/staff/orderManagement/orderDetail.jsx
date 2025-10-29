@@ -22,12 +22,13 @@ import {
   HomeOutlined,
   CreditCardOutlined,
   CloseCircleOutlined,
-  FileTextOutlined,
+  DollarOutlined,
   CarOutlined,
 } from "@ant-design/icons";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
 import useVehicleStore from "../../../../hooks/useVehicle";
+import usePaymentStore from "../../../../hooks/usePayment";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import axiosClient from "../../../../config/axiosClient";
@@ -50,35 +51,30 @@ export default function OrderDetail() {
     isLoadingOrderDetail,
     fetchCustomerOrderById,
   } = useDealerOrder();
+  const { payment, isLoadingPayment, getPayment } = usePaymentStore();
   const { fetchVehicleById } = useVehicleStore();
   const [orderInfo, setOrderInfo] = useState(null);
   const [vehicleDetails, setVehicleDetails] = useState([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [error, setError] = useState(null);
   const [vehicleImageUrls, setVehicleImageUrls] = useState({});
+  const [totalPaidAmount, setTotalPaidAmount] = useState(0);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
-  // 3. Fetch Order Details (Items) first
   useEffect(() => {
-    if (orderId) {
+    if (orderId && dealerId) {
+      getCustomerOrders(dealerId);
       fetchCustomerOrderById(orderId);
+      getPayment();
     }
-  }, [orderId, fetchCustomerOrderById]);
-
-  useEffect(() => {
-    const fetchOrderAndCustomer = async () => {
-      if (!orderId || !dealerId) return;
-
-      try {
-        await getCustomerOrders(dealerId); //
-      } catch (err) {
-        console.error("Error fetching order list:", err);
-        setError("Không thể tải danh sách đơn hàng.");
-      }
-    };
-    fetchOrderAndCustomer();
-  }, [orderId, dealerId, getCustomerOrders]);
+  }, [
+    orderId,
+    dealerId,
+    getCustomerOrders,
+    fetchCustomerOrderById,
+    getPayment,
+  ]);
 
   useEffect(() => {
     if (CustomerOrder && CustomerOrder.length > 0) {
@@ -171,6 +167,23 @@ export default function OrderDetail() {
     };
   }, [vehicleDetails]);
 
+  useEffect(() => {
+    if (payment && payment.length > 0 && orderId) {
+      const relevantPayments = payment.filter(
+        (p) =>
+          p.orderId == orderId &&
+          (p.status === "COMPLETED" || p.status === "Completed")
+      );
+      const totalPaid = relevantPayments.reduce(
+        (sum, p) => sum + (p.amount || 0),
+        0
+      );
+      setTotalPaidAmount(totalPaid);
+    } else {
+      setTotalPaidAmount(0);
+    }
+  }, [payment, orderId]);
+
   // 6. Combine all data once available
   const mergedData = useMemo(() => {
     if (
@@ -205,6 +218,7 @@ export default function OrderDetail() {
     isLoadingCustomerDetail ||
     isLoadingCustomerOrder ||
     isLoadingVehicles ||
+    isLoadingPayment ||
     !mergedData;
   const handlePayment = () => {
     toast.info(`Thực hiện thanh toán cho đơn hàng ${orderId}`);
@@ -214,6 +228,31 @@ export default function OrderDetail() {
     toast.warn(`Thực hiện huỷ đơn hàng ${orderId}`);
   };
 
+  const getStatusTag = (status) => {
+    let color = "processing";
+    let text = status;
+    if (status === "COMPLETED") {
+      color = "success";
+      text = "Hoàn thành";
+    }
+    if (status === "PAID") {
+      color = "blue";
+      text = "Đã thanh toán";
+    }
+    if (status === "PARTIAL") {
+      color = "orange";
+      text = "Thanh toán một phần";
+    }
+    if (status === "CANCELLED") {
+      color = "error";
+      text = "Đã hủy";
+    }
+    if (status === "PENDING") {
+      color = "warning";
+      text = "Đang chờ";
+    }
+    return { color, text };
+  };
 
   if (isLoading && !error) {
     return (
@@ -251,7 +290,7 @@ export default function OrderDetail() {
 
   const { order, customer, items } = mergedData;
   const isActionDisabled =
-    order.status === "COMPLETED" || order.status === "CANCELLED"; 
+    order.status === "COMPLETED" || order.status === "CANCELLED";
 
   return (
     <div>
@@ -268,24 +307,26 @@ export default function OrderDetail() {
       {/* Header và nút Action */}
       <div className="flex justify-between items-center mb-6">
         <Title level={2}>Chi tiết đơn hàng: #{order.orderId}</Title>
-        <Space>
-          <Button
-            type="primary"
-            icon={<CreditCardOutlined />}
-            onClick={handlePayment}
-            disabled={isActionDisabled}
-          >
-            Thanh toán
-          </Button>
-          <Button
-            danger
-            icon={<CloseCircleOutlined />}
-            onClick={handleCancelOrder}
-            disabled={isActionDisabled}
-          >
-            Huỷ đơn
-          </Button>
-        </Space>
+        {order.status === "PENDING" && (
+          <Space>
+            <Button
+              type="primary"
+              icon={<CreditCardOutlined />}
+              onClick={handlePayment}
+              disabled={isActionDisabled}
+            >
+              Thanh toán
+            </Button>
+            <Button
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={handleCancelOrder}
+              disabled={isActionDisabled}
+            >
+              Huỷ đơn
+            </Button>
+          </Space>
+        )}
       </div>
 
       <Row gutter={[16, 16]}>
@@ -317,26 +358,29 @@ export default function OrderDetail() {
           <Card title="Thông tin đơn hàng">
             <Descriptions column={2}>
               <Descriptions.Item label="Ngày tạo">
-                {/* Use correct field name and format */}
                 {dayjs(order.createdDate).format("DD/MM/YYYY HH:mm")}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag
-                  color={
-                    isActionDisabled
-                      ? order.status === "COMPLETED"
-                        ? "success"
-                        : "error"
-                      : "processing"
-                  }
-                >
-                  {order.status}
+                <Tag color={getStatusTag(order.status).color}>
+                  {getStatusTag(order.status).text}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Tổng tiền" span={2}>
-                <Title level={3} style={{ color: "red" }}>
+              <Descriptions.Item
+                label={
+                  <>
+                    <DollarOutlined /> Đã thanh toán
+                  </>
+                }
+              >
+                <Text strong style={{ color: "green" }}>
+                  {totalPaidAmount.toLocaleString("vi-VN")} VNĐ
+                </Text>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Tổng tiền">
+                <Text strong style={{ color: "red" }}>
                   {(order.totalPrice || 0).toLocaleString("vi-VN")} VNĐ
-                </Title>
+                </Text>
               </Descriptions.Item>
             </Descriptions>
           </Card>

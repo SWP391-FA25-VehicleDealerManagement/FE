@@ -342,7 +342,7 @@ export default function Quote() {
           In báo giá
         </Button>
 
-        <Button
+        {/* <Button
           type="primary"
           icon={<CheckCircleOutlined />}
           onClick={handleCreateOrder}
@@ -351,7 +351,7 @@ export default function Quote() {
           style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
         >
           Xác nhận & Tạo Đơn Hàng
-        </Button>
+        </Button> */}
       </Space>
       {renderContent()}
     </div>

@@ -1,23 +1,19 @@
 import axiosClient from "../config/axiosClient";
 
-export const getCustomerDebt = async () => {
-  return await axiosClient.get("/customer-debt");
+const getCustomerDebt = async (dealerId) => {
+  return await axiosClient.get(`/api/debts/customer-debts/${dealerId}`);
 };
 
-export const getCustomerDebtById = async (id) => {
-  return await axiosClient.get(`/customer-debt/${id}`);
+const getCustomerDebtById = (id) => {
+  return axiosClient.get(`/api/debts/${id}`);
 };
 
-export const createCustomerDebt = async (data) => {
-  return await axiosClient.post("/customer-debt", data);
+const getPaymentHistory = (id) => {
+  return axiosClient.get(`/api/debts/${id}/payments`);
 };
 
-export const updateCustomerDebt = async (id, data) => {
-  return await axiosClient.put(`/customer-debt/${id}`, data);
+const getCustomerDebtSchedule = (id) => {
+  return axiosClient.get(`/api/debts/${id}/schedules`);
 };
 
-export const deleteCustomerDebt = async (id) => {
-  return await axiosClient.delete(`/customer-debt/${id}`);
-};
-
-
+export { getCustomerDebt, getCustomerDebtById, getPaymentHistory, getCustomerDebtSchedule };

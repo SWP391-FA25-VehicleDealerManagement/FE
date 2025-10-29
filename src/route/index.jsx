@@ -122,6 +122,10 @@ const CustomerOrderDetailPage = lazy(() =>
   import("../page/dealer/staff/customerOrderDetailPage.jsx")
 );
 const QuotePage = lazy(() => import("../page/dealer/staff/QuotePage.jsx"));
+const CustomerDebtPage = lazy(() => import("../page/dealer/staff/customerDebtPage.jsx"));
+const CustomerDebtDetailPage = lazy(() => import("../page/dealer/staff/customerDebtDetailPage.jsx"));
+const AppointmentTestDrivePage = lazy(() => import("../page/dealer/staff/appointmentTestDrivePage.jsx"));
+
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -298,6 +302,9 @@ const Routes = () => {
         { path: "orders", element: <CustomerOrderPage /> },
         { path: "orders/:orderId", element: <CustomerOrderDetailPage /> },
         { path: "quote-preview", element: <QuotePage /> },
+        { path: "customer-debt", element: <CustomerDebtPage /> },
+        { path: "customer-debt/:debtId", element: <CustomerDebtDetailPage /> },
+        { path: "appointments", element: <AppointmentTestDrivePage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

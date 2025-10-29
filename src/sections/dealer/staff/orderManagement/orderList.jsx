@@ -1,5 +1,5 @@
 // components/order/orderList.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, Card, Typography, Spin, Tag, Modal } from "antd";
 import {
   PlusOutlined,
@@ -16,8 +16,10 @@ import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
 import CreateOrderModal from "./createOrderModal";
 import CreateQuoteModal from "./CreateQuoteModal.jsx";
+import PaymentModal from "./PaymentModal.jsx";
+import usePaymentStore from "../../../../hooks/usePayment.js";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export default function OrderList() {
   const navigate = useNavigate();
@@ -30,9 +32,12 @@ export default function OrderList() {
     Customer,
     isLoadingCustomer,
   } = useDealerOrder();
+  const { payment, isLoadingPayment, getPayment } = usePaymentStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [mergedOrders, setMergedOrders] = useState([]);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
@@ -40,39 +45,60 @@ export default function OrderList() {
     if (dealerId) {
       getCustomerOrders(dealerId);
       getCustomer(dealerId);
+      getPayment();
     }
-  }, [getCustomerOrders, getCustomer, dealerId]);
+  }, [getCustomerOrders, getCustomer, getPayment, dealerId]);
 
-  const filteredOrders = React.useMemo(() => {
-    return CustomerOrder.filter((order) => order.customerId != null);
+  const filteredOrders = useMemo(() => {
+    return CustomerOrder.filter(
+      (order) => order.customerId !== null && order.customerId !== undefined
+    );
   }, [CustomerOrder]);
 
   useEffect(() => {
-    // Chỉ chạy khi CÓ cả 2 nguồn dữ liệu
-    if (filteredOrders.length > 0 && Customer && Customer.length > 0) {
+    if (
+      filteredOrders &&
+      filteredOrders.length >= 0 &&
+      Customer &&
+      Customer.length > 0 &&
+      payment &&
+      payment.length >= 0
+    ) {
       const customerMap = new Map(
         Customer.map((customer) => [customer.customerId, customer])
       );
+
+      const paymentMap = new Map();
+      payment.forEach((p) => {
+        const currentTotal = paymentMap.get(p.orderId) || 0;
+
+        if (p.status === "COMPLETED" || p.status === "Completed") {
+          paymentMap.set(p.orderId, currentTotal + (p.amount || 0));
+        }
+      });
       const combinedData = filteredOrders.map((order) => {
         const customer = customerMap.get(order.customerId);
+        const totalPaid = paymentMap.get(order.orderId) || 0;
+
         return {
           ...order,
-          customerName: customer ? customer.customerName : "N/A",
+          customerName: customer ? customer.customerName : "N/A", //
+          totalPaid: totalPaid,
         };
       });
       setMergedOrders(combinedData);
     } else {
-      setMergedOrders(filteredOrders);
+      setMergedOrders([]);
     }
-  }, [filteredOrders, Customer]);
+  }, [filteredOrders, Customer, payment]);
 
   const handleViewDetail = (orderId) => {
     navigate(`/dealer-staff/orders/${orderId}`);
   };
 
   const handlePayment = (record) => {
-    // Logic thanh toán
-    toast.info(`Thực hiện thanh toán cho đơn hàng ${record.orderId}`);
+    setSelectedOrderForPayment(record);
+    setIsPaymentModalOpen(true);
   };
 
   const handleCancelOrder = (record) => {
@@ -88,12 +114,6 @@ export default function OrderList() {
       },
     });
   };
-
-  // const handleCreateQuote = (record) => {
-  //   navigate(
-  //     `/dealer-staff/quote/${record.orderId}?customerId=${record.customerId}`
-  //   );
-  // };
 
   const columns = [
     {
@@ -120,6 +140,14 @@ export default function OrderList() {
       render: (amount) => `${(amount || 0).toLocaleString("vi-VN")}`,
     },
     {
+      title: "Đã thanh toán (VNĐ)",
+      dataIndex: "totalPaid",
+      key: "totalPaid",
+      render: (amount) => (
+        <Text type="success">{`${(amount || 0).toLocaleString("vi-VN")}`}</Text>
+      ),
+    },
+    {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
@@ -129,6 +157,14 @@ export default function OrderList() {
         if (status === "COMPLETED") {
           color = "success";
           text = "Hoàn thành";
+        }
+        if (status === "PAID") {
+          color = "blue";
+          text = "Đã thanh toán";
+        }
+        if (status === "PARTIAL") {
+          color = "orange";
+          text = "Thanh toán một phần";
         }
         if (status === "CANCELLED") {
           color = "error";
@@ -162,7 +198,10 @@ export default function OrderList() {
             size="small"
             onClick={() => handlePayment(record)}
             disabled={
-              record.status === "COMPLETED" || record.status === "CANCELLED"
+              record.status === "COMPLETED" ||
+              record.status === "CANCELLED" ||
+              record.status === "PAID" ||
+              record.status === "PARTIAL"
             }
           >
             Thanh toán
@@ -173,7 +212,10 @@ export default function OrderList() {
             size="small"
             onClick={() => handleCancelOrder(record)}
             disabled={
-              record.status === "COMPLETED" || record.status === "CANCELLED"
+              record.status === "COMPLETED" ||
+              record.status === "CANCELLED" ||
+              record.status === "PAID" ||
+              record.status === "PARTIAL"
             }
           >
             Huỷ đơn
@@ -238,6 +280,11 @@ export default function OrderList() {
       <CreateQuoteModal
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
+      />
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        order={selectedOrderForPayment}
       />
     </div>
   );

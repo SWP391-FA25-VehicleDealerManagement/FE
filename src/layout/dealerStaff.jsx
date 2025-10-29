@@ -55,7 +55,7 @@ const menuItems = [
       null,
       "/dealer-staff/customer-contract"
     ),
-    getItem("Công nợ", "5", null, null, "/dealer-staff/debt-list"),
+    getItem("Công nợ", "5", null, null, "/dealer-staff/customer-debt"),
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
     getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),

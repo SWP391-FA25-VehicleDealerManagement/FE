@@ -64,13 +64,6 @@ const menuItems = [
       "/dealer-manager/vehicles"
     ),
     getItem(
-      "Giá bán",
-      "sale-prices",
-      null,
-      null,
-      "/dealer-manager/sale-prices"
-    ),
-    getItem(
       "Yêu cầu xe từ hãng",
       "vehicle-requests",
       null,
