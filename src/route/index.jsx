@@ -10,8 +10,8 @@ import ScrollToTop from "../components/scrolltotop.jsx";
 import Error404 from "../components/404.jsx";
 import Error403 from "../components/403.jsx";
 import useAuthen from "../hooks/useAuthen";
-import CustomerListPage from "../page/dealer/manager/customerListPage.jsx";
 import CustomerDetail from "../sections/dealer/manager/customerManagement/customerDetail.jsx";
+
 
 //Import page
 //Authentication
@@ -68,6 +68,11 @@ const DealerOrderList = lazy(() =>
 );
 const DealerOrderDetail = lazy(() =>
   import("../page/dealer/manager/DealerOrderDetail.jsx")
+const CustomerListPage = lazy(() =>
+  import("../page/dealer/manager/customerListPage.jsx")
+);
+const CustomerDetailPage = lazy(() =>
+  import("../page/dealer/manager/customerDetailPage.jsx")
 );
 
 //EVM Staff
@@ -260,6 +265,7 @@ const Routes = () => {
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <CustomerListPage /> },
         { path: "customer-list/:id", element: <CustomerDetail /> },
+        { path: "customer-list/:customerId", element: <CustomerDetail />},
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
