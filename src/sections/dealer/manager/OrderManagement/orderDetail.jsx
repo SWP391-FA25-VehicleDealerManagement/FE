@@ -32,7 +32,7 @@ import usePaymentStore from "../../../../hooks/usePayment";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import axiosClient from "../../../../config/axiosClient";
-import PaymentModal from "./PaymentModal.jsx"; // 1. Import PaymentModal
+import PaymentModal from "./PaymentModal.jsx"; 
 
 const { Title, Text } = Typography;
 
@@ -45,9 +45,6 @@ export default function OrderDetail() {
     CustomerOrder,
     isLoadingCustomerOrder,
     getCustomerOrders,
-    CustomerDetail,
-    isLoadingCustomerDetail,
-    getCustomerById,
     CustomerOrderDetail,
     isLoadingOrderDetail,
     fetchCustomerOrderById,
@@ -60,6 +57,8 @@ export default function OrderDetail() {
   const [error, setError] = useState(null);
   const [vehicleImageUrls, setVehicleImageUrls] = useState({});
   const [totalPaidAmount, setTotalPaidAmount] = useState(0);
+
+  // 2. Thêm state cho PaymentModal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
@@ -84,16 +83,11 @@ export default function OrderDetail() {
       const currentOrder = CustomerOrder.find((o) => o.orderId == orderId);
       if (currentOrder) {
         setOrderInfo(currentOrder);
-        if (currentOrder.customerId) {
-          getCustomerById(currentOrder.customerId);
-        } else {
-          console.warn("Order found, but no customerId associated.");
-        }
       } else {
         console.warn(`Order with ID ${orderId} not found in the list.`);
       }
     }
-  }, [orderId, CustomerOrder, getCustomerById]);
+  }, [orderId, CustomerOrder]);
 
   useEffect(() => {
     if (Array.isArray(CustomerOrderDetail) && CustomerOrderDetail.length > 0) {
@@ -161,6 +155,7 @@ export default function OrderDetail() {
 
     fetchAllImages();
 
+    // Hàm cleanup: Thu hồi tất cả Object URL đã tạo trong useEffect này
     return () => {
       objectUrlsToRevoke.forEach((url) => {
         if (url) URL.revokeObjectURL(url);
@@ -189,7 +184,6 @@ export default function OrderDetail() {
   const mergedData = useMemo(() => {
     if (
       !orderInfo ||
-      !CustomerDetail ||
       !Array.isArray(CustomerOrderDetail) ||
       CustomerOrderDetail.length === 0 ||
       vehicleDetails.length === 0 ||
@@ -209,47 +203,47 @@ export default function OrderDetail() {
 
     return {
       order: orderInfo,
-      customer: CustomerDetail,
       items: itemsWithVehicles,
     };
-  }, [orderInfo, CustomerDetail, CustomerOrderDetail, vehicleDetails]);
+  }, [orderInfo, CustomerOrderDetail, vehicleDetails]);
 
   const isLoading =
     isLoadingOrderDetail ||
-    isLoadingCustomerDetail ||
     isLoadingCustomerOrder ||
     isLoadingVehicles ||
     isLoadingPayment ||
     !mergedData;
 
+  // 3. Cập nhật hàm handlePayment
   const handlePayment = () => {
-    if (!mergedData) {
-      toast.error("Dữ liệu đơn hàng chưa sẵn sàng.");
+    if (!mergedData || !mergedData.order) {
+      toast.error("Không tìm thấy thông tin đơn hàng để thanh toán.");
       return;
     }
-    const { order, customer } = mergedData;
-    // Chuẩn bị dữ liệu cho modal
-    setSelectedOrderForPayment({
-      orderId: order.orderId,
-      totalPrice: order.totalPrice,
-      customerName: customer.customerName, // Modal cần trường này
-    });
+
+    // Tạo đối tượng order cho modal,
+    // gán 'dealerName' vào 'customerName' như logic của orderList
+    const orderForModal = {
+      orderId: mergedData.order.orderId,
+      totalPrice: mergedData.order.totalPrice,
+      customerName: userDetail?.dealer?.dealerName || "Đơn hàng nội bộ",
+    };
+
+    setSelectedOrderForPayment(orderForModal);
     setIsPaymentModalOpen(true);
   };
 
-  // 4. Thêm hàm đóng modal và tải lại dữ liệu
+  // 4. Thêm hàm đóng Modal và refresh dữ liệu
   const handleClosePaymentModal = () => {
     setIsPaymentModalOpen(false);
     setSelectedOrderForPayment(null);
+    
+    // Tải lại dữ liệu sau khi thanh toán thành công
     if (orderId && dealerId) {
       getCustomerOrders(dealerId);
       fetchCustomerOrderById(orderId);
       getPayment();
     }
-  };
-
-  const handleCancelOrder = () => {
-    toast.warn(`Thực hiện huỷ đơn hàng ${orderId}`);
   };
 
   const getStatusTag = (status) => {
@@ -293,7 +287,10 @@ export default function OrderDetail() {
           Lỗi tải dữ liệu
         </Title>
         <Text>{error}</Text>
-        <Button onClick={() => navigate(-1)} style={{ marginTop: "16px" }}>
+        <Button
+          onClick={() => navigate("/dealer-manager/dealer-orders")}
+          style={{ marginTop: "16px" }}
+        >
           Quay lại
         </Button>
       </Card>
@@ -305,77 +302,77 @@ export default function OrderDetail() {
       <Card>
         <Title level={4}>Không tìm thấy chi tiết đơn hàng</Title>
         <Text>Không thể tìm thấy thông tin cho mã đơn hàng #{orderId}.</Text>
-        <Button onClick={() => navigate(-1)} style={{ marginTop: "16px" }}>
+        <Button
+          onClick={() => navigate("/dealer-manager/dealer-orders")}
+          style={{ marginTop: "16px" }}
+        >
           Quay lại
         </Button>
       </Card>
     );
   }
 
-  const { order, customer, items } = mergedData;
+  const { order, items } = mergedData;
   const isActionDisabled =
-    order.status === "COMPLETED" || 
+    order.status === "COMPLETED" ||
     order.status === "CANCELLED" ||
     order.status === "PAID" ||
-    order.status === "PARTIAL"; 
+    order.status === "PARTIAL";
 
   return (
     <div>
+      {/* Button Quay lại */}
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/dealer-staff/orders")}
+        onClick={() => navigate("/dealer-manager/dealer-orders")}
         className="mb-4"
       >
         Quay lại danh sách
       </Button>
 
+      {/* Header và nút Action */}
       <div className="flex justify-between items-center mb-6">
         <Title level={2}>Chi tiết đơn hàng: #{order.orderId}</Title>
-        
+        {/* 5. Cập nhật logic các nút dựa trên isActionDisabled */}
         <Space>
           <Button
             type="primary"
             icon={<CreditCardOutlined />}
-            onClick={handlePayment}
+            onClick={handlePayment} // 6. Gọi hàm handlePayment
             disabled={isActionDisabled}
           >
             Thanh toán
           </Button>
-          <Button
-            danger
-            icon={<CloseCircleOutlined />}
-            onClick={handleCancelOrder}
-            disabled={isActionDisabled || order.status === "PENDING"} 
-          >
-            Huỷ đơn
-          </Button>
         </Space>
       </div>
+
       <Row gutter={[16, 16]}>
+        {/* Thông tin đại lý */}
         <Col span={10}>
-          <Card title="Thông tin khách hàng">
-            {customer ? (
+          <Card title="Thông tin đại lý">
+            {userDetail?.dealer ? (
               <Descriptions column={1} layout="horizontal">
                 <Descriptions.Item label={<UserOutlined />}>
-                  {customer.customerName}
+                  {userDetail.dealer.dealerName || "N/A"}
                 </Descriptions.Item>
                 <Descriptions.Item label={<PhoneOutlined />}>
-                  {customer.phone}
+                  {userDetail.dealer.phone || "N/A"}
                 </Descriptions.Item>
                 <Descriptions.Item label={<MailOutlined />}>
-                  {customer.email}
+                  {userDetail.email || "N/A"}
                 </Descriptions.Item>
                 <Descriptions.Item label={<HomeOutlined />}>
-                  {customer.address || "Chưa có địa chỉ"}
+                  {userDetail.dealer.address || "Chưa có địa chỉ"}
                 </Descriptions.Item>
               </Descriptions>
             ) : (
-              <Text type="secondary">Không có thông tin khách hàng.</Text>
+              <Text type="secondary">Không có thông tin đại lý.</Text>
             )}
           </Card>
         </Col>
 
+        {/* Thông tin đơn hàng */}
         <Col span={14}>
           <Card title="Thông tin đơn hàng">
             <Descriptions column={2}>
@@ -408,6 +405,7 @@ export default function OrderDetail() {
           </Card>
         </Col>
 
+        {/* Danh sách xe */}
         <Col span={24}>
           <Card title="Danh sách xe trong đơn hàng">
             <List
@@ -429,7 +427,7 @@ export default function OrderDetail() {
                       </Text>,
                       item.vehicle ? (
                         <Link
-                          to={`/dealer-staff/vehicles/${item.vehicle.vehicleId}`}
+                          to={`/dealer-manager/vehicles/${item.vehicle.vehicleId}`}
                         >
                           Xem chi tiết xe
                         </Link>
@@ -487,7 +485,7 @@ export default function OrderDetail() {
         </Col>
       </Row>
 
-      {/* 8. Render PaymentModal */}
+      {/* 7. Render PaymentModal */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePaymentModal}

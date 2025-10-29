@@ -63,6 +63,12 @@ const DealerDebtPage = lazy(() =>
 const DealerDebtDetailPage = lazy(() =>
   import("../page/dealer/manager/dealerDebtDetailPage.jsx")
 );
+const DealerOrderList = lazy(() =>
+  import("../page/dealer/manager/DealerOrderPage.jsx")
+);
+const DealerOrderDetail = lazy(() =>
+  import("../page/dealer/manager/DealerOrderDetail.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -125,7 +131,8 @@ const QuotePage = lazy(() => import("../page/dealer/staff/QuotePage.jsx"));
 const CustomerDebtPage = lazy(() => import("../page/dealer/staff/customerDebtPage.jsx"));
 const CustomerDebtDetailPage = lazy(() => import("../page/dealer/staff/customerDebtDetailPage.jsx"));
 const AppointmentTestDrivePage = lazy(() => import("../page/dealer/staff/appointmentTestDrivePage.jsx"));
-
+const DeliveryPage = lazy(() => import("../page/dealer/staff/deiliveryPage.jsx"));
+const DeliveryDetailPage = lazy(() => import("../page/dealer/staff/deliveryDetailPage.jsx"));
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -267,6 +274,8 @@ const Routes = () => {
         { path: "inventory", element: <InventoryPage /> },
         { path: "dealer-debt", element: <DealerDebtPage /> },
         { path: "dealer-debt/:debtId", element: <DealerDebtDetailPage /> },
+        { path: "dealer-orders", element: <DealerOrderList /> },
+        { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -305,6 +314,8 @@ const Routes = () => {
         { path: "customer-debt", element: <CustomerDebtPage /> },
         { path: "customer-debt/:debtId", element: <CustomerDebtDetailPage /> },
         { path: "appointments", element: <AppointmentTestDrivePage /> },
+        { path: "deliveries", element: <DeliveryPage /> },
+        { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

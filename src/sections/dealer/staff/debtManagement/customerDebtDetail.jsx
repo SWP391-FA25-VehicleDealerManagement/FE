@@ -43,8 +43,9 @@ export default function CustomerDebtDetail() {
     isLoadingDebtSchedules,
     fetchDebtSchedules,
     clearDebtSchedules,
-    isMakingPayment,
-    makePayment,
+    // 1. Thay đổi 'isMakingPayment' và 'makePayment'
+    isLoadingCustomerPayment,
+    makeCustomerPayment,
     paymentHistory,
     isLoadingPaymentHistory,
     fetchPaymentHistory,
@@ -92,15 +93,12 @@ export default function CustomerDebtDetail() {
   const handlePaymentSubmit = async (values) => {
     if (!debtId || !selectedSchedule) return;
     try {
-      const paymentData = {
-        amount: values.paymentAmount,
-        paymentMethod: values.paymentMethod,
-        scheduleId: selectedSchedule.scheduleId,
-        notes: values.notes || "",
-        createdBy: userDetail?.fullName || "Unknown",
-      };
-
-      const response = await makePayment(debtId, paymentData);
+      // 2. Thay đổi hàm gọi từ makePayment sang makeCustomerPayment
+      // Hàm này chỉ nhận scheduleId và amount
+      const response = await makeCustomerPayment(
+        selectedSchedule.scheduleId,
+        values.paymentAmount
+      );
 
       if (response && response.status === 200) {
         toast.success("Thanh toán thành công!", { autoClose: 2000 });
@@ -116,6 +114,7 @@ export default function CustomerDebtDetail() {
   };
 
   const scheduleColumns = [
+    // ... (các cột không đổi) ...
     {
       title: "Kỳ",
       dataIndex: "periodNo",
@@ -236,6 +235,7 @@ export default function CustomerDebtDetail() {
   ];
 
   const paymentHistoryColumns = [
+    // ... (các cột không đổi) ...
     {
       title: "Ngày trả",
       dataIndex: "paymentDate",
@@ -383,7 +383,7 @@ export default function CustomerDebtDetail() {
         </Card>
 
         {/* 3. Bảng Lịch sử thanh toán */}
-        <Card title="Lịch sử thanh toán" size="small">
+        {/* <Card title="Lịch sử thanh toán" size="small">
           <Spin spinning={isLoadingPaymentHistory}>
             <Table
               dataSource={paymentHistory}
@@ -394,7 +394,7 @@ export default function CustomerDebtDetail() {
               locale={{ emptyText: "Chưa có lịch sử thanh toán" }}
             />
           </Spin>
-        </Card>
+        </Card> */}
       </Space>
 
       <Modal
@@ -409,14 +409,15 @@ export default function CustomerDebtDetail() {
           <Button
             key="submit"
             type="primary"
-            loading={isMakingPayment}
+            loading={isLoadingCustomerPayment}
             onClick={() => paymentForm.submit()}
           >
             Xác nhận thanh toán
           </Button>,
         ]}
       >
-        <Spin spinning={isMakingPayment}>
+        {/* 4. Thay đổi loading state */}
+        <Spin spinning={isLoadingCustomerPayment}>
           <Form
             form={paymentForm}
             layout="vertical"

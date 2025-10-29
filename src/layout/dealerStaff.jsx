@@ -42,7 +42,7 @@ const menuItems = [
       "7",
       null,
       null,
-      "/dealer-staff/delivery-management"
+      "/dealer-staff/deliveries"
     ),
   ]),
   getItem("Danh sách xe đại lý", "2", <CarOutlined />, null, "/dealer-staff/vehicles"),

@@ -8,6 +8,7 @@ import {
   getPaymentHistory,
   confirmDebtPayment,
   rejectDebtPayment,
+  makeCustomerPayment,
 } from "../api/dealerdebt";
 const useDealerDebt = create((set) => ({
   dealerDebt: [],
@@ -110,7 +111,12 @@ const useDealerDebt = create((set) => ({
   rejectDebtPayment: async (debtId, paymentId, rejectedBy, reason) => {
     set({ isLoadingRejectPayment: true });
     try {
-      const response = await rejectDebtPayment(debtId, paymentId, rejectedBy, reason);
+      const response = await rejectDebtPayment(
+        debtId,
+        paymentId,
+        rejectedBy,
+        reason
+      );
       if (response && response.status === 200) {
         set({ isLoadingRejectPayment: false });
       }
@@ -152,6 +158,22 @@ const useDealerDebt = create((set) => ({
       console.error("Error making payment:", error);
       set({ isMakingPayment: false });
       return false;
+    }
+  },
+
+  isLoadingCustomerPayment: false,
+  makeCustomerPayment: async (scheduleId, amount) => {
+    set({ isLoadingCustomerPayment: true });
+    try {
+      const response = await makeCustomerPayment(scheduleId, amount);
+      if (response && response.status === 200) {
+        set({ isLoadingCustomerPayment: false });
+      }
+      return response;
+    } catch (error) {
+      console.error("Error making customer payment:", error);
+      set({ isLoadingCustomerPayment: false });
+      throw error;
     }
   },
 }));

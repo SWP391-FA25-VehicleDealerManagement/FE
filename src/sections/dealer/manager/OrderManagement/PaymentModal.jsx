@@ -18,7 +18,6 @@ import {
   PercentageOutlined,
 } from "@ant-design/icons";
 import usePaymentStore from "../../../../hooks/usePayment";
-import useCustomerDebt from "../../../../hooks/useCustomerDebt";
 import { toast } from "react-toastify";
 import useAuthen from "../../../../hooks/useAuthen";
 
@@ -33,8 +32,6 @@ export default function PaymentModal({ isOpen, onClose, order }) {
     paymentSuccess,
     isPaymentSuccessLoading,
   } = usePaymentStore();
-  const { createCustomerDebtFromPayment, isLoadingCreateCustomerDebt } =
-    useCustomerDebt();
   const { userDetail } = useAuthen();
   const [calculatedAmount, setCalculatedAmount] = useState(0);
 
@@ -77,54 +74,40 @@ export default function PaymentModal({ isOpen, onClose, order }) {
       paymentMethod: values.paymentMethod,
       paymentType: values.paymentType,
     };
+    console.log("Check payload", paymentPayload);
     const orderId = order?.orderId;
-    const dealerId = userDetail?.dealer?.dealerId;
 
-    if (!dealerId || !orderId) {
-      toast.error("Không thể xác định ID Đại lý hoặc ID Đơn hàng.");
+    const dealerId = userDetail?.dealer?.dealerId;
+    if (!dealerId) {
+      toast.error("Không thể xác định Dealer ID.");
+      return;
+    }
+    if (!orderId) {
+      toast.error("Không thể xác định Order ID để cập nhật trạng thái.");
       return;
     }
 
     try {
-      // B1: Tạo thanh toán
       const paymentResponse = await createPayment(paymentPayload);
 
       if (paymentResponse && paymentResponse.status === 200) {
-        // Lấy paymentId từ response (giả định cấu trúc data)
-        const newPaymentId = paymentResponse.data?.data?.paymentId;
-        if (!newPaymentId) {
-          toast.warn(
-            "Tạo thanh toán thành công nhưng không lấy được ID thanh toán để tạo công nợ."
-          );
-          return;
-        }
-
-        // B2: Cập nhật trạng thái đơn hàng
         const statusToUpdate =
           values.paymentType === "FULL" ? "PAID" : "PARTIAL";
         const successResponse = await paymentSuccess(orderId, statusToUpdate);
 
         if (successResponse && successResponse.status === 200) {
-          // B3: Tạo công nợ khách hàng (chỉ khi có newPaymentId)
-          if (newPaymentId) {
-            const debtResponse = await createCustomerDebtFromPayment(
-              newPaymentId
-            );
-            if (debtResponse && debtResponse.status === 200) {
-              toast.success(
-                "Thanh toán, cập nhật trạng thái và tạo công nợ thành công!"
-              );
-            } else {
-              toast.warn("Thanh toán thành công nhưng tạo công nợ thất bại.");
-            }
-          } else {
-            toast.success("Thanh toán và cập nhật trạng thái thành công!");
-          }
-
-          onClose(); // Đóng modal và tải lại dữ liệu (do logic ở component cha)
+          toast.success("Thanh toán và cập nhật trạng thái thành công!", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          onClose();
         } else {
           toast.error(
-            "Tạo thanh toán thành công nhưng cập nhật trạng thái đơn hàng thất bại."
+            "Tạo thanh toán thành công nhưng cập nhật trạng thái thất bại.",
+            {
+              position: "top-right",
+              autoClose: 3000,
+            }
           );
         }
       }

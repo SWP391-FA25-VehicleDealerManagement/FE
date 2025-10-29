@@ -16,4 +16,8 @@ const getCustomerDebtSchedule = (id) => {
   return axiosClient.get(`/api/debts/${id}/schedules`);
 };
 
-export { getCustomerDebt, getCustomerDebtById, getPaymentHistory, getCustomerDebtSchedule };
+const createCustomerDebt = (id) => {
+  return axiosClient.post(`/api/debts/create-from-payment/${id}`);
+}
+
+export { getCustomerDebt, getCustomerDebtById, getPaymentHistory, getCustomerDebtSchedule, createCustomerDebt };

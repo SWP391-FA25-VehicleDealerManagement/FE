@@ -8,7 +8,6 @@ import {
   Col,
   Descriptions,
   Button,
-  Space,
   List,
   Avatar,
   Tag,
@@ -20,8 +19,6 @@ import {
   PhoneOutlined,
   MailOutlined,
   HomeOutlined,
-  CreditCardOutlined,
-  CloseCircleOutlined,
   DollarOutlined,
   CarOutlined,
 } from "@ant-design/icons";
@@ -29,14 +26,12 @@ import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import usePaymentStore from "../../../../hooks/usePayment";
-import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import axiosClient from "../../../../config/axiosClient";
-import PaymentModal from "./PaymentModal.jsx"; // 1. Import PaymentModal
 
 const { Title, Text } = Typography;
 
-export default function OrderDetail() {
+export default function DeliveryDetail() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { userDetail } = useAuthen();
@@ -60,8 +55,6 @@ export default function OrderDetail() {
   const [error, setError] = useState(null);
   const [vehicleImageUrls, setVehicleImageUrls] = useState({});
   const [totalPaidAmount, setTotalPaidAmount] = useState(0);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
@@ -86,11 +79,7 @@ export default function OrderDetail() {
         setOrderInfo(currentOrder);
         if (currentOrder.customerId) {
           getCustomerById(currentOrder.customerId);
-        } else {
-          console.warn("Order found, but no customerId associated.");
         }
-      } else {
-        console.warn(`Order with ID ${orderId} not found in the list.`);
       }
     }
   }, [orderId, CustomerOrder, getCustomerById]);
@@ -104,12 +93,9 @@ export default function OrderDetail() {
           const vehiclePromises = CustomerOrderDetail.map((item) =>
             fetchVehicleById(item.vehicleId)
           );
-
           const vehiclesData = await Promise.all(vehiclePromises);
-
           setVehicleDetails(vehiclesData.filter(Boolean));
         } catch (err) {
-          console.error("Error fetching vehicle details:", err);
           setError("Không thể tải chi tiết một số xe.");
           setVehicleDetails([]);
         } finally {
@@ -124,7 +110,6 @@ export default function OrderDetail() {
 
   useEffect(() => {
     let objectUrlsToRevoke = [];
-
     const fetchAllImages = async () => {
       if (vehicleDetails && vehicleDetails.length > 0) {
         const newImageUrls = { ...vehicleImageUrls };
@@ -132,7 +117,6 @@ export default function OrderDetail() {
           .map((v) => v?.variantImage)
           .filter(Boolean)
           .filter((path) => !newImageUrls[path]);
-
         if (pathsToFetch.length === 0) return;
         const fetchPromises = pathsToFetch.map(async (imagePath) => {
           try {
@@ -143,13 +127,10 @@ export default function OrderDetail() {
             objectUrlsToRevoke.push(objectUrl);
             return { path: imagePath, url: objectUrl };
           } catch (error) {
-            console.error(`Không thể tải ảnh: ${imagePath}`, error);
             return { path: imagePath, url: null };
           }
         });
-
         const results = await Promise.all(fetchPromises);
-
         results.forEach((result) => {
           if (result) {
             newImageUrls[result.path] = result.url;
@@ -158,9 +139,7 @@ export default function OrderDetail() {
         setVehicleImageUrls(newImageUrls);
       }
     };
-
     fetchAllImages();
-
     return () => {
       objectUrlsToRevoke.forEach((url) => {
         if (url) URL.revokeObjectURL(url);
@@ -222,36 +201,7 @@ export default function OrderDetail() {
     isLoadingPayment ||
     !mergedData;
 
-  const handlePayment = () => {
-    if (!mergedData) {
-      toast.error("Dữ liệu đơn hàng chưa sẵn sàng.");
-      return;
-    }
-    const { order, customer } = mergedData;
-    // Chuẩn bị dữ liệu cho modal
-    setSelectedOrderForPayment({
-      orderId: order.orderId,
-      totalPrice: order.totalPrice,
-      customerName: customer.customerName, // Modal cần trường này
-    });
-    setIsPaymentModalOpen(true);
-  };
-
-  // 4. Thêm hàm đóng modal và tải lại dữ liệu
-  const handleClosePaymentModal = () => {
-    setIsPaymentModalOpen(false);
-    setSelectedOrderForPayment(null);
-    if (orderId && dealerId) {
-      getCustomerOrders(dealerId);
-      fetchCustomerOrderById(orderId);
-      getPayment();
-    }
-  };
-
-  const handleCancelOrder = () => {
-    toast.warn(`Thực hiện huỷ đơn hàng ${orderId}`);
-  };
-
+  // Hàm render tag trạng thái
   const getStatusTag = (status) => {
     let color = "processing";
     let text = status;
@@ -275,6 +225,10 @@ export default function OrderDetail() {
       color = "warning";
       text = "Đang chờ";
     }
+    if (status === "IN_TRANSIT") {
+      color = "cyan";
+      text = "Đang vận chuyển";
+    }
     return { color, text };
   };
 
@@ -289,9 +243,7 @@ export default function OrderDetail() {
   if (error) {
     return (
       <Card>
-        <Title level={4} type="danger">
-          Lỗi tải dữ liệu
-        </Title>
+        <Title level={4} type="danger">Lỗi tải dữ liệu</Title>
         <Text>{error}</Text>
         <Button onClick={() => navigate(-1)} style={{ marginTop: "16px" }}>
           Quay lại
@@ -311,46 +263,20 @@ export default function OrderDetail() {
       </Card>
     );
   }
-
   const { order, customer, items } = mergedData;
-  const isActionDisabled =
-    order.status === "COMPLETED" || 
-    order.status === "CANCELLED" ||
-    order.status === "PAID" ||
-    order.status === "PARTIAL"; 
-
   return (
     <div>
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/dealer-staff/orders")}
+        onClick={() => navigate("/dealer-staff/deliveries")} 
         className="mb-4"
       >
         Quay lại danh sách
       </Button>
 
       <div className="flex justify-between items-center mb-6">
-        <Title level={2}>Chi tiết đơn hàng: #{order.orderId}</Title>
-        
-        <Space>
-          <Button
-            type="primary"
-            icon={<CreditCardOutlined />}
-            onClick={handlePayment}
-            disabled={isActionDisabled}
-          >
-            Thanh toán
-          </Button>
-          <Button
-            danger
-            icon={<CloseCircleOutlined />}
-            onClick={handleCancelOrder}
-            disabled={isActionDisabled || order.status === "PENDING"} 
-          >
-            Huỷ đơn
-          </Button>
-        </Space>
+        <Title level={2}>Chi tiết Vận chuyển: #{order.orderId}</Title>
       </div>
       <Row gutter={[16, 16]}>
         <Col span={10}>
@@ -486,13 +412,6 @@ export default function OrderDetail() {
           </Card>
         </Col>
       </Row>
-
-      {/* 8. Render PaymentModal */}
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={handleClosePaymentModal}
-        order={selectedOrderForPayment}
-      />
     </div>
   );
 }

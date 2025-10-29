@@ -14,8 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
-import CreateOrderModal from "./createOrderModal";
-import CreateQuoteModal from "./CreateQuoteModal.jsx";
 import PaymentModal from "./PaymentModal.jsx";
 import usePaymentStore from "../../../../hooks/usePayment.js";
 
@@ -28,49 +26,35 @@ export default function OrderList() {
     CustomerOrder,
     isLoadingCustomerOrder,
     getCustomerOrders,
-    getCustomer,
-    Customer,
-    isLoadingCustomer,
   } = useDealerOrder();
   const { payment, isLoadingPayment, getPayment } = usePaymentStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [mergedOrders, setMergedOrders] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
-  const loadData = () => {
+  useEffect(() => {
     if (dealerId) {
       getCustomerOrders(dealerId);
-      getCustomer(dealerId);
+      // 2. Đã loại bỏ getCustomer(dealerId)
       getPayment();
     }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [getCustomerOrders, getCustomer, getPayment, dealerId]);
+  }, [getCustomerOrders, getPayment, dealerId]);
 
   const filteredOrders = useMemo(() => {
-    return CustomerOrder.filter(
-      (order) => order.customerId !== null && order.customerId !== undefined
-    );
+    return CustomerOrder.filter((order) => order.customerId == null);
   }, [CustomerOrder]);
 
   useEffect(() => {
+    // 4. Đã loại bỏ check 'Customer'
     if (
       filteredOrders &&
       filteredOrders.length >= 0 &&
-      Customer &&
-      Customer.length > 0 &&
       payment &&
       payment.length >= 0
     ) {
-      const customerMap = new Map(
-        Customer.map((customer) => [customer.customerId, customer])
-      );
+      // 5. Đã loại bỏ 'customerMap'
 
       const paymentMap = new Map();
       payment.forEach((p) => {
@@ -81,12 +65,13 @@ export default function OrderList() {
         }
       });
       const combinedData = filteredOrders.map((order) => {
-        const customer = customerMap.get(order.customerId);
+        // 6. Đã loại bỏ 'const customer'
         const totalPaid = paymentMap.get(order.orderId) || 0;
 
         return {
           ...order,
-          customerName: customer ? customer.customerName : "N/A", //
+          // 7. Thay thế 'customerName' bằng 'dealerName' từ userDetail
+          dealerName: userDetail?.dealer?.dealerName || "N/A",
           totalPaid: totalPaid,
         };
       });
@@ -94,35 +79,30 @@ export default function OrderList() {
     } else {
       setMergedOrders([]);
     }
-  }, [filteredOrders, Customer, payment]);
+  }, [filteredOrders, payment, userDetail]);
 
   const handleViewDetail = (orderId) => {
-    navigate(`/dealer-staff/orders/${orderId}`);
-  };
-
-  const handlePayment = (record) => {
-    setSelectedOrderForPayment(record);
-    setIsPaymentModalOpen(true);
-  };
-
-  const handleCancelOrder = (record) => {
-    // Logic huỷ đơn
-    Modal.confirm({
-      title: "Xác nhận huỷ đơn hàng",
-      content: `Bạn có chắc muốn huỷ đơn hàng ${record.orderId}?`,
-      okText: "Xác nhận",
-      cancelText: "Không",
-      onOk: () => {
-        // Gọi API huỷ đơn...
-        toast.success(`Đã huỷ đơn hàng ${record.orderId}`);
-      },
-    });
+    navigate(`/dealer-manager/dealer-orders/${orderId}`);
   };
 
   const handleClosePaymentModal = () => {
     setIsPaymentModalOpen(false);
     setSelectedOrderForPayment(null);
-    loadData();
+    if (dealerId) {
+      getCustomerOrders(dealerId);
+      getPayment();
+    }
+  };
+
+  const handlePayment = (record) => {
+    // 9. Cập nhật record để truyền cho PaymentModal
+    // PaymentModal mong đợi trường 'customerName', nên ta gán 'dealerName' cho nó
+    const orderForModal = {
+      ...record,
+      customerName: record.dealerName || "Đơn hàng nội bộ",
+    };
+    setSelectedOrderForPayment(orderForModal);
+    setIsPaymentModalOpen(true);
   };
 
   const columns = [
@@ -132,10 +112,11 @@ export default function OrderList() {
       key: "orderId",
       sorter: (a, b) => a.orderId - b.orderId,
     },
+    // 10. THAY ĐỔI CỘT
     {
-      title: "Khách hàng",
-      dataIndex: "customerName",
-      key: "customerName",
+      title: "Đại lý", // Thay vì "Khách hàng"
+      dataIndex: "dealerName", // Thay vì "customerName"
+      key: "dealerName", // Thay vì "customerName"
     },
     {
       title: "Ngày tạo",
@@ -216,20 +197,6 @@ export default function OrderList() {
           >
             Thanh toán
           </Button>
-          <Button
-            danger
-            icon={<CloseCircleOutlined />}
-            size="small"
-            onClick={() => handleCancelOrder(record)}
-            disabled={
-              record.status === "COMPLETED" ||
-              record.status === "CANCELLED" ||
-              record.status === "PAID" ||
-              record.status === "PARTIAL"
-            }
-          >
-            Huỷ đơn
-          </Button>
         </Space>
       ),
     },
@@ -239,26 +206,9 @@ export default function OrderList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
-          <ContainerOutlined style={{ marginRight: 8 }} /> Quản lý đơn hàng
+          <ContainerOutlined style={{ marginRight: 8 }} /> Đơn hàng cần thanh
+          toán
         </Title>
-        <div className="flex space-x-4">
-          <Button
-            type="primary"
-            icon={<FormOutlined />}
-            onClick={() => setIsQuoteModalOpen(true)}
-            disabled={isLoadingCustomer}
-          >
-            Tạo Báo Giá
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setIsModalOpen(true)}
-            disabled={isLoadingCustomer}
-          >
-            Tạo đơn hàng mới
-          </Button>
-        </div>
       </div>
 
       <Card>
@@ -275,25 +225,6 @@ export default function OrderList() {
           />
         )}
       </Card>
-
-      <CreateOrderModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onOrderCreated={() => {
-          if (dealerId) {
-            getCustomerOrders(dealerId);
-          }
-          setIsModalOpen(false);
-        }}
-      />
-
-      <CreateQuoteModal
-        isOpen={isQuoteModalOpen}
-        onOrderCreated={() => {
-          loadData();
-          setIsModalOpen(false);
-        }}
-      />
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePaymentModal}

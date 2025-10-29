@@ -77,6 +77,13 @@ const menuItems = [
       null,
       "/dealer-manager/request-list"
     ),
+    getItem(
+      "Danh mục đơn hàng",
+      "dealer-orders",
+      null,
+      null,
+      "/dealer-manager/dealer-orders"
+    ),
   ]),
   getItem(
     "Kho hàng",
