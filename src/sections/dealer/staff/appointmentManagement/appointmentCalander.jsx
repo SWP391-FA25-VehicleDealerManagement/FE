@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Typography,
   Spin,
@@ -18,6 +18,11 @@ import "dayjs/locale/vi";
 import isBetween from "dayjs/plugin/isBetween";
 import weekday from "dayjs/plugin/weekday";
 import weekOfYear from "dayjs/plugin/weekOfYear";
+import CreateAppointmentModal from "./CreateAppointmentModal";
+import useTestDriveStore from "../../../../hooks/useTestDrive";
+import useVehicleStore from "../../../../hooks/useVehicle";
+import useDealerOrder from "../../../../hooks/useDealerOrder";
+import useAuthen from "../../../../hooks/useAuthen";
 
 dayjs.locale("vi");
 dayjs.extend(isBetween);
@@ -26,88 +31,23 @@ dayjs.extend(weekOfYear);
 
 const { Text, Title } = Typography;
 
-// --- DỮ LIỆU MẪU (Giữ nguyên) ---
-const sampleAppointments = [
-  {
-    testDriveId: 1,
-    scheduledDate: "2025-10-27T10:00:00Z", // Thứ 2 tuần này
-    endDate: "2025-10-27T11:30:00Z",
-    status: "SCHEDULED",
-    customerId: 101,
-    vehicleId: 201,
-    notes: "Khách hàng tiềm năng",
-  },
-  {
-    testDriveId: 2,
-    scheduledDate: "2025-10-29T14:00:00Z", // Thứ 4
-    endDate: "2025-10-29T15:00:00Z",
-    status: "CONFIRMED",
-    customerId: 102,
-    vehicleId: 205,
-    notes: "Đã xác nhận qua điện thoại",
-  },
-  {
-    testDriveId: 3,
-    scheduledDate: "2025-10-30T09:00:00Z", // Thứ 5
-    endDate: "2025-10-30T10:00:00Z",
-    status: "SCHEDULED",
-    customerId: 103,
-    vehicleId: 202,
-    notes: "",
-  },
-  {
-    testDriveId: 4,
-    scheduledDate: "2025-10-30T11:00:00Z", // Thứ 5
-    endDate: "2025-10-30T12:00:00Z",
-    status: "COMPLETED",
-    customerId: 104,
-    vehicleId: 201,
-    notes: "Hoàn thành lái thử",
-  },
-  {
-    testDriveId: 5,
-    scheduledDate: "2025-10-29T11:00:00Z", // Thứ 4 (Hôm nay, giả sử hôm nay là 29/10/2025)
-    endDate: "2025-10-29T12:00:00Z",
-    status: "CANCELLED",
-    customerId: 105,
-    vehicleId: 203,
-    notes: "Khách hủy",
-  },
-  {
-    testDriveId: 6,
-    scheduledDate: "2025-11-02T13:00:00Z", // Chủ nhật
-    endDate: "2025-11-02T15:00:00Z",
-    status: "SCHEDULED",
-    customerId: 106,
-    vehicleId: 204,
-    notes: "Hẹn chiều Chủ Nhật",
-  },
-  {
-    testDriveId: 7,
-    scheduledDate: "2025-10-27T12:00:00Z",
-    endDate: "2025-10-27T13:30:00Z",
-    status: "CONFIRMED",
-    customerId: 107,
-    vehicleId: 207,
-    notes: "Khách VIP",
-  },
-];
-
 const START_HOUR = 8;
 const END_HOUR = 18;
+const DEFAULT_DURATION_MINUTES = 60;
 
-const getStatusColor = (status) => {
-  switch (status?.toUpperCase()) {
+const getStatusProps = (status) => {
+  const upperStatus = status?.toUpperCase();
+  switch (upperStatus) {
     case "SCHEDULED":
-      return "blue";
+      return { color: "blue", text: "Đã lên lịch" };
     case "CONFIRMED":
-      return "green";
+      return { color: "green", text: "Đã xác nhận" };
     case "COMPLETED":
-      return "gray";
+      return { color: "gray", text: "Đã hoàn thành" };
     case "CANCELLED":
-      return "red";
+      return { color: "red", text: "Đã hủy" };
     default:
-      return "default";
+      return { color: "default", text: status || "Không rõ" };
   }
 };
 
@@ -120,15 +60,46 @@ const generateTimeSlots = () => {
 };
 
 export default function WeeklyCalendar() {
-  const [appointments, setAppointments] = useState(sampleAppointments);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentDate, setCurrentDate] = useState(dayjs("2025-10-29"));
+  const [processedAppointments, setProcessedAppointments] = useState([]);
+  const [currentDate, setCurrentDate] = useState(dayjs());
   const [weekDays, setWeekDays] = useState([]);
   const [timeSlots] = useState(generateTimeSlots());
   const [currentView, setCurrentView] = useState("week");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { userDetail } = useAuthen();
+  const dealerId = userDetail?.dealer?.dealerId;
+  const { testDrives, fetchTestDrives, isLoadingTestDrives } =
+    useTestDriveStore();
 
+  const isLoading = isLoadingTestDrives;
+
+  useEffect(() => {
+    if (dealerId) {
+      fetchTestDrives(dealerId);
+    }
+  }, [dealerId]);
+
+  useEffect(() => {
+    if (!testDrives) {
+      setProcessedAppointments([]);
+      return;
+    }
+
+    const processedData = testDrives.map((drive) => {
+      const endDate = dayjs(drive.scheduledDate)
+        .add(DEFAULT_DURATION_MINUTES, "minute")
+        .toISOString();
+
+      return {
+        ...drive,
+        endDate: endDate,
+      };
+    });
+
+    setProcessedAppointments(processedData);
+  }, [testDrives]);
   useEffect(() => {
     const startOfWeek = currentDate.startOf("week");
     const days = [];
@@ -137,6 +108,73 @@ export default function WeeklyCalendar() {
     }
     setWeekDays(days);
   }, [currentDate]);
+
+  const handleMonthPanelChange = useCallback(
+    (date) => {
+      setCurrentDate(date);
+    },
+    [setCurrentDate]
+  ); // Dependencies are the state setters
+
+  const handleMonthDateSelect = useCallback(
+    (date) => {
+      setCurrentDate(date);
+      setCurrentView("day");
+    },
+    [setCurrentDate, setCurrentView]
+  );
+
+  const handleYearPanelChange = useCallback(
+    (date, mode) => {
+      setCurrentDate(date);
+      setCurrentView(mode);
+    },
+    [setCurrentDate, setCurrentView]
+  );
+
+  const handleYearDateSelect = useCallback(
+    (date) => {
+      setCurrentDate(date);
+      setCurrentView("month");
+    },
+    [setCurrentDate, setCurrentView]
+  );
+
+  const dateCellRender = useCallback(
+    (date) => {
+      const dayAppointments = processedAppointments.filter((app) =>
+        date.isSame(app.scheduledDate, "day")
+      );
+
+      if (dayAppointments.length > 0) {
+        return (
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: "none",
+              maxHeight: 60,
+              overflowY: "auto",
+            }}
+          >
+            {dayAppointments.map((item) => (
+              <li key={item.testDriveId}>
+                <Tag
+                  color={getStatusProps(item.status).color}
+                  style={{ fontSize: 10, margin: "1px 0" }}
+                >
+                  {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
+                  {item.customerId}
+                </Tag>
+              </li>
+            ))}
+          </ul>
+        );
+      }
+      return null;
+    },
+    [processedAppointments]
+  );
 
   const handlePrev = () => {
     switch (currentView) {
@@ -180,7 +218,6 @@ export default function WeeklyCalendar() {
     setCurrentDate(dayjs());
   };
 
-  // --- Render Header ---
   const renderHeader = () => {
     let title = "";
     switch (currentView) {
@@ -262,7 +299,7 @@ export default function WeeklyCalendar() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => alert("Mở form tạo lịch hẹn mới...")}
+            onClick={() => setIsCreateModalOpen(true)}
           >
             Tạo lịch hẹn
           </Button>
@@ -286,7 +323,7 @@ export default function WeeklyCalendar() {
   };
 
   const renderDayGrid = () => {
-    const filteredAppointments = appointments.filter((app) =>
+    const filteredAppointments = processedAppointments.filter((app) =>
       dayjs(app.scheduledDate).isSame(currentDate, "day")
     );
     const totalRows = (END_HOUR - START_HOUR) * 2;
@@ -362,7 +399,8 @@ export default function WeeklyCalendar() {
           const gridCol = 2;
           const gridRowStart = getRowStart(item.scheduledDate);
           const gridRowEnd = getRowEnd(item.endDate);
-          const color = getStatusColor(item.status);
+          const color = getStatusProps(item.status).color;
+          const statusProps = getStatusProps(item.status);
 
           return (
             <Tooltip
@@ -434,14 +472,14 @@ export default function WeeklyCalendar() {
                   {item.notes || "Không có ghi chú"}
                 </Text>
                 <Tag
-                  color={color}
+                  color={statusProps.color}
                   style={{
                     fontSize: 10,
                     padding: "0 4px",
                     margin: "2px 0 0 0",
                   }}
                 >
-                  {item.status}
+                  {statusProps.text}
                 </Tag>
               </Card>
             </Tooltip>
@@ -454,10 +492,9 @@ export default function WeeklyCalendar() {
   // Render Lưới 7 Ngày (Week View)
   const renderWeekGrid = () => {
     if (weekDays.length === 0) return <Spin />;
-
     const startOfWeek = weekDays[0].startOf("day");
     const endOfWeek = weekDays[6].endOf("day");
-    const filteredAppointments = appointments.filter((app) =>
+    const filteredAppointments = processedAppointments.filter((app) =>
       dayjs(app.scheduledDate).isBetween(startOfWeek, endOfWeek)
     );
     const totalRows = (END_HOUR - START_HOUR) * 2;
@@ -554,7 +591,7 @@ export default function WeeklyCalendar() {
             return null;
           }
 
-          const color = getStatusColor(item.status);
+          const color = getStatusProps(item.status).color;
 
           return (
             <Tooltip
@@ -634,7 +671,7 @@ export default function WeeklyCalendar() {
                     margin: "2px 0 0 0",
                   }}
                 >
-                  {item.status}
+                  {getStatusProps(item.status).text}
                 </Tag>
               </Card>
             </Tooltip>
@@ -646,57 +683,15 @@ export default function WeeklyCalendar() {
 
   //  Render Lịch Tháng (Month View)
   const renderMonthGrid = () => {
-    const onPanelChange = (date, mode) => {
-      setCurrentDate(date);
-    };
-
-    const onDateSelect = (date) => {
-      setCurrentDate(date);
-      setCurrentView("day");
-    };
-
-    const dateCellRender = (date) => {
-      const dayAppointments = appointments.filter((app) =>
-        date.isSame(app.scheduledDate, "day")
-      );
-
-      if (dayAppointments.length > 0) {
-        return (
-          <ul
-            style={{
-              margin: 0,
-              padding: 0,
-              listStyle: "none",
-              maxHeight: 60,
-              overflowY: "auto",
-            }}
-          >
-            {dayAppointments.map((item) => (
-              <li key={item.testDriveId}>
-                <Tag
-                  color={getStatusColor(item.status)}
-                  style={{ fontSize: 10, margin: "1px 0" }}
-                >
-                  {dayjs(item.scheduledDate).format("HH:mm")} - KH{" "}
-                  {item.customerId}
-                </Tag>
-              </li>
-            ))}
-          </ul>
-        );
-      }
-      return null;
-    };
-
     return (
       <div style={{ borderTop: "1px solid #f0f0f0", padding: 8 }}>
         <Calendar
           value={currentDate}
           mode="month"
-          onPanelChange={onPanelChange}
-          onSelect={onDateSelect}
+          onPanelChange={handleMonthPanelChange}
+          onSelect={handleMonthDateSelect}
           dateCellRender={dateCellRender}
-          headerRender={() => null} // <-- THÊM DÒNG NÀY ĐỂ ẨN HEADER MẶC ĐỊNH
+          headerRender={() => null}
         />
       </div>
     );
@@ -704,23 +699,14 @@ export default function WeeklyCalendar() {
 
   // Render Lịch Năm (Year View)
   const renderYearGrid = () => {
-    const onPanelChange = (date, mode) => {
-      setCurrentDate(date);
-      setCurrentView(mode);
-    };
-
-    const onDateSelect = (date) => {
-      setCurrentDate(date);
-      setCurrentView("month");
-    };
 
     return (
       <div style={{ borderTop: "1px solid #f0f0f0", padding: 8 }}>
         <Calendar
           value={currentDate}
           mode="year"
-          onPanelChange={onPanelChange}
-          onSelect={onDateSelect}
+          onPanelChange={handleYearPanelChange} 
+          onSelect={handleYearDateSelect}    
           headerRender={() => null}
         />
       </div>
@@ -753,7 +739,7 @@ export default function WeeklyCalendar() {
 
   return (
     <>
-      <Card bodyStyle={{ padding: 0 }}>
+      <Card styles={{ body: { padding: 0 } }}>
         {renderHeader()}
         {renderCalendarBody()}
       </Card>
@@ -780,15 +766,15 @@ export default function WeeklyCalendar() {
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
-              <Tag color={getStatusColor(selectedAppointment.status)}>
-                {selectedAppointment.status}
+              <Tag color={getStatusProps(selectedAppointment.status).color}>
+                {getStatusProps(selectedAppointment.status).text}
               </Tag>
             </p>
             <p>
-              <strong>ID Khách hàng:</strong> {selectedAppointment.customerId}
+              <strong>Khách hàng ID:</strong> {selectedAppointment.customerId}
             </p>
             <p>
-              <strong>ID Xe:</strong> {selectedAppointment.vehicleId}
+              <strong>Xe ID:</strong> {selectedAppointment.vehicleId}
             </p>
             <p>
               <strong>Ghi chú:</strong>{" "}
@@ -797,6 +783,17 @@ export default function WeeklyCalendar() {
           </div>
         )}
       </Modal>
+
+      <CreateAppointmentModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onAppointmentCreated={() => {
+          setIsCreateModalOpen(false);
+          if (dealerId) {
+            fetchTestDrives(dealerId);
+          }
+        }}
+      />
     </>
   );
 }
