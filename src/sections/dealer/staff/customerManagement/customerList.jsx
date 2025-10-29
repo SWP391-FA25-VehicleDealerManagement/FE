@@ -4,18 +4,25 @@ import { SearchOutlined, UserAddOutlined, DeleteOutlined, EyeOutlined } from "@a
 import { Link } from "react-router-dom";
 import useCustomerStore from "../../../../hooks/useCustomer";
 import CreateCustomerModal from "./createCustomerModal";
-
+import useAuthen from "../../../../hooks/useAuthen";
 const { Title } = Typography;
 
 export default function CustomerList() {
-  const { customers, isLoading, fetchCustomers, deleteCustomer } = useCustomerStore();
+  const { customers, isLoading, fetchCustomersByDealerId, deleteCustomer } = useCustomerStore();
+  const { userDetail } = useAuthen()
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
+  const dealerId = userDetail?.dealer?.dealerId;
 
-  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+  useEffect(() => { 
+    if (dealerId) {
+    fetchCustomersByDealerId(dealerId);
+    }
+   }, [dealerId, fetchCustomersByDealerId]);
+   console.log("check data", customers);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -48,7 +55,7 @@ export default function CustomerList() {
     { title: "ID", dataIndex: "customerId", key: "customerId", sorter: (a,b)=>a.customerId-b.customerId },
     { title: "Tên khách hàng", dataIndex: "customerName", key: "customerName", ...getColSearch("customerName"), sorter: (a,b)=>a.customerName.localeCompare(b.customerName) },
     { title: "Số điện thoại", dataIndex: "phone", key: "phone", ...getColSearch("phone") },
-    { title: "Địa chỉ", dataIndex: "address", key: "address", ...getColSearch("address") },
+    { title: "Email", dataIndex: "email", key: "email", ...getColSearch("email") },
     {
       title: "Thao tác", key: "action",
       render: (_, record) => (
@@ -91,7 +98,7 @@ export default function CustomerList() {
       <CreateCustomerModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onSuccess={() => fetchCustomers()}
+        onSuccess={() => dealerId && fetchCustomersByDealerId(dealerId)}
       />
     </div>
   );
