@@ -12,7 +12,6 @@ import Error403 from "../components/403.jsx";
 import useAuthen from "../hooks/useAuthen";
 import CustomerDetail from "../sections/dealer/manager/customerManagement/customerDetail.jsx";
 
-
 //Import page
 //Authentication
 const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
@@ -68,6 +67,7 @@ const DealerOrderList = lazy(() =>
 );
 const DealerOrderDetail = lazy(() =>
   import("../page/dealer/manager/DealerOrderDetail.jsx")
+);
 const CustomerListPage = lazy(() =>
   import("../page/dealer/manager/customerListPage.jsx")
 );
@@ -133,11 +133,21 @@ const CustomerOrderDetailPage = lazy(() =>
   import("../page/dealer/staff/customerOrderDetailPage.jsx")
 );
 const QuotePage = lazy(() => import("../page/dealer/staff/QuotePage.jsx"));
-const CustomerDebtPage = lazy(() => import("../page/dealer/staff/customerDebtPage.jsx"));
-const CustomerDebtDetailPage = lazy(() => import("../page/dealer/staff/customerDebtDetailPage.jsx"));
-const AppointmentTestDrivePage = lazy(() => import("../page/dealer/staff/appointmentTestDrivePage.jsx"));
-const DeliveryPage = lazy(() => import("../page/dealer/staff/deiliveryPage.jsx"));
-const DeliveryDetailPage = lazy(() => import("../page/dealer/staff/deliveryDetailPage.jsx"));
+const CustomerDebtPage = lazy(() =>
+  import("../page/dealer/staff/customerDebtPage.jsx")
+);
+const CustomerDebtDetailPage = lazy(() =>
+  import("../page/dealer/staff/customerDebtDetailPage.jsx")
+);
+const AppointmentTestDrivePage = lazy(() =>
+  import("../page/dealer/staff/appointmentTestDrivePage.jsx")
+);
+const DeliveryPage = lazy(() =>
+  import("../page/dealer/staff/deiliveryPage.jsx")
+);
+const DeliveryDetailPage = lazy(() =>
+  import("../page/dealer/staff/deliveryDetailPage.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -265,7 +275,7 @@ const Routes = () => {
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <CustomerListPage /> },
         { path: "customer-list/:id", element: <CustomerDetail /> },
-        { path: "customer-list/:customerId", element: <CustomerDetail />},
+        { path: "customer-list/:customerId", element: <CustomerDetail /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
