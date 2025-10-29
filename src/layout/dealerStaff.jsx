@@ -55,13 +55,16 @@ const menuItems = [
   ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Khách hàng", "3", null, null, "/dealer-staff/customer-list"),
+    getItem("Hợp đồng với khách", "4", null, null, "/dealer-staff/customer-contract")
+  ]),
+  getItem("Quản lý công nợ khách", "sub1", <FileOutlined/>, [
+    getItem("Công nợ", "5", null, null, "/dealer-staff/debt-list")
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
     getItem("Báo cáo bán hàng", "6", null, null, "/dealer-staff/sales-report"),
-    getItem("Báo cáo kho", "8", null, null, "/dealer-staff/inventory-report"),
     getItem(
-      "Báo cáo công nợ",
-      "9",
+      "Báo cáo công nợ khách hàng",
+      "7",
       null,
       null,
       "/dealer-staff/customer-debt-report"
@@ -164,6 +167,7 @@ const DealerStaff = ({ children }) => {
         <Menu
           theme="light"
           defaultSelectedKeys={defaultSelectedKeys}
+          defaultOpenKeys={["sub1", "sub2"]}
           mode="inline"
           className="border-0 h-full"
           style={{

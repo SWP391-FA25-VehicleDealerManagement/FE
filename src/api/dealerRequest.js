@@ -12,4 +12,13 @@ const createDealerRequest = (data) => {
   return axiosClient.post("/api/dealer-requests", data);
 };
 
-export { getDealerRequest, createDealerRequest, getDealerRequestById };
+const confirmVehicleRequest = (id) => {
+  return axiosClient.post(`/api/dealer-requests/${id}/deliver`);
+};
+
+export {
+  getDealerRequest,
+  createDealerRequest,
+  getDealerRequestById,
+  confirmVehicleRequest,
+};

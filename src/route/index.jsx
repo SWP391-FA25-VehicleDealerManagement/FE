@@ -21,9 +21,7 @@ const Login = lazy(() => import("../page/authen/LoginPage.jsx"));
 const AdminDashboard = lazy(() =>
   import("../page/admin/adminDashboardPage.jsx")
 );
-const EvmStaffPage = lazy(() =>
-  import("../page/admin/evmStaffPage.jsx")
-);
+const EvmStaffPage = lazy(() => import("../page/admin/evmStaffPage.jsx"));
 const EvmStaffDetailPage = lazy(() =>
   import("../page/admin/evmStaffDetailPage.jsx")
 );
@@ -49,6 +47,9 @@ const RequestListPage = lazy(() =>
 );
 const RequestDetailPage = lazy(() =>
   import("../sections/dealer/manager/vehicleManagement/requestDetail.jsx")
+);
+const InventoryPage = lazy(() =>
+  import("../page/dealer/manager/inventoryListPage.jsx")
 );
 const StaffListPage = lazy(() =>
   import("../page/dealer/manager/staffListPage.jsx")
@@ -238,8 +239,10 @@ const Routes = () => {
         { path: "request-list/:id", element: <RequestDetailPage /> },
         { path: "staff", element: <StaffListPage /> },
         { path: "staff/:staffId", element: <StaffDetailPage /> },
+        { path: "staff", element: <StaffListPage /> },
+        { path: "staff/:staffId", element: <StaffDetailPage /> },
+        { path: "inventory", element: <InventoryPage /> },
         { path: "*", element: <Error404 /> },
-
       ],
     },
 
@@ -260,10 +263,17 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerStaffCustomerListPage /> },
-        { path: "customers/:customerId", element: <DealerStaffCustomerDetailPage /> },
+        {
+          path: "customers/:customerId",
+          element: <DealerStaffCustomerDetailPage />,
+        },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <DealerStaffVehicleListPage /> },
-        { path: "vehicles/:vehicleId", element: <DealerStaffVehicleDetailPage /> },
+        {
+          path: "vehicles/:vehicleId",
+          element: <DealerStaffVehicleDetailPage />,
+        },
+        { path: "inventory", element: <InventoryPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

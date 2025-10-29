@@ -8,7 +8,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   DownOutlined,
-  SettingOutlined,
+  InboxOutlined,
   CarOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
@@ -32,7 +32,23 @@ const menuItems = [
     null,
     "/dealer-manager/dashboard"
   ),
-  getItem("Quản lý xe", "2", <CarOutlined />, [
+  getItem("Quản lý hợp đồng", "2", <FileOutlined />, [
+    getItem(
+      "Hợp đồng với hãng",
+      "evm-contract",
+      null,
+      null,
+      "/dealer-manager/evm=-contract"
+    ),
+    getItem(
+      "Hợp đồng với khách",
+      "customer-contract",
+      null,
+      null,
+      "/dealer-manager/customer-contract"
+    ),
+  ]),
+  getItem("Quản lý xe", "3", <CarOutlined />, [
     getItem(
       "Danh sách xe",
       "vehicle-list",
@@ -55,6 +71,13 @@ const menuItems = [
       "/dealer-manager/request-list"
     ),
   ]),
+  getItem(
+    "Kho hàng",
+    "inventory",
+    <InboxOutlined />,
+    null,
+    "/dealer-manager/inventory"
+  ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
     getItem( "Khách hàng", "customer-list", null, null, "/dealer-manager/customer-list"),
@@ -79,7 +102,6 @@ const menuItems = [
 ];
 
 const Dealer = ({ children }) => {
-  const [current, setCurrent] = useState("1");
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const { logout, userDetail } = useAuthen();
@@ -175,6 +197,7 @@ const Dealer = ({ children }) => {
           theme="light"
           defaultSelectedKeys={defaultSelectedKeys}
           mode="inline"
+          defaultOpenKeys={["2", "3", "sub1", "sub2"]}
           className="border-0 h-full"
           style={{
             backgroundColor: "white",

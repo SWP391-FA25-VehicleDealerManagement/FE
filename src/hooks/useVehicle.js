@@ -47,7 +47,10 @@ const useVehicleStore = create((set) => ({
   deleteVehicleById: async (id) => {
     try {
       const response = await deleteVehicle(id);
-      return response.data;
+      if (response && response.status === 200) {
+        set({ isLoading: false });
+      }
+      return response;
     } catch (error) {
       console.error("Error deleting vehicle:", error);
       throw error;
@@ -57,13 +60,15 @@ const useVehicleStore = create((set) => ({
   createNewVehicle: async (data) => {
     try {
       const response = await createVehicle(data);
-      return response.data;
+      if (response && response.status === 200) {
+        set({ isLoading: false });
+      }
+      return response;
     } catch (error) {
       console.error("Error creating vehicle:", error);
       throw error;
     }
   },
-
 
   dealerCarLists: [],
   fetchVehicleDealers: async (id) => {
