@@ -342,81 +342,6 @@ export default function ContractsTargets() {
     },
   ];
 
-  const targetColumns = [
-    {
-      title: "Đại lý",
-      dataIndex: "dealerName",
-      key: "dealerName",
-    },
-    {
-      title: "Kỳ",
-      dataIndex: "period",
-      key: "period",
-      width: 100,
-    },
-    {
-      title: "Mục tiêu doanh thu",
-      dataIndex: "targetRevenue",
-      key: "targetRevenue",
-      width: 150,
-      render: (value) => `${value.toLocaleString("vi-VN")} đ`,
-    },
-    {
-      title: "Thực hiện",
-      dataIndex: "actualRevenue",
-      key: "actualRevenue",
-      width: 150,
-      render: (value) => (
-        <Text strong>{value.toLocaleString("vi-VN")} đ</Text>
-      ),
-    },
-    {
-      title: "Mục tiêu xe",
-      dataIndex: "targetUnits",
-      key: "targetUnits",
-      width: 100,
-      render: (value) => `${value} xe`,
-    },
-    {
-      title: "Đạt được",
-      dataIndex: "actualUnits",
-      key: "actualUnits",
-      width: 100,
-      render: (value) => <Text strong>{value} xe</Text>,
-    },
-    {
-      title: "Tỷ lệ hoàn thành",
-      dataIndex: "achievement",
-      key: "achievement",
-      width: 200,
-      render: (achievement) => (
-        <div>
-          <Progress
-            percent={achievement}
-            status={achievement >= 100 ? "success" : achievement >= 70 ? "normal" : "exception"}
-            size="small"
-          />
-        </div>
-      ),
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 150,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => showEditTargetModal(record)}
-          >
-            Sửa
-          </Button>
-        </Space>
-      ),
-    },
-  ];
-
   const showContractDetail = (record) => {
     Modal.info({
       title: "Chi tiết hợp đồng",
@@ -457,13 +382,6 @@ export default function ContractsTargets() {
     totalValue: contracts.reduce((sum, c) => sum + c.contractValue, 0),
   };
 
-  const targetStats = {
-    total: targets.length,
-    achieved: targets.filter((t) => t.achievement >= 100).length,
-    avgAchievement: targets.length > 0
-      ? (targets.reduce((sum, t) => sum + t.achievement, 0) / targets.length).toFixed(1)
-      : 0,
-  };
 
   return (
     <div>
@@ -539,76 +457,6 @@ export default function ContractsTargets() {
                 columns={contractColumns}
                 dataSource={contracts}
                 rowKey="contractId"
-                pagination={{ pageSize: 10 }}
-              />
-            )}
-          </Card>
-        </TabPane>
-
-        {/* Targets Tab */}
-        <TabPane
-          tab={
-            <span>
-              <RiseOutlined />
-              Mục tiêu kinh doanh
-            </span>
-          }
-          key="targets"
-        >
-          {/* Statistics Cards */}
-          <Row gutter={16} className="mb-4">
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="Tổng số mục tiêu"
-                  value={targetStats.total}
-                  prefix={<RiseOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="Đã đạt mục tiêu"
-                  value={targetStats.achieved}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: "#3f8600" }}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="Tỷ lệ hoàn thành TB"
-                  value={targetStats.avgAchievement}
-                  prefix={<RiseOutlined />}
-                  suffix="%"
-                  valueStyle={{ color: "#1890ff" }}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          <Card
-            extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={showAddTargetModal}
-              >
-                Thêm mục tiêu
-              </Button>
-            }
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center p-10">
-                <Spin size="large" />
-              </div>
-            ) : (
-              <Table
-                columns={targetColumns}
-                dataSource={targets}
-                rowKey="targetId"
                 pagination={{ pageSize: 10 }}
               />
             )}

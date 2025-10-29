@@ -32,13 +32,20 @@ const menuItems = [
     null,
     "/dealer-manager/dashboard"
   ),
-  getItem("Quản lý hợp đồng", "2", <FileOutlined />, [
+  getItem("Hợp đồng và công nợ", "2", <FileOutlined />, [
     getItem(
       "Hợp đồng với hãng",
       "evm-contract",
       null,
       null,
       "/dealer-manager/evm=-contract"
+    ),
+    getItem(
+      "Công nợ với hãng",
+      "dealer-debt",
+      null,
+      null,
+      "/dealer-manager/dealer-debt"
     ),
     getItem(
       "Hợp đồng với khách",
@@ -70,6 +77,13 @@ const menuItems = [
       null,
       "/dealer-manager/request-list"
     ),
+    getItem(
+      "Danh mục đơn hàng",
+      "dealer-orders",
+      null,
+      null,
+      "/dealer-manager/dealer-orders"
+    ),
   ]),
   getItem(
     "Kho hàng",
@@ -80,7 +94,13 @@ const menuItems = [
   ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
-    getItem( "Khách hàng", "customer-list", null, null, "/dealer-manager/customer-list"),
+    getItem(
+      "Khách hàng",
+      "customer-list",
+      null,
+      null,
+      "/dealer-manager/customer-list"
+    ),
   ]),
   getItem("Báo cáo", "sub2", <TeamOutlined />, [
     getItem(
@@ -202,7 +222,9 @@ const Dealer = ({ children }) => {
           style={{
             backgroundColor: "white",
             height: "calc(100vh - 64px)",
+            overflowY: "auto",
           }}
+          overflowedIndicator={false}
         >
           {renderMenuItems(menuItems)}
         </Menu>

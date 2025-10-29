@@ -47,6 +47,8 @@ export default function RequestList() {
     fetchRequestsByDealer,
     confirmRequestReceived,
     isLoadingConfirmRequest,
+    deleteRequest,
+    isLoadingDeleteRequest,
   } = useDealerRequest();
   const { userDetail } = useAuthen();
 
@@ -57,6 +59,7 @@ export default function RequestList() {
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [confirmForm] = Form.useForm();
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -166,11 +169,35 @@ export default function RequestList() {
     }
   };
 
-  const handleCancelRequest = async () => {};
-
   const handleConfirmCancel = () => {
     setIsConfirmModalVisible(false);
     confirmForm.resetFields();
+  };
+
+  const showCanclelModal = (record) => {
+    setSelectedRequest(record);
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleCancelRequest = async () => {
+    try {
+      console.log("check id", selectedRequest.requestId);
+      const response = await deleteRequest(selectedRequest.requestId);
+      console.log("check response", response);
+      if (response && response.status === 200) {
+        toast.success("Hủy yêu cầu thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        loadData();
+        setIsDeleteModalVisible(false);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Hủy yêu cầu thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
   };
 
   // Calculate statistics
@@ -360,7 +387,7 @@ export default function RequestList() {
               danger
               icon={<CloseOutlined />}
               size="small"
-              onClick={() => showConfirmModal(record)}
+              onClick={() => showCanclelModal(record)}
             >
               Huỷ
             </Button>
@@ -558,6 +585,32 @@ export default function RequestList() {
             </p>
           </div>
         </Form>
+      </Modal>
+
+      {/* Modal xác nhận hủy */}
+      <Modal
+        title="Xác nhận hủy yêu cầu"
+        open={isDeleteModalVisible}
+        onOk={handleCancelRequest}
+        onCancel={() => setIsDeleteModalVisible(false)}
+        okText="Xác nhận"
+        cancelText="Hủy"
+        confirmLoading={isLoadingDeleteRequest}
+        okButtonProps={{ icon: <CheckSquareOutlined /> }}
+      >
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            backgroundColor: "#fff1f0",
+            borderRadius: 4,
+          }}
+        >
+          <p style={{ margin: 0, color: "#c41c00" }}>
+            Bạn có chắc chắn muốn hủy yêu cầu này không? Hành động này sẽ không
+            thể hoàn tác.
+          </p>
+        </div>
       </Modal>
     </div>
   );

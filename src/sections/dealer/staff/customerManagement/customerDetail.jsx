@@ -4,16 +4,18 @@ import { Card, Descriptions, Button, Tabs, Table, Typography, Spin, Row, Col, Di
 import { ArrowLeftOutlined, PhoneOutlined, EnvironmentOutlined, EditOutlined, DeleteOutlined, UserOutlined } from "@ant-design/icons";
 import useCustomerStore from "../../../../hooks/useCustomer";
 import { toast } from "react-toastify";
+import UpdateCustomerModal from "./updateCustomerModal";
 
 
 const { Title } = Typography;
 
 export default function CustomerDetail() {
   const { customerId } = useParams();
-  const { customerDetail, isLoading, fetchCustomerById, deleteCustomer } = useCustomerStore();
+  const { customerDetail, isLoading, getCustomerById, deleteCustomer } = useCustomerStore();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
 
-  useEffect(() => { if (customerId) fetchCustomerById(customerId); }, [customerId, fetchCustomerById]);
+  useEffect(() => { if (customerId) getCustomerById(customerId); }, [customerId, getCustomerById]);
 
   const handleDelete = async () => {
     await deleteCustomer(customerId);
@@ -43,7 +45,7 @@ export default function CustomerDetail() {
           <Title level={2} style={{ margin: 0 }}>Chi tiết Khách hàng: {customerDetail?.customerName || "—"}</Title>
         </div>
         <Space>
-          <Button type="primary" icon={<EditOutlined />}>Chỉnh sửa</Button>
+          <Button type="primary" icon={<EditOutlined />} onClick={() => setOpenEdit(true)} >Chỉnh sửa</Button>
           <Button danger icon={<DeleteOutlined />} onClick={() => setIsDeleteOpen(true)}>Xoá</Button>
         </Space>
       </div>
@@ -71,11 +73,18 @@ export default function CustomerDetail() {
         </Col>
       </Row>
 
-      <Modal title="Xác nhận xoá khách hàng" open={isDeleteOpen}
-             onOk={handleDelete} onCancel={() => setIsDeleteOpen(false)}
-             okText="Xoá" cancelText="Hủy" okType="danger" closable={false}>
-        <p>Bạn có chắc muốn xoá <strong>{customerDetail?.customerName}</strong> không?</p>
-      </Modal>
-    </div>
-  );
+      <UpdateCustomerModal
+        open={openEdit}
+        customer={customerDetail}
+        onClose={() => setOpenEdit(false)}
+        onSuccess={() => getCustomerById(customerId)}
+      />
+
+        <Modal title="Xác nhận xoá khách hàng" open={isDeleteOpen}
+          onOk={handleDelete} onCancel={() => setIsDeleteOpen(false)}
+          okText="Xoá" cancelText="Hủy" okType="danger" closable={false}>
+          <p>Bạn có chắc muốn xoá <strong>{customerDetail?.customerName}</strong> không?</p>
+        </Modal>
+      </div>
+      );
 }

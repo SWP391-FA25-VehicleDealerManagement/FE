@@ -4,6 +4,7 @@ import {
   createDealerRequest,
   getDealerRequestById,
   confirmVehicleRequest,
+  deleteDealerRequest,
 } from "../api/dealerRequest";
 
 const useDealerRequest = create((set) => ({
@@ -86,7 +87,6 @@ const useDealerRequest = create((set) => ({
     }
   },
 
-  // Confirm vehicle request (change status to ALLOCATED)
   isLoadingConfirmRequest: false,
   confirmRequestReceived: async (id) => {
     try {
@@ -99,6 +99,21 @@ const useDealerRequest = create((set) => ({
     } catch (error) {
       set({ isLoadingConfirmRequest: false });
       console.error("Error confirming request:", error);
+      throw error;
+    }
+  },
+
+  isLoadingDeleteRequest: false,
+  deleteRequest: async (id) => {
+    try {
+      set({ isLoadingDeleteRequest: true });
+      const response = await deleteDealerRequest(id);
+      if (response && response.status === 200) {
+        set({ isLoadingDeleteRequest: false });
+      }
+      return response;
+    } catch (error) {
+      console.error("Error deleting request:", error);
       throw error;
     }
   },

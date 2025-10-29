@@ -1,3 +1,13 @@
-import DealerDebts from "../../sections/evm/dealerManagement/dealerDebts";
+import DealerDebts from "../../sections/evm/debtManagement/dealerDebts";
+import { Helmet } from "react-helmet";
 
-export default DealerDebts;
+export default function EvmDealerDebtsPage() {
+  return (
+    <div>
+      <Helmet>
+        <title>Dealer Debts</title>
+      </Helmet>
+      <DealerDebts />
+    </div>
+  );
+}
