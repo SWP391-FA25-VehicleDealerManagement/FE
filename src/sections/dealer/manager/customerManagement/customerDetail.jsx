@@ -1,3 +1,4 @@
+// src/sections/dealer/manager/customerManagement/customerDetail.jsx
 import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -24,12 +25,13 @@ const { Title } = Typography;
 
 export default function CustomerDetail() {
   const { customerId } = useParams();
-  const { customerDetail, isLoading, fetchCustomerById } = useCustomerStore();
+  const { customerDetail, isLoading, getCustomerById } = useCustomerStore();
 
   useEffect(() => {
-    if (customerId) fetchCustomerById(customerId);
-  }, [customerId, fetchCustomerById]);
+    if (customerId) getCustomerById(customerId);
+  }, [customerId, getCustomerById]);
 
+  // demo data – thay bằng dữ liệu thực nếu có
   const interactions = [
     { key: "1", date: "2025-01-20", action: "Gọi điện", note: "Hỏi về VF8" },
     { key: "2", date: "2025-01-21", action: "Gửi báo giá", note: "VF8 Plus" },
@@ -41,12 +43,13 @@ export default function CustomerDetail() {
     { title: "Ghi chú", dataIndex: "note", key: "note" },
   ];
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center p-20">
         <Spin size="large" />
       </div>
     );
+  }
 
   return (
     <div>
@@ -104,7 +107,7 @@ export default function CustomerDetail() {
           </Card>
         </Col>
 
-        {/* Lịch sử tương tác */}
+        {/* Lịch sử tương tác / đơn hàng */}
         <Col span={16}>
           <Card>
             <Tabs

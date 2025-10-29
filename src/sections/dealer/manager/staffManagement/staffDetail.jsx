@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import useStaffStore from "../../../../hooks/useStaff"; // đi lên 4 cấp
+import useStaffStore from "../../../../hooks/useDealerStaff";
 import {
   Card,
   Descriptions,
