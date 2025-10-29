@@ -18,17 +18,18 @@ export default function CreateDealerModal({ isOpen, onClose, onSuccess }) {
         createdBy: userDetail?.userName || "unknown",
       };
 
-      await createDealer(dealerData);
-
-      toast.success("Tạo đại lý thành công!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-
-      form.resetFields();
-      onSuccess && onSuccess();
-      onClose();
+      const response = await createDealer(dealerData);
+      console.log("check response", response);
+      if (response && response.status === 200) {
+        toast.success("Tạo đại lý thành công!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+        form.resetFields();
+        onSuccess && onSuccess();
+        onClose();
+      }
     } catch (error) {
       console.error("Error creating dealer:", error);
       toast.error(error.response?.data?.message || "Tạo đại lý thất bại!", {

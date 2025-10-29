@@ -417,7 +417,7 @@ export default function RequestVehicle() {
       render: (text) => <span>{text}</span>,
     },
     {
-      title: "Giá (VNĐ)",
+      title: "Giá niêm yết (VNĐ)",
       dataIndex: "msrp",
       key: "msrp",
       width: "15%",

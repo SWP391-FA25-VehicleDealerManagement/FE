@@ -272,7 +272,24 @@ export default function VehicleList() {
       render: (text) => <span>{text}</span>,
     },
     {
-      title: "Giá (VNĐ)",
+      title: "Giá bán (VNĐ)",
+      dataIndex: "price",
+      key: "price",
+      width: "15%",
+      sorter: (a, b) => {
+        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
+        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
+        return priceA - priceB;
+      },
+      render: (msrp) => {
+        if (!msrp) {
+          return "N/A";
+        }
+        return msrp.toLocaleString("vi-VN");
+      },
+    },
+    {
+      title: "Giá niêm yết (VNĐ)",
       dataIndex: "msrp",
       key: "msrp",
       width: "15%",

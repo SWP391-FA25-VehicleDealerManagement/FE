@@ -319,11 +319,18 @@ export default function InventoryManagement() {
       width: "20%",
     },
     {
+      title: "Màu sắc",
+      dataIndex: "color",
+      key: "color",
+      ...getColumnSearchProps("color"),
+      width: "20%",
+    },
+    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: "20%",
+      width: "15%",
       render: (quantity) => (
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),

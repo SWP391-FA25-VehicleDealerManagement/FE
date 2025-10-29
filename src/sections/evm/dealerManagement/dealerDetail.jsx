@@ -1,22 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import useDealerStore from "../../../hooks/useDealer";
-import { Card, Descriptions, Button, Tabs, Table, Tag, Typography, Spin, Avatar, Row, Col, Divider, Space, Modal } from "antd";
-import { 
-  ArrowLeftOutlined, 
-  PhoneOutlined, 
-  MailOutlined, 
-  EnvironmentOutlined, 
+import {
+  Card,
+  Descriptions,
+  Button,
+  Tabs,
+  Table,
+  Input,
+  Typography,
+  Spin,
+  Avatar,
+  Row,
+  Col,
+  Divider,
+  Space,
+  Modal,
+  Tag,
+} from "antd";
+import {
+  ArrowLeftOutlined,
+  PhoneOutlined,
+  EnvironmentOutlined,
   UserOutlined,
   EditOutlined,
   DeleteOutlined,
   TeamOutlined,
-  CarOutlined,
-  ExclamationCircleOutlined,
-  UserAddOutlined
+  UserAddOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import UpdateDealerModal from "./updateDealerModal";
 import CreateDealerManagerModal from "./createDealerManagerModal";
+import useUserStore from "../../../hooks/useUser";
 import { toast } from "react-toastify";
 
 const { Title, Text } = Typography;
@@ -24,21 +39,52 @@ const { TabPane } = Tabs;
 
 export default function DealerDetail() {
   const { dealerId } = useParams();
-  const { dealerDetail, isLoading, fetchDealerById, deleteDealer } = useDealerStore();
+  const { dealerDetail, isLoading, fetchDealerById, deleteDealer } =
+    useDealerStore();
+  const { dealerAccounts, fetchDealerAccounts, isLoadingDealerAccounts } =
+    useUserStore();
   const [activeTab, setActiveTab] = useState("1");
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [createManagerModalVisible, setCreateManagerModalVisible] = useState(false);
+  const [createManagerModalVisible, setCreateManagerModalVisible] =
+    useState(false);
+
+  const fetchData = useCallback(async () => {
+    if (dealerId) {
+      try {
+        await Promise.all([
+          fetchDealerById(dealerId),
+          fetchDealerAccounts(dealerId),
+        ]);
+      } catch (error) {
+        console.error("Có lỗi xảy ra khi fetch data:", error);
+        toast.error("Tải dữ liệu thất bại", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
+    }
+  }, [dealerId, fetchDealerById, fetchDealerAccounts]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (dealerId) {
-        await fetchDealerById(dealerId);
-      }
-    };
     fetchData();
-  }, [dealerId, fetchDealerById]);
-  
+  }, [fetchData]);
+
+  const roleColorMap = {
+    admin: "purple",
+    dealer_manager: "blue",
+    dealer_staff: "cyan",
+    evm_staff: "green",
+  };
+
+  const roleLabelMap = {
+    admin: "Quản trị viên",
+    dealer_manager: "Quản lý Đại lý",
+    dealer_staff: "Nhân viên Đại lý",
+    evm_staff: "Nhân viên EVM",
+  };
+
   const showDeleteModal = () => {
     setIsDeleteModalOpen(true);
   };
@@ -46,7 +92,7 @@ export default function DealerDetail() {
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
   };
-  
+
   const handleDelete = async () => {
     try {
       await deleteDealer(dealerId);
@@ -55,7 +101,7 @@ export default function DealerDetail() {
         autoClose: 3000,
         hideProgressBar: false,
       });
-      window.location.href = '/evm-staff/dealer-list'; // Redirect to dealer list
+      window.location.href = "/evm-staff/dealer-list"; // Redirect to dealer list
     } catch (error) {
       console.error("Error deleting dealer:", error);
       toast.error(error.response?.data?.message || "Xóa đại lý thất bại", {
@@ -68,123 +114,100 @@ export default function DealerDetail() {
     }
   };
 
-  // Placeholder data for staff members
-  const staffData = [
-    {
-      key: '1',
-      id: 1,
-      name: 'Nguyễn Văn A',
-      role: 'Quản lý',
-      email: 'nguyenvana@example.com',
-      phone: '0901234567',
-      status: 'active',
-    },
-    {
-      key: '2',
-      id: 2,
-      name: 'Trần Thị B',
-      role: 'Nhân viên bán hàng',
-      email: 'tranthib@example.com',
-      phone: '0909876543',
-      status: 'active',
-    },
-  ];
-
-  // Placeholder data for vehicles
-  const vehicleData = [
-    {
-      key: '1',
-      id: 'VF1001',
-      model: 'VF8',
-      color: 'Đen',
-      price: 1200000000,
-      status: 'available',
-    },
-    {
-      key: '2',
-      id: 'VF1002',
-      model: 'VF9',
-      color: 'Trắng',
-      price: 1500000000,
-      status: 'sold',
-    },
-  ];
+  const getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          placeholder={`Tìm ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Tìm kiếm
+          </Button>
+          <Button
+            onClick={() => handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Đặt lại
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        ? record[dataIndex]
+            .toString()
+            .toLowerCase()
+            .includes(value.toLowerCase())
+        : "",
+  });
 
   // Staff table columns
   const staffColumns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      title: "ID",
+      dataIndex: "userId",
+      key: "userId",
+      ...getColumnSearchProps("userId"),
     },
     {
-      title: 'Tên',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Tên",
+      dataIndex: "fullName",
+      key: "fullName",
     },
     {
-      title: 'Chức vụ',
-      dataIndex: 'role',
-      key: 'role',
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
+      title: "Điện thoại",
+      dataIndex: "phone",
+      key: "phone",
     },
     {
-      title: 'Điện thoại',
-      dataIndex: 'phone',
-      key: 'phone',
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag color={status === 'active' ? 'green' : 'red'}>
-          {status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-        </Tag>
-      ),
+      title: "Chức vụ",
+      dataIndex: "role",
+      key: "role",
+      render: (role) => {
+        if (!role) return null;
+
+        const roleLowerCase = role.toLowerCase();
+
+        const color = roleColorMap[roleLowerCase] || "default";
+        const label = roleLabelMap[roleLowerCase] || role;
+
+        return <Tag color={color}>{label}</Tag>;
+      },
     },
   ];
 
-  // Vehicle table columns
-  const vehicleColumns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
-      title: 'Model',
-      dataIndex: 'model',
-      key: 'model',
-    },
-    {
-      title: 'Màu sắc',
-      dataIndex: 'color',
-      key: 'color',
-    },
-    {
-      title: 'Giá (VNĐ)',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price),
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag color={status === 'available' ? 'green' : 'blue'}>
-          {status === 'available' ? 'Còn hàng' : 'Đã bán'}
-        </Tag>
-      ),
-    },
-  ];
+  const hasDealerManager = dealerAccounts?.some(
+    (account) => account.role === "DEALER_MANAGER"
+  );
 
-  if (isLoading) {
+  if (isLoading && isLoadingDealerAccounts) {
     return (
       <div className="flex justify-center items-center p-20">
         <Spin size="large" />
@@ -206,30 +229,28 @@ export default function DealerDetail() {
           </Title>
         </div>
         <Space>
-          <Button 
-            type="default" 
-            icon={<UserAddOutlined />} 
-            onClick={() => setCreateManagerModalVisible(true)}
-          >
-            Tạo tài khoản quản lý
-          </Button>
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          {!hasDealerManager && (
+            <Button
+              type="default"
+              icon={<UserAddOutlined />}
+              onClick={() => setCreateManagerModalVisible(true)}
+            >
+              Tạo tài khoản quản lý
+            </Button>
+          )}
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             onClick={() => setUpdateModalVisible(true)}
           >
             Chỉnh sửa
           </Button>
-          <Button 
-            danger 
-            icon={<DeleteOutlined />} 
-            onClick={showDeleteModal}
-          >
+          <Button danger icon={<DeleteOutlined />} onClick={showDeleteModal}>
             Xóa
           </Button>
         </Space>
       </div>
-      
+
       {/* Update Dealer Modal */}
       <UpdateDealerModal
         visible={updateModalVisible}
@@ -251,20 +272,32 @@ export default function DealerDetail() {
             <div className="flex flex-col items-center mb-6">
               <Avatar size={100} icon={<UserOutlined />} />
               <Title level={3} style={{ marginTop: 16, marginBottom: 0 }}>
-                {dealerDetail.dealerName || 'Chưa có thông tin'}
+                {dealerDetail.dealerName || "Chưa có thông tin"}
               </Title>
-              <Text type="secondary">ID: {dealerDetail.dealerId || 'N/A'}</Text>
+              <Text type="secondary">ID: {dealerDetail.dealerId || "N/A"}</Text>
             </div>
             <Divider />
             <Descriptions layout="vertical" column={1}>
-              <Descriptions.Item label={<><PhoneOutlined /> Số điện thoại</>}>
-                {dealerDetail.phone || 'Chưa có thông tin'}
+              <Descriptions.Item
+                label={
+                  <>
+                    <PhoneOutlined /> Số điện thoại
+                  </>
+                }
+              >
+                {dealerDetail.phone || "Chưa có thông tin"}
               </Descriptions.Item>
               {/* <Descriptions.Item label={<><MailOutlined /> Email</>}>
                 {dealerDetail.email || 'Chưa có thông tin'}
               </Descriptions.Item> */}
-              <Descriptions.Item label={<><EnvironmentOutlined /> Địa chỉ</>}>
-                {dealerDetail.address || 'Chưa có thông tin'}
+              <Descriptions.Item
+                label={
+                  <>
+                    <EnvironmentOutlined /> Địa chỉ
+                  </>
+                }
+              >
+                {dealerDetail.address || "Chưa có thông tin"}
               </Descriptions.Item>
               {/* <Descriptions.Item label="Trạng thái">
                 <Tag color={dealerDetail.status === 'active' ? 'green' : 'red'}>
@@ -272,7 +305,9 @@ export default function DealerDetail() {
                 </Tag>
               </Descriptions.Item> */}
               <Descriptions.Item label="Ngày thành lập">
-                {dealerDetail.createdAt ? new Date(dealerDetail.createdAt).toLocaleDateString('vi-VN') : 'Chưa có thông tin'}
+                {dealerDetail.createdAt
+                  ? new Date(dealerDetail.createdAt).toLocaleDateString("vi-VN")
+                  : "Chưa có thông tin"}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -292,27 +327,11 @@ export default function DealerDetail() {
               >
                 <Table
                   columns={staffColumns}
-                  dataSource={staffData}
+                  dataSource={dealerAccounts}
                   pagination={{ pageSize: 5 }}
                   rowKey="id"
                 />
               </TabPane>
-              {/* <TabPane
-                tab={
-                  <span>
-                    <CarOutlined />
-                    Danh sách Xe
-                  </span>
-                }
-                key="2"
-              >
-                <Table
-                  columns={vehicleColumns}
-                  dataSource={vehicleData}
-                  pagination={{ pageSize: 5 }}
-                  rowKey="id"
-                />
-              </TabPane> */}
             </Tabs>
           </Card>
         </Col>

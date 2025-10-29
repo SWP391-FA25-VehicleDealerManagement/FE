@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { updateUser, changePassword } from "../api/user";
+import { updateUser, changePassword, getDealerAccounts } from "../api/user";
 import { toast } from "react-toastify";
 const useUserStore = create((set) => ({
   isLoading: false,
@@ -45,6 +45,24 @@ const useUserStore = create((set) => ({
       set({ isLoading: false });
       console.error("Error changing password:", error);
       throw error;
+    }
+  },
+
+  dealerAccounts: [],
+  isLoadingDealerAccounts: false,
+  fetchDealerAccounts: async (id) => {
+    try {
+      set({ isLoadingDealerAccounts: true });
+      const response = await getDealerAccounts(id);
+      if (response && response.status === 200) {
+        set({
+          dealerAccounts: response.data.data || response.data,
+          isLoadingDealerAccounts: false,
+        });
+      }
+    } catch (error) {
+      set({ isLoadingDealerAccounts: false });
+      console.error("Error fetching dealer accounts:", error);
     }
   },
 }));

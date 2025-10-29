@@ -93,7 +93,6 @@ export default function VehicleAllocation() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
 
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -242,7 +241,7 @@ export default function VehicleAllocation() {
 
       setIsRecallModalVisible(false);
       recallForm.resetFields();
-      fetchVehicleRequests(); // Refresh danh sách
+      fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Thu hồi thất bại", {
         position: "top-right",
@@ -390,43 +389,22 @@ export default function VehicleAllocation() {
       width: "20%",
     },
     {
+      title: "Màu sắc",
+      dataIndex: "color",
+      key: "color",
+      ...getColumnSearchProps("color"),
+      width: "15%",
+    },
+    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       sorter: (a, b) => a.quantity - b.quantity,
-      width: "20%",
+      width: "15%",
       render: (quantity) => (
         <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
       ),
     },
-    // {
-    //   title: "Thao tác",
-    //   key: "action",
-    //   width: "20%",
-    //   render: (_, record) => (
-    //     <Space size="small">
-    //       <Button
-    //         type="primary"
-    //         size="small"
-    //         icon={<ImportOutlined />}
-    //         onClick={() => {
-    //           setSelectedInventoryItem(record);
-    //           setIsAddMoreModalVisible(true);
-    //         }}
-    //       >
-    //         Nhập thêm
-    //       </Button>
-    //       <Button
-    //         danger
-    //         size="small"
-    //         icon={<DeleteOutlined />}
-    //         onClick={() => showDeleteConfirm(record)}
-    //       >
-    //         Xóa
-    //       </Button>
-    //     </Space>
-    //   ),
-    // },
   ];
 
   const dealerColumns = [
@@ -547,6 +525,10 @@ export default function VehicleAllocation() {
             text = "Đang phân vận chuyển";
             icon = <SyncOutlined spin />;
             break;
+          case "DELIVERED":
+            color = "success";
+            text = "Hoàn thành";
+            icon = <CheckOutlined />;
           default:
             color = "default";
             text = status;
@@ -1087,8 +1069,8 @@ export default function VehicleAllocation() {
                       ? "error"
                       : vehicleRequestDetail.status === "SHIPPED"
                       ? "blue"
-                      : vehicleRequestDetail.status === "ALLOCATED"
-                      ? "processing"
+                      : vehicleRequestDetail.status === "DELIVERED"
+                      ? "success"
                       : "default"
                   }
                   icon={
@@ -1100,8 +1082,8 @@ export default function VehicleAllocation() {
                       <CloseOutlined />
                     ) : vehicleRequestDetail.status === "SHIPPED" ? (
                       <SyncOutlined spin />
-                    ) : vehicleRequestDetail.status === "ALLOCATED" ? (
-                      <CheckCircleOutlined />
+                    ) : vehicleRequestDetail.status === "DELIVERED" ? (
+                      <CheckOutlined />
                     ) : null
                   }
                   style={{
@@ -1118,8 +1100,8 @@ export default function VehicleAllocation() {
                     ? "Từ chối"
                     : vehicleRequestDetail.status === "SHIPPED"
                     ? "Đang vận chuyển"
-                    : vehicleRequestDetail.status === "ALLOCATED"
-                    ? "Đã phân bổ"
+                    : vehicleRequestDetail.status === "DELIVERED"
+                    ? "Hoàn thành"
                     : vehicleRequestDetail.status}
                 </Tag>
               </Descriptions.Item>
