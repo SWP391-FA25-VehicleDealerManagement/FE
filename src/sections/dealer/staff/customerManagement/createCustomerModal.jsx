@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Form, Input, Button, Row, Col } from "antd";
+import { Modal, Form, Input, Button, Row, Col, Alert } from "antd";
 import { toast } from "react-toastify";
 import useCustomerStore from "../../../../hooks/useCustomer";
 import useAuthen from "../../../../hooks/useAuthen";
@@ -10,10 +10,22 @@ export default function CreateCustomerModal({ isOpen, onClose, onSuccess }) {
   const { createCustomer } = useCustomerStore();
   const { userDetail } = useAuthen();
 
+  const dealerId = userDetail?.dealer?.dealerId || null;
+  const createdBy = userDetail?.userName || "unknown";
+
   const handleSubmit = async (values) => {
     setIsLoading(true);
     try {
-      await createCustomer({ ...values, createdBy: userDetail?.userName || "unknown" });
+      const payload = {
+        dealerId,
+        customerName: values.customerName?.trim(),
+        email: values.email?.trim() || null,
+        phone: values.phone?.trim(),
+        createBy: createdBy, 
+      };
+
+      await createCustomer(payload);
+
       toast.success("Tạo khách hàng thành công!", { autoClose: 3000 });
       form.resetFields();
       onSuccess?.();
@@ -26,35 +38,80 @@ export default function CreateCustomerModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleCancel = () => {
+    form.resetFields();
+    onClose();
+  };
+
   return (
-    <Modal title="Tạo khách hàng mới" open={isOpen} onCancel={() => { form.resetFields(); onClose(); }}
-           footer={null} width={600} destroyOnClose closable={false}>
+    <Modal
+      title="Tạo khách hàng mới"
+      open={isOpen}
+      onCancel={handleCancel}
+      footer={null}
+      width={600}
+      destroyOnClose
+      closable={false}
+    >
+      {!dealerId && (
+        <Alert
+          type="warning"
+          showIcon
+          className="mb-4"
+          message="Không tìm thấy dealerId của bạn. Vui lòng đăng nhập lại hoặc kiểm tra thông tin tài khoản."
+        />
+      )}
+
       <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="customerName" label="Tên khách hàng"
-              rules={[{ required: true, message: "Vui lòng nhập tên!" }, { min: 2, message: "Ít nhất 2 ký tự!" }]}>
+            <Form.Item
+              name="customerName"
+              label="Tên khách hàng"
+              rules={[
+                { required: true, message: "Vui lòng nhập tên!" },
+                { min: 2, message: "Ít nhất 2 ký tự!" },
+              ]}
+            >
               <Input placeholder="Nhập tên khách hàng" size="large" />
             </Form.Item>
           </Col>
+
           <Col span={12}>
-            <Form.Item name="phone" label="Số điện thoại"
-              rules={[{ required: true, message: "Vui lòng nhập SĐT!" }, { pattern: /^[0-9+\-\s()]+$/, message: "SĐT không hợp lệ!" }]}>
+            <Form.Item
+              name="phone"
+              label="Số điện thoại"
+              rules={[
+                { required: true, message: "Vui lòng nhập SĐT!" },
+                { pattern: /^[0-9+\-\s()]+$/, message: "SĐT không hợp lệ!" },
+              ]}
+            >
               <Input placeholder="Nhập số điện thoại" size="large" />
             </Form.Item>
           </Col>
         </Row>
-        <Form.Item name="address" label="Địa chỉ"
-          rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }, { min: 5, message: "Ít nhất 5 ký tự!" }]}>
-          <Input placeholder="Nhập địa chỉ" size="large" />
-        </Form.Item>
-        <Form.Item name="note" label="Ghi chú">
-          <Input placeholder="Ghi chú (tuỳ chọn)" size="large" />
+
+        <Form.Item
+          name="email"
+          label="Email (tuỳ chọn)"
+          rules={[{ type: "email", message: "Email không hợp lệ!" }]}
+        >
+          <Input placeholder="Nhập email" size="large" />
         </Form.Item>
 
         <div className="flex justify-start gap-4 mt-6">
-          <Button onClick={() => { form.resetFields(); onClose(); }} size="large">Hủy</Button>
-          <Button type="primary" htmlType="submit" loading={isLoading} size="large">Tạo khách hàng</Button>
+          <Button onClick={handleCancel} size="large">
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isLoading}
+            disabled={!dealerId}
+            size="large"
+          >
+            Tạo khách hàng
+          </Button>
         </div>
       </Form>
     </Modal>

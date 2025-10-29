@@ -3,19 +3,24 @@ import { Table, Input, Button, Space, Card, Typography, Spin } from "antd";
 import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import useCustomerStore from "../../../../hooks/useCustomer";
+import useAuthen from "../../../../hooks/useAuthen";
 
 const { Title } = Typography;
 
 export default function CustomerList() {
-  const { customers, isLoading, fetchCustomers } = useCustomerStore();
+  const { customers, isLoading, fetchCustomersByDealerId } = useCustomerStore();
+  const { userDetail } = useAuthen();
+  const dealerId = userDetail?.dealer?.dealerId;
+
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
 
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    if (dealerId) {
+      fetchCustomersByDealerId(dealerId);
+    }
+  }, [dealerId, fetchCustomersByDealerId]);
 
-  // ----- Search & Filter -----
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
     setSearchText(selectedKeys[0]);
@@ -47,32 +52,19 @@ export default function CustomerList() {
           >
             Tìm kiếm
           </Button>
-          <Button
-            onClick={() => handleReset(clearFilters)}
-            size="small"
-            style={{ width: 90 }}
-          >
+          <Button onClick={() => handleReset(clearFilters)} size="small" style={{ width: 90 }}>
             Đặt lại
           </Button>
         </Space>
       </div>
     ),
-    filterIcon: (filtered) => (
-      <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
-    ),
+    filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />,
     onFilter: (value, record) =>
-      record[dataIndex]?.toString().toLowerCase().includes(value.toLowerCase()),
+      record[dataIndex]?.toString()?.toLowerCase().includes(value.toLowerCase()),
   });
-  // ----------------------------
 
-  // ----- Cấu hình cột bảng -----
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "customerId",
-      key: "customerId",
-      sorter: (a, b) => a.customerId - b.customerId,
-    },
+    { title: "ID", dataIndex: "customerId", key: "customerId", sorter: (a, b) => a.customerId - b.customerId },
     {
       title: "Tên khách hàng",
       dataIndex: "customerName",
@@ -80,18 +72,8 @@ export default function CustomerList() {
       ...getColSearch("customerName"),
       sorter: (a, b) => a.customerName.localeCompare(b.customerName),
     },
-    {
-      title: "Số điện thoại",
-      dataIndex: "phone",
-      key: "phone",
-      ...getColSearch("phone"),
-    },
-    {
-      title: "Địa chỉ",
-      dataIndex: "address",
-      key: "address",
-      ...getColSearch("address"),
-    },
+    { title: "Số điện thoại", dataIndex: "phone", key: "phone", ...getColSearch("phone") },
+    { title: "Email", dataIndex: "email", key: "email", ...getColSearch("email") },
     {
       title: "Thao tác",
       key: "action",
@@ -106,16 +88,13 @@ export default function CustomerList() {
       ),
     },
   ];
-  // ----------------------------
 
   return (
     <div>
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <Title level={2}>Danh sách Khách hàng</Title>
       </div>
 
-      {/* Table */}
       <Card>
         {isLoading ? (
           <div className="flex justify-center items-center p-10">
@@ -129,8 +108,7 @@ export default function CustomerList() {
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} mục`,
+              showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
             }}
           />
         )}

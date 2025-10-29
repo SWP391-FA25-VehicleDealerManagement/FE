@@ -4,9 +4,7 @@ import StaffDetail from "../../../sections/dealer/manager/staffManagement/staffD
 export default function StaffDetailPage() {
   return (
     <div>
-      <Helmet>
         <title>Staff Detail</title>
-      </Helmet>
       <StaffDetail />
     </div>
   );

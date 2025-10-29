@@ -1,53 +1,92 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { toast } from "react-toastify";
+import { getAllCustomers, getCustomerById, deleteCustomerById, createCustomer, updateCustomer } from "../api/customer";
 
-const SEED = [
-  { customerId: 1, customerName: "Phạm Quốc D", phone: "0901112222", address: "Q.1, HCM", note: "Lead nóng" },
-  { customerId: 2, customerName: "Vũ Thu E",    phone: "0913334444", address: "Cầu Giấy, Hà Nội", note: "Hẹn lái thử" },
-  { customerId: 3, customerName: "Lâm Hữu F",    phone: "0935556666", address: "Hải Châu, Đà Nẵng", note: "" },
-];
+const useCustomerStore = create((set) => ({
+  customers: [],
+  isLoading: false,
+  fetchCustomersByDealerId: async (Id) => {
+    try {
+      set({ isLoading: true });
+      const response = await getAllCustomers(Id);
+      if (response && response.status === 200)
+        set({ customers: response.data.data, isLoading: false });
+    }
+    catch (error) {
+      console.error("Failed to fetch customers:", error);
+    }
+  },
 
-const useCustomerStore = create(
-  persist(
-    (set, get) => ({
-      customers: SEED,
-      isLoading: false,
-      customerDetail: {},
-
-      fetchCustomers: async () => {
-        set({ isLoading: true });
-        await new Promise((r) => setTimeout(r, 120));
+  deleteCustomer: async (Id) => {
+    try {
+      set({ isLoading: true });
+      const response = await deleteCustomerById(Id);
+      if (response && response.status === 200) {
         set({ isLoading: false });
-      },
-      fetchCustomerById: async (id) => {
-        set({ isLoading: true });
-        await new Promise((r) => setTimeout(r, 100));
-        const found = get().customers.find(c => String(c.customerId) === String(id)) || {};
-        set({ isLoading: false, customerDetail: found });
-      },
-      createCustomer: async (data) => {
-        const nextId = (get().customers.at(-1)?.customerId || 0) + 1;
-        const created = { customerId: nextId, ...data };
-        set({ customers: [...get().customers, created] });
-        toast.success("Tạo khách hàng thành công!", { autoClose: 2500 });
-        return created;
-      },
-      updateCustomer: async (id, patch) => {
-        const updated = get().customers.map(c =>
-          String(c.customerId) === String(id) ? { ...c, ...patch } : c
-        );
-        set({ customers: updated });
-        toast.success("Cập nhật khách hàng thành công!", { autoClose: 2500 });
-      },
-      deleteCustomer: async (id) => {
-        const filtered = get().customers.filter(c => String(c.customerId) !== String(id));
-        set({ customers: filtered });
-        toast.success("Xoá khách hàng thành công", { autoClose: 2500 });
-      },
-    }),
-    { name: "dealer-staff-customers", partialize: s => ({ customers: s.customers }) }
-  )
-);
+      }
+    }
+    catch (error) {
+      console.error("Failed to delete customer:", error);
+      set({ isLoading: false });
+    }
+  },
+
+  customerDetail: {},
+  getCustomerById: async (Id) => {
+    try {
+      set({ isLoading: true });
+      const response = await getCustomerById(Id);
+      if (response && response.status === 200) {
+        set({ customerDetail: response.data.data, isLoading: false });
+      }
+    }
+    catch (error) {
+      console.error("Failed to fetch customer by ID:", error);
+      set({ isLoading: false });
+    }
+  },
+
+  deleteCustomerById: async (Id) => {
+    try {
+      set({ isLoading: true });
+      const response = await deleteCustomerById(Id);
+      if (response && response.status === 200) {
+        set({ isLoading: false });
+      }
+    }
+    catch (error) {
+      console.error("Failed to delete customer by ID:", error);
+      set({ isLoading: false });
+    }
+  },
+
+  createCustomer: async (customerData) => {
+    try {
+      set({ isLoading: true });
+      const response = await createCustomer(customerData);
+      if (response && (response.status === 200 || response.status === 201)) {
+        set({ isLoading: false });
+        return response.data;
+      }
+    } catch (error) {
+      console.error("Failed to create customer:", error);
+      set({ isLoading: false });
+    }
+  },
+
+  updateCustomer: async (Id, customerData) => {
+    try {
+      set({ isLoading: true });
+      const response = await updateCustomer(Id, customerData);
+      if (response && (response.status === 200 || response.status === 201)) {
+        set({ isLoading: false });
+        return response.data;
+      }
+    } catch (error) {
+      console.error("Failed to update customer:", error);
+      set({ isLoading: false });
+    }
+  },
+}));
+
 
 export default useCustomerStore;
