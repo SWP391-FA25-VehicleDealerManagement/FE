@@ -101,3 +101,41 @@ body {
     transform: translateY(0);
   }
 }
+
+@media print {
+  /* 1. Hide everything by default when printing */
+  body * {
+    visibility: hidden; /* Hide elements but keep space */
+  }
+
+  /* 2. Make ONLY the quote content and its children visible */
+  #quote-to-print, #quote-to-print * {
+    visibility: visible;
+  }
+
+  #quote-to-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important; 
+    padding: 10px !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+  }
+
+  /* 4. Hide specific layout elements */
+  .ant-layout-sider,  
+  .ant-layout-header, 
+  .ant-layout-footer, 
+  .action-buttons-container 
+   {
+    display: none !important; 
+  }
+
+   /* 5. Ensure the main layout content area doesn't have offsets */
+   .ant-layout-content {
+       margin-left: 0 !important; /* Reset margin from sidebar */
+       padding: 0 !important; /* Reset padding */
+   }
+}

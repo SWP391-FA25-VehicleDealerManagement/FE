@@ -251,13 +251,25 @@ export default function DealerVehicleDetail() {
                 label={
                   <span className="flex items-center gap-1">
                     <DollarOutlined />
-                    Giá (VNĐ)
+                    Giá bán (VNĐ)
+                  </span>
+                }
+              >
+                {vehicleDetail?.price
+                  ? Number(vehicleDetail.price).toLocaleString("vi-VN")
+                  : "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <span className="flex items-center gap-1">
+                    <DollarOutlined />
+                    Giá gốc(VNĐ)
                   </span>
                 }
               >
                 {vehicleDetail?.msrp
                   ? Number(vehicleDetail.msrp).toLocaleString("vi-VN")
-                  : "Liên hệ"}
+                  : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item
                 label={

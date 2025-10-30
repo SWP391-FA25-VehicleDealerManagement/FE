@@ -47,8 +47,6 @@ const Login = () => {
   const handleLogin = async (values) => {
     try {
       const result = await login(values);
-      console.log("Login result:", result);
-      console.log("ket qua", result);
       if (result.success) {
         toast.success(`Chào mừng bạn trở lại hệ thống ${result.role}`, {
           position: "top-right",
@@ -178,6 +176,7 @@ const Login = () => {
                   prefix={<LockOutlined className="text-gray-400" />}
                   placeholder="Mật khẩu"
                   className="rounded-lg py-2"
+                  suggested="current-password"
                 />
               </Form.Item>
 

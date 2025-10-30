@@ -85,7 +85,7 @@ export default function RequestDetail() {
         text: "Đang vận chuyển",
       },
       DELIVERED: {
-        color: "blue",
+        color: "green",
         icon: <CheckCircleOutlined />,
         text: "Hoàn thành",
       },
@@ -117,7 +117,7 @@ export default function RequestDetail() {
     const priorityConfig = {
       HIGH: { color: "red", text: "Cao" },
       NORMAL: { color: "blue", text: "Bình thường" },
-      LOW: { color: "default", text: "Thấp" },
+      LOW: { color: "green", text: "Thấp" },
     };
 
     const config = priorityConfig[priority] || {
@@ -143,7 +143,6 @@ export default function RequestDetail() {
     }).format(amount);
   };
 
-  // Columns for request details table
   const detailColumns = [
     {
       title: "STT",
@@ -226,13 +225,6 @@ export default function RequestDetail() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          {/* <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/dealer-manager/request-list")}
-            style={{ marginRight: 16 }}
-          >
-            Quay lại
-          </Button> */}
           <Title level={2} style={{ margin: 0 }}>
             Chi tiết yêu cầu #{requestDetail.requestId}
           </Title>
@@ -391,88 +383,9 @@ export default function RequestDetail() {
 
         {/* Right Column - Timeline & Status */}
         <Col xs={24} lg={8}>
-          <Card title="Lịch sử trạng thái">
-            <Timeline
-              items={[
-                {
-                  color: "blue",
-                  children: (
-                    <div>
-                      <Text strong>Tạo yêu cầu</Text>
-                      <br />
-                      <Text type="secondary">
-                        {requestDetail.requestDate
-                          ? dayjs(requestDetail.requestDate).format(
-                              "DD/MM/YYYY HH:mm"
-                            )
-                          : "N/A"}
-                      </Text>
-                    </div>
-                  ),
-                },
-                ...(requestDetail.approvedDate
-                  ? [
-                      {
-                        color:
-                          requestDetail.status === "APPROVED" ? "green" : "red",
-                        children: (
-                          <div>
-                            <Text strong>
-                              {requestDetail.status === "APPROVED"
-                                ? "Đã duyệt"
-                                : "Từ chối"}
-                            </Text>
-                            <br />
-                            <Text type="secondary">
-                              {dayjs(requestDetail.approvedDate).format(
-                                "DD/MM/YYYY HH:mm"
-                              )}
-                            </Text>
-                            {requestDetail.approvedBy && (
-                              <>
-                                <br />
-                                <Text type="secondary">
-                                  Bởi: {requestDetail.approvedBy}
-                                </Text>
-                              </>
-                            )}
-                          </div>
-                        ),
-                      },
-                    ]
-                  : []),
-                ...(requestDetail.deliveryDate
-                  ? [
-                      {
-                        color: "purple",
-                        children: (
-                          <div>
-                            <Text strong>Giao hàng</Text>
-                            <br />
-                            <Text type="secondary">
-                              {dayjs(requestDetail.deliveryDate).format(
-                                "DD/MM/YYYY"
-                              )}
-                            </Text>
-                          </div>
-                        ),
-                      },
-                    ]
-                  : []),
-              ]}
-            />
-          </Card>
-
           {/* Quick Actions */}
           <Card title="Thao tác nhanh" className="mt-4">
             <Space direction="vertical" style={{ width: "100%" }}>
-              {/* <Button
-                block
-                icon={<FileTextOutlined />}
-                onClick={() => window.print()}
-              >
-                In yêu cầu
-              </Button> */}
               <Button
                 block
                 type="primary"
