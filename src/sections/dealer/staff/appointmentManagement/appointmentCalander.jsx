@@ -99,7 +99,9 @@ export default function WeeklyCalendar() {
     });
 
     setProcessedAppointments(processedData);
+    console.log("check data", processedAppointments);
   }, [testDrives]);
+
   useEffect(() => {
     const startOfWeek = currentDate.startOf("week");
     const days = [];
@@ -164,7 +166,7 @@ export default function WeeklyCalendar() {
                   style={{ fontSize: 10, margin: "1px 0" }}
                 >
                   {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
-                  {item.customerId}
+                  {item.customer?.customerName}
                 </Tag>
               </li>
             ))}
@@ -457,7 +459,9 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  KH: {item.customerId} - Xe: {item.vehicleId}
+                  KH: {item.customer?.customerName} - Xe:{" "}
+                  {item.vehicle?.variant?.model?.name}{" "}
+                  {item.vehicle?.variant?.name}
                 </Text>
                 <Text
                   type="secondary"
@@ -469,7 +473,7 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.notes || "Không có ghi chú"}
+                  Ghi chú: {item.notes || "Không có ghi chú"}
                 </Text>
                 <Tag
                   color={statusProps.color}
@@ -649,7 +653,9 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  KH: {item.customerId} - Xe: {item.vehicleId}
+                  KH: {item.customer?.customerName} - Xe:{" "}
+                  {item.vehicle?.variant?.model?.name}{" "}
+                  {item.vehicle?.variant?.name}
                 </Text>
                 <Text
                   type="secondary"
@@ -661,7 +667,7 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.notes || "Không có ghi chú"}
+                  Ghi chú: {item.notes || "Không có ghi chú"}
                 </Text>
                 <Tag
                   color={color}
@@ -699,14 +705,13 @@ export default function WeeklyCalendar() {
 
   // Render Lịch Năm (Year View)
   const renderYearGrid = () => {
-
     return (
       <div style={{ borderTop: "1px solid #f0f0f0", padding: 8 }}>
         <Calendar
           value={currentDate}
           mode="year"
-          onPanelChange={handleYearPanelChange} 
-          onSelect={handleYearDateSelect}    
+          onPanelChange={handleYearPanelChange}
+          onSelect={handleYearDateSelect}
           headerRender={() => null}
         />
       </div>
@@ -736,6 +741,8 @@ export default function WeeklyCalendar() {
         return renderWeekGrid();
     }
   };
+
+  console.log("check select,", selectedAppointment);
 
   return (
     <>
