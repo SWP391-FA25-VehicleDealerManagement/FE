@@ -106,13 +106,13 @@ export default function PaymentModal({ isOpen, onClose, order }) {
 
         if (successResponse && successResponse.status === 200) {
           // B3: Tạo công nợ khách hàng (chỉ khi có newPaymentId)
-          if (newPaymentId) {
+          if (values.paymentType === "INSTALLMENT") {
             const debtResponse = await createCustomerDebtFromPayment(
               newPaymentId
             );
             if (debtResponse && debtResponse.status === 200) {
               toast.success(
-                "Thanh toán, cập nhật trạng thái và tạo công nợ thành công!"
+                "Thanh toán thành công!"
               );
             } else {
               toast.warn("Thanh toán thành công nhưng tạo công nợ thất bại.");

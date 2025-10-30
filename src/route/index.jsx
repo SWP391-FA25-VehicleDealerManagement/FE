@@ -274,8 +274,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <CustomerListPage /> },
-        { path: "customer-list/:id", element: <CustomerDetail /> },
-        { path: "customer-list/:customerId", element: <CustomerDetail /> },
+        { path: "customer-list/:id", element: <CustomerDetailPage /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
