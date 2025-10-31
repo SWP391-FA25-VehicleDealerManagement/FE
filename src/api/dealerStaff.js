@@ -9,3 +9,7 @@ export const getDealerStaffByDealerId = (dealerId) => {
 export const getUserById = (userId) => {
   return axiosClient.get(`/api/users/${userId}`);
 };
+
+export const createDealerStaff = (data) => {
+  return axiosClient.post(`/api/admin/create-dealer-staff`, data);
+};

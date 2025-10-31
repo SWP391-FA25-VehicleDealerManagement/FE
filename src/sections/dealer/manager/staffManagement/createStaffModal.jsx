@@ -1,41 +1,39 @@
 import React, { useState } from "react";
-import { Modal, Form, Input, Button, Row, Col } from "antd";
+import { Modal, Form, Input, Button, Row, Col, Alert } from "antd";
 import { toast } from "react-toastify";
-import useStaffStore from "../../../../hooks/useDealerStaff";
+import useDealerStaff from "../../../../hooks/useDealerStaff";
 import useAuthen from "../../../../hooks/useAuthen";
 
 export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
   const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
-  const { createStaff } = useStaffStore();
+  const { createStaff } = useDealerStaff();
   const { userDetail } = useAuthen();
+
+  const dealerId = userDetail?.dealer?.dealerId || null;
 
   const handleSubmit = async (values) => {
     setIsLoading(true);
     try {
-      const staffData = {
-        ...values, // { staffName, phone, address }
-        createdBy: userDetail?.userName || "unknown",
+      const payload = {
+        username: values.username.trim(),
+        password: values.password,           // để nguyên
+        fullName: values.fullName.trim(),
+        phone: values.phone.trim(),
+        email: values.email.trim(),
+        role: "DEALER_STAFF",
+        dealerId,                            // bắt buộc
       };
 
-      await createStaff(staffData);
+      await createStaff(payload);
 
-      toast.success("Tạo nhân viên thành công!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-
+      toast.success("Tạo nhân viên thành công!", { autoClose: 3000 });
       form.resetFields();
-      onSuccess && onSuccess();
+      onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Error creating staff:", error);
-      toast.error(error?.response?.data?.message || "Tạo nhân viên thất bại!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      toast.error(error?.response?.data?.message || "Tạo nhân viên thất bại!", { autoClose: 3000 });
     } finally {
       setIsLoading(false);
     }
@@ -52,71 +50,90 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
       open={isOpen}
       onCancel={handleCancel}
       footer={null}
-      width={600}
+      width={640}
       destroyOnClose
       closable={false}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        autoComplete="off"
-      >
+      {!dealerId && (
+        <Alert
+          type="warning"
+          showIcon
+          className="mb-4"
+          message="Không tìm thấy dealerId của bạn. Vui lòng đăng nhập lại hoặc kiểm tra thông tin tài khoản."
+        />
+      )}
+
+      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="staffName"
-              label="Tên nhân viên"
+              name="username"
+              label="Tên đăng nhập"
               rules={[
-                { required: true, message: "Vui lòng nhập tên nhân viên!" },
-                { min: 2, message: "Tên nhân viên phải có ít nhất 2 ký tự!" },
+                { required: true, message: "Vui lòng nhập tên đăng nhập!" },
+                { min: 3, message: "Ít nhất 3 ký tự!" },
               ]}
             >
-              <Input placeholder="Nhập tên nhân viên" size="large" />
+              <Input placeholder="vd: staff.hanoi1" size="large" />
             </Form.Item>
           </Col>
+
+          <Col span={12}>
+            <Form.Item
+              name="password"
+              label="Mật khẩu"
+              rules={[
+                { required: true, message: "Vui lòng nhập mật khẩu!" },
+                { min: 6, message: "Ít nhất 6 ký tự!" },
+              ]}
+            >
+              <Input.Password placeholder="Nhập mật khẩu" size="large" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="fullName"
+              label="Họ và tên"
+              rules={[
+                { required: true, message: "Vui lòng nhập họ tên!" },
+                { min: 2, message: "Ít nhất 2 ký tự!" },
+              ]}
+            >
+              <Input placeholder="vd: Staff Hà Nội" size="large" />
+            </Form.Item>
+          </Col>
+
           <Col span={12}>
             <Form.Item
               name="phone"
               label="Số điện thoại"
               rules={[
                 { required: true, message: "Vui lòng nhập số điện thoại!" },
-                {
-                  pattern: /^[0-9+\-\s()]+$/,
-                  message: "Số điện thoại không hợp lệ!",
-                },
+                { pattern: /^[0-9+\-\s()]+$/, message: "Số điện thoại không hợp lệ!" },
               ]}
             >
-              <Input placeholder="Nhập số điện thoại" size="large" />
+              <Input placeholder="vd: 0909222222" size="large" />
             </Form.Item>
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="address"
-              label="Địa chỉ"
-              rules={[
-                { required: true, message: "Vui lòng nhập địa chỉ!" },
-                { min: 5, message: "Địa chỉ phải có ít nhất 5 ký tự!" },
-              ]}
-            >
-              <Input placeholder="Nhập địa chỉ" size="large" />
-            </Form.Item>
-          </Col>
-        </Row>
+        <Form.Item
+          name="email"
+          label="Email"
+          rules={[
+            { required: true, message: "Vui lòng nhập email!" },
+            { type: "email", message: "Email không hợp lệ!" },
+          ]}
+        >
+          <Input placeholder="vd: staff1@vinfast.vn" size="large" />
+        </Form.Item>
 
         <div className="flex justify-start gap-4 mt-6">
-          <Button onClick={handleCancel} size="large">
-            Hủy
-          </Button>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={isLoading}
-            size="large"
-          >
+          <Button onClick={handleCancel} size="large">Hủy</Button>
+          <Button type="primary" htmlType="submit" loading={isLoading} disabled={!dealerId} size="large">
             Tạo nhân viên
           </Button>
         </div>
