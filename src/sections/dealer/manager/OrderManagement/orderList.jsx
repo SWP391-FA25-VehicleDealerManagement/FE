@@ -37,7 +37,6 @@ export default function OrderList() {
   useEffect(() => {
     if (dealerId) {
       getCustomerOrders(dealerId);
-      // 2. Đã loại bỏ getCustomer(dealerId)
       getPayment();
     }
   }, [getCustomerOrders, getPayment, dealerId]);
@@ -47,15 +46,12 @@ export default function OrderList() {
   }, [CustomerOrder]);
 
   useEffect(() => {
-    // 4. Đã loại bỏ check 'Customer'
     if (
       filteredOrders &&
       filteredOrders.length >= 0 &&
       payment &&
       payment.length >= 0
     ) {
-      // 5. Đã loại bỏ 'customerMap'
-
       const paymentMap = new Map();
       payment.forEach((p) => {
         const currentTotal = paymentMap.get(p.orderId) || 0;
@@ -65,12 +61,10 @@ export default function OrderList() {
         }
       });
       const combinedData = filteredOrders.map((order) => {
-        // 6. Đã loại bỏ 'const customer'
         const totalPaid = paymentMap.get(order.orderId) || 0;
 
         return {
           ...order,
-          // 7. Thay thế 'customerName' bằng 'dealerName' từ userDetail
           dealerName: userDetail?.dealer?.dealerName || "N/A",
           totalPaid: totalPaid,
         };
@@ -95,8 +89,6 @@ export default function OrderList() {
   };
 
   const handlePayment = (record) => {
-    // 9. Cập nhật record để truyền cho PaymentModal
-    // PaymentModal mong đợi trường 'customerName', nên ta gán 'dealerName' cho nó
     const orderForModal = {
       ...record,
       customerName: record.dealerName || "Đơn hàng nội bộ",
@@ -112,11 +104,10 @@ export default function OrderList() {
       key: "orderId",
       sorter: (a, b) => a.orderId - b.orderId,
     },
-    // 10. THAY ĐỔI CỘT
     {
-      title: "Đại lý", // Thay vì "Khách hàng"
-      dataIndex: "dealerName", // Thay vì "customerName"
-      key: "dealerName", // Thay vì "customerName"
+      title: "Đại lý", 
+      dataIndex: "dealerName", 
+      key: "dealerName", 
     },
     {
       title: "Ngày tạo",

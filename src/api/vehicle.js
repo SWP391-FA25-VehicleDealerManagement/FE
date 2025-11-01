@@ -12,8 +12,12 @@ const getVehicleDealers = (id) => {
   return axiosClient.get(`/api/vehicles/dealer/${id}/vehicles`);
 };
 
-const createVehicle = (data) => {
-  return axiosClient.post("/api/vehicles", data);
+const createVehicle = (formData) => {
+  return axiosClient.post("/api/vehicles", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
 
 const updateVehicle = (id, formData) => {

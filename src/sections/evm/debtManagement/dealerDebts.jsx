@@ -8,29 +8,20 @@ import {
   Input,
   Typography,
   Spin,
-  Modal,
-  Form,
-  Select,
-  InputNumber,
-  Descriptions,
   Row,
   Col,
   Statistic,
-  DatePicker,
 } from "antd";
 import {
   DollarOutlined,
-  PlusOutlined,
   EyeOutlined,
   SearchOutlined,
   ExclamationCircleOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   WarningOutlined,
-  ShopOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
-import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import useDealerDebt from "../../../hooks/useDealerDebt";
@@ -47,9 +38,6 @@ export default function DealerDebts() {
     isLoading: isDealerLoading,
   } = useDealerStore();
   const [mergedData, setMergedData] = useState([]);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedDebt, setSelectedDebt] = useState(null);
-  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,7 +53,7 @@ export default function DealerDebts() {
   // USEEFFECT ĐỂ KẾT HỢP DỮ LIỆU KHI CÓ THAY ĐỔI
   useEffect(() => {
     // Dùng 'DealerDebts' (từ hook) và 'dealers' (từ store)
-    if (dealerDebt && dealers) {
+    if (Array.isArray(dealerDebt) && Array.isArray(dealers)) {
       const dealerMap = new Map(
         dealers.map((dealer) => [dealer.dealerId, dealer])
       );
@@ -73,12 +61,21 @@ export default function DealerDebts() {
       // Kết hợp dữ liệu
       const combinedData = dealerDebt.map((debt) => {
         const dealer = dealerMap.get(Number(debt.dealerId));
+        
+        // Tính toán số liệu an toàn
+        const amountDue = debt.totalAmount || debt.amountDue || 0;
+        const amountPaid = debt.paidAmount || debt.amountPaid || 0;
+        const remainingAmount = amountDue - amountPaid;
 
         return {
           ...debt,
           dealerName: dealer ? dealer.dealerName : "Không tìm thấy",
           phone: dealer ? dealer.phone : "N/A",
           address: dealer ? dealer.address : "N/A",
+          amountDue: amountDue,
+          amountPaid: amountPaid,
+          remainingAmount: remainingAmount > 0 ? remainingAmount : 0,
+          status: debt.status || "PENDING",
         };
       });
 
@@ -163,8 +160,22 @@ export default function DealerDebts() {
       dataIndex: "startDate",
       key: "startDate",
       width: 120,
-      render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "N/A"), // Thêm kiểm tra
-      sorter: (a, b) => dayjs(a.startDate).unix() - dayjs(b.startDate).unix(),
+      render: (date) => {
+        if (!date) return "N/A";
+        try {
+          return dayjs(date).format("DD/MM/YYYY");
+        } catch {
+          return "N/A";
+        }
+      },
+      sorter: (a, b) => {
+        if (!a.startDate || !b.startDate) return 0;
+        try {
+          return dayjs(a.startDate).unix() - dayjs(b.startDate).unix();
+        } catch {
+          return 0;
+        }
+      },
     },
     {
       title: "Tổng tiền hàng",
@@ -200,14 +211,20 @@ export default function DealerDebts() {
       key: "remainingAmount",
       width: 150,
       render: (remainingAmount) => {
-        const value = remainingAmount || 0;
+        const value = remainingAmount !== null && remainingAmount !== undefined 
+          ? remainingAmount 
+          : 0;
         return (
           <Text type="danger" strong>{`${value.toLocaleString(
             "vi-VN"
           )} đ`}</Text>
         );
       },
-      sorter: (a, b) => (a.remainingAmount || 0) - (b.remainingAmount || 0), // Sửa: Xử lý giá trị 0
+      sorter: (a, b) => {
+        const aVal = a.remainingAmount !== null && a.remainingAmount !== undefined ? a.remainingAmount : 0;
+        const bVal = b.remainingAmount !== null && b.remainingAmount !== undefined ? b.remainingAmount : 0;
+        return aVal - bVal;
+      },
     },
     {
       title: "Tổng lãi",
@@ -225,14 +242,22 @@ export default function DealerDebts() {
       dataIndex: "dueDate",
       key: "dueDate",
       width: 130,
-      render: (date, record) => {
-        return (
-          <div>
-            <Text type="default">{dayjs(date).format("DD/MM/YYYY")}</Text>
-          </div>
-        );
+      render: (date) => {
+        if (!date) return <Text type="secondary">N/A</Text>;
+        try {
+          return <Text type="default">{dayjs(date).format("DD/MM/YYYY")}</Text>;
+        } catch {
+          return <Text type="secondary">N/A</Text>;
+        }
       },
-      sorter: (a, b) => dayjs(a.dueDate).unix() - dayjs(b.dueDate).unix(), //
+      sorter: (a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        try {
+          return dayjs(a.dueDate).unix() - dayjs(b.dueDate).unix();
+        } catch {
+          return 0;
+        }
+      },
     },
     {
       title: "Hình thức trả",
@@ -278,7 +303,12 @@ export default function DealerDebts() {
             icon: <ClockCircleOutlined />,
           },
         };
-        const config = statusConfig[status] || statusConfig.pending;
+        const defaultConfig = {
+          color: "default",
+          text: status || "N/A",
+          icon: <ExclamationCircleOutlined />,
+        };
+        const config = statusConfig[status] || statusConfig.PENDING || defaultConfig;
         return (
           <Tag color={config.color} icon={config.icon}>
             {config.text}
@@ -328,13 +358,16 @@ export default function DealerDebts() {
         (sum, d) => sum + (d.totalAmount || d.amountDue || 0),
         0
       ),
-      totalPaid: mergedData.reduce((sum, d) => sum + (d.paidAmount || 0), 0),
-      totalRemaining: mergedData.reduce(
-        (sum, d) => sum + (d.remainingAmount || 0),
-        0
-      ),
+      totalPaid: mergedData.reduce((sum, d) => {
+        const paid = d.paidAmount || d.amountPaid || 0;
+        return sum + (typeof paid === 'number' ? paid : 0);
+      }, 0),
+      totalRemaining: mergedData.reduce((sum, d) => {
+        const remaining = d.remainingAmount || 0;
+        return sum + (typeof remaining === 'number' ? remaining : 0);
+      }, 0),
       overdueCount: mergedData.filter(
-        (d) => d.status === "overdue" || d.overdue === true
+        (d) => d.status === "OVERDUE" || d.status === "overdue" || d.overdue === true
       ).length,
     };
   }, [mergedData]);
@@ -408,7 +441,7 @@ export default function DealerDebts() {
         ) : (
           <Table
             columns={columns}
-            dataSource={mergedData}
+            dataSource={Array.isArray(mergedData) ? mergedData : []}
             rowKey="debtId"
             pagination={{ pageSize: 10, showSizeChanger: true }}
             scroll={{ x: 2000 }}

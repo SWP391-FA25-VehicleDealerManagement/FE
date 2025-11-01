@@ -59,12 +59,6 @@ const useAuthen = create((set, get) => ({
         isInitialized: true,
       });
 
-      notification.success({
-        message: "Logout Successful",
-        description: "You have been logged out successfully",
-        duration: 1,
-      });
-
       return true;
     } catch (err) {
       console.log("Logout error", err);
