@@ -148,6 +148,9 @@ const DeliveryPage = lazy(() =>
 const DeliveryDetailPage = lazy(() =>
   import("../page/dealer/staff/deliveryDetailPage.jsx")
 );
+const FeedbackListPage = lazy(() =>
+  import("../page/dealer/staff/feedbackListPage.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -331,6 +334,7 @@ const Routes = () => {
         { path: "appointments", element: <AppointmentTestDrivePage /> },
         { path: "deliveries", element: <DeliveryPage /> },
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
+        { path: "reviews", element: <FeedbackListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
