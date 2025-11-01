@@ -1,56 +1,119 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "react-toastify";
-
-const SEED = [
-  { staffId: 1, staffName: "Nguyễn Minh A", phone: "0901234567", email: "a@evm.vn", role: "Sales", address: "Q.1, HCM" },
-  { staffId: 2, staffName: "Trần Thu B",    phone: "0912345678", email: "b@evm.vn", role: "CSKH",  address: "Cầu Giấy, Hà Nội" },
-  { staffId: 3, staffName: "Lê Hoàng C",    phone: "0934567890", email: "c@evm.vn", role: "Kỹ thuật", address: "Hải Châu, Đà Nẵng" },
-];
+import {
+  getAllEvmStaff,
+  getEvmStaffById,
+  createEvmStaff as apiCreate,
+  updateEvmStaff as apiUpdate,
+  deleteEvmStaff as apiDelete,
+} from "../api/evmStaff";
 
 const useEvmStaffStore = create(
   persist(
     (set, get) => ({
-      evmStaffs: SEED,
+      evmStaffs: [],
       isLoading: false,
-      evmStaffDetail: {},
+      staffDetail: {},
 
       fetchEvmStaffs: async () => {
         set({ isLoading: true });
-        await new Promise(r => setTimeout(r, 120));
-        set({ isLoading: false });
+        try {
+          const res = await getAllEvmStaff();
+          console.log("GET /api/evmstaff response:", res);
+          const list = res?.data?.data ?? res?.data ?? [];
+          set({ evmStaffs: Array.isArray(list) ? list : [], isLoading: false });
+        } catch (err) {
+          console.error("fetchEvmStaffs error:", err);
+          set({ evmStaffs: [], isLoading: false });
+          toast.error("Không tải được danh sách nhân viên từ server.");
+        }
       },
 
       fetchEvmStaffById: async (id) => {
         set({ isLoading: true });
-        await new Promise(r => setTimeout(r, 100));
-        const found = get().evmStaffs.find(s => String(s.staffId) === String(id)) || {};
-        set({ isLoading: false, evmStaffDetail: found });
+        try {
+          const res = await getEvmStaffById(id);
+          console.log(`GET /api/evmstaff/${id} response:`, res);
+          const detail = res?.data?.data ?? res?.data ?? {};
+          set({ staffDetail: detail, isLoading: false });
+        } catch (err) {
+          console.error("fetchEvmStaffById error:", err);
+          set({ staffDetail: {}, isLoading: false });
+          toast.error("Không tải được chi tiết nhân viên từ server.");
+        }
       },
 
       createEvmStaff: async (data) => {
-        const nextId = (get().evmStaffs.at(-1)?.staffId || 0) + 1;
-        const created = { staffId: nextId, ...data };
-        set({ evmStaffs: [...get().evmStaffs, created] });
-        toast.success("Tạo nhân viên EVM thành công!", { autoClose: 2500 });
-        return created;
+        set({ isLoading: true });
+        try {
+          const res = await apiCreate(data);
+          console.log("POST /api/evmstaff response:", res);
+          const created = res?.data?.data ?? res?.data ?? null;
+          if (created) {
+            set({ evmStaffs: [...get().evmStaffs, created], isLoading: false });
+            toast.success("Tạo nhân viên EVM thành công!");
+            return created;
+          }
+          set({ isLoading: false });
+          throw new Error("Invalid create response");
+        } catch (err) {
+          console.error("createEvmStaff error:", err);
+          set({ isLoading: false });
+          toast.error(err?.response.data.message);
+          throw err;
+        }
       },
 
       updateEvmStaff: async (id, patch) => {
-        const updated = get().evmStaffs.map(s =>
-          String(s.staffId) === String(id) ? { ...s, ...patch } : s
-        );
-        set({ evmStaffs: updated });
-        toast.success("Cập nhật nhân viên EVM thành công!", { autoClose: 2500 });
+        set({ isLoading: true });
+        try {
+          const res = await apiUpdate(id, patch);
+          console.log(`PUT /api/evmstaff/${id} response:`, res);
+          const updated = res?.data?.data ?? res?.data ?? null;
+          if (updated) {
+            set({
+              evmStaffs: get().evmStaffs.map((s) =>
+                String(s.staffId ?? s.id ?? s.userId) === String(id)
+                  ? updated
+                  : s
+              ),
+              isLoading: false,
+            });
+            toast.success("Cập nhật nhân viên thành công!");
+            return updated;
+          }
+          set({ isLoading: false });
+          throw new Error("Invalid update response");
+        } catch (err) {
+          console.error("updateEvmStaff error:", err);
+          set({ isLoading: false });
+          toast.error("Cập nhật thất bại.");
+          throw err;
+        }
       },
 
       deleteEvmStaff: async (id) => {
-        const filtered = get().evmStaffs.filter(s => String(s.staffId) !== String(id));
-        set({ evmStaffs: filtered });
-        toast.success("Xoá nhân viên EVM thành công", { autoClose: 2500 });
+        set({ isLoading: true });
+        try {
+          const res = await apiDelete(id);
+          console.log(`DELETE /api/evmstaff/${id} response:`, res);
+          set({
+            evmStaffs: get().evmStaffs.filter(
+              (s) => String(s.staffId ?? s.id ?? s.userId) !== String(id)
+            ),
+            isLoading: false,
+          });
+          toast.success("Xoá nhân viên thành công.");
+        } catch (err) {
+          console.error("deleteEvmStaff error:", err);
+          set({ isLoading: false });
+          toast.error("Xoá thất bại.");
+          throw err;
+        }
       },
     }),
-    { name: "evm-staffs", partialize: s => ({ evmStaffs: s.evmStaffs }) }
+    { name: "evm-staffs", partialize: (s) => ({ evmStaffs: s.evmStaffs }) }
   )
 );
 
