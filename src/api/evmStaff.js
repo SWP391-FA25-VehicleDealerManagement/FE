@@ -7,7 +7,7 @@ export const getEvmStaffById = (id) => {
     return axiosClient.get(`/api/evmstaff/${id}`);
 };
 export const createEvmStaff = (data) => {
-    return axiosClient.post("/api/evmstaff", data);
+    return axiosClient.post("/api/admin/create-evm-staff", data);
 };
 export const updateEvmStaff = (id, data) => {
     return axiosClient.put(`/api/evmstaff/${id}`, data);
