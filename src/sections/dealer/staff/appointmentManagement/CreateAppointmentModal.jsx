@@ -92,11 +92,14 @@ export default function CreateAppointmentModal({
       toast.error("Vui lòng tìm khách hàng hợp lệ bằng SĐT.");
       return;
     }
+    
+    const scheduledDate = values.scheduledDate.format("YYYY-MM-DDTHH:mm:ss");
+    
     const payload = {
       dealerId: dealerId,
       customerId: customerInfo.customerId,
       vehicleId: values.vehicleId,
-      scheduledDate: values.scheduledDate.toISOString(),
+      scheduledDate: scheduledDate,
       notes: values.notes || "",
       assignedBy: userDetail.username || "dealerStaff",
     };
@@ -111,7 +114,7 @@ export default function CreateAppointmentModal({
         });
         form.resetFields();
         setCustomerInfo(null);
-        onAppointmentCreated(); // Gọi callback để refresh
+        onAppointmentCreated(); 
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Có lỗi xảy ra", {
@@ -124,6 +127,37 @@ export default function CreateAppointmentModal({
   // Tắt các ngày/giờ trong quá khứ
   const disabledDate = (current) => {
     return current && current < dayjs().startOf("day");
+  };
+
+  // Tắt các giờ ngoài 8h-17h
+  const disabledDateTime = (current) => {
+    // Nếu không có ngày được chọn hoặc ngày trong quá khứ
+    if (!current || current < dayjs().startOf("day")) {
+      return {
+        disabledHours: () => [],
+        disabledMinutes: () => [],
+      };
+    }
+
+    return {
+      disabledHours: () => {
+        const hours = [];
+        // Disable 0-7h và 18-23h
+        for (let i = 0; i < 8; i++) hours.push(i);
+        for (let i = 18; i < 24; i++) hours.push(i);
+        return hours;
+      },
+      disabledMinutes: (selectedHour) => {
+        // Chỉ cho phép phút 00 và 30
+        const minutes = [];
+        for (let i = 0; i < 60; i++) {
+          if (i !== 0 && i !== 30) {
+            minutes.push(i);
+          }
+        }
+        return minutes;
+      },
+    };
   };
 
   return (
@@ -216,14 +250,17 @@ export default function CreateAppointmentModal({
               name="scheduledDate"
               label="Thời gian hẹn"
               rules={[{ required: true, message: "Vui lòng chọn thời gian!" }]}
+              extra="Chỉ được đặt lịch từ 8:00 - 17:00"
             >
               <DatePicker
                 showTime
                 format="DD/MM/YYYY HH:mm"
                 disabledDate={disabledDate}
+                disabledTime={disabledDateTime}
                 style={{ width: "100%" }}
                 placeholder="Chọn ngày và giờ"
                 minuteStep={30}
+                showNow={false}
               />
             </Form.Item>
           </Col>

@@ -23,7 +23,7 @@ const ReschuduleTestDrive = async (testDriveId, newDate) => {
 }
 
 const cancelTestDrive = async (testDriveId) => {
-  return await axiosClient.put(
+  return await axiosClient.delete(
     `/api/testdrives/cancel-test-drive/${testDriveId}/cancel`
   );
 };

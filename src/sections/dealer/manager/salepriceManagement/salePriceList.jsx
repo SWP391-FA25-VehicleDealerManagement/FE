@@ -274,7 +274,9 @@ export default function SalePriceList() {
       key: "variantName",
       ...getColumnSearchProps("variantName"),
       render: (text, record) => (
-        <span>{text || "N/A"}</span>
+        <Link to={`/dealer-manager/vehicles/variants/${record.variantId}`}>
+          {text || "N/A"}
+        </Link>
       ),
     },
     {
