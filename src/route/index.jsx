@@ -74,6 +74,12 @@ const CustomerListPage = lazy(() =>
 const CustomerDetailPage = lazy(() =>
   import("../page/dealer/manager/customerDetailPage.jsx")
 );
+const SalePriceListPage = lazy(() =>
+  import("../page/dealer/manager/salePriceListPage.jsx")
+);
+const SalePriceDetailPage = lazy(() =>
+  import("../page/dealer/manager/salePriceDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -298,6 +304,8 @@ const Routes = () => {
         { path: "dealer-debt/:debtId", element: <DealerDebtDetailPage /> },
         { path: "dealer-orders", element: <DealerOrderList /> },
         { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
+        { path: "sale-prices", element: <SalePriceListPage /> },
+        { path: "sale-prices/:salePriceId", element: <SalePriceDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

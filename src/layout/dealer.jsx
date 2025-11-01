@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
+import { get } from "lodash";
 
 const { Header, Content, Footer, Sider } = Layout;
 function getItem(label, key, icon, children, path) {
@@ -62,6 +63,13 @@ const menuItems = [
       null,
       null,
       "/dealer-manager/vehicles"
+    ),
+    getItem(
+      "Quản lý giá bán",
+      "sale-prices",
+      null,
+      null,
+      "/dealer-manager/sale-prices"
     ),
     getItem(
       "Yêu cầu xe từ hãng",

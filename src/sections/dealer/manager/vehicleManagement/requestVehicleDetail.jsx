@@ -65,10 +65,10 @@ export default function RequestVehicleDetail() {
     let objectUrl = null;
 
     const fetchImage = async () => {
-      if (vehicle?.variantImage) {
+      if (vehicle?.imageUrl) {
         try {
           // Dùng axiosClient để get, vì nó đã có interceptor gắn token
-          const response = await axiosClient.get(vehicle?.variantImage, {
+          const response = await axiosClient.get(vehicle?.imageUrl, {
             responseType: "blob",
           });
           // Tạo URL tạm thời từ blob
@@ -91,7 +91,7 @@ export default function RequestVehicleDetail() {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [vehicle?.variantImage]);
+  }, [vehicle?.imageUrl]);
 
   const statusMap = {
     IN_MANUFACTURER_STOCK: { text: "Trong kho nhà SX", color: "blue" },
@@ -274,7 +274,7 @@ export default function RequestVehicleDetail() {
         <Col span={8}>
           <Card title="Thông tin cơ bản" bordered={false}>
             <div className="flex flex-col items-center mb-6">
-              {vehicle?.variantImage ? (
+              {vehicle?.imageUrl ? (
                 <Image
                   width={250}
                   height={200}

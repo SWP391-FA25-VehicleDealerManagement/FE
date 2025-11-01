@@ -125,7 +125,7 @@ export default function SalePriceDetail() {
           position: "top-right",
           autoClose: 3000,
         });
-        navigate("/dealer-manager/sale-prices");
+        navigate("/dealer-manager/vehicles/sale-prices");
       }
     } catch (error) {
       console.error("Error deleting sale price:", error);
@@ -157,7 +157,7 @@ export default function SalePriceDetail() {
           <Title level={4} style={{ marginTop: 16 }}>
             Không tìm thấy giá bán
           </Title>
-          <Link to="/dealer-manager/sale-prices">
+          <Link to="/dealer-manager/vehicles/sale-prices">
             <Button type="primary" style={{ marginTop: 16 }}>
               <ArrowLeftOutlined /> Quay lại danh sách
             </Button>
@@ -170,7 +170,7 @@ export default function SalePriceDetail() {
   return (
     <div>
       <div className="mb-4">
-        <Link to="/dealer-manager/sale-prices">
+        <Link to="/dealer-manager/vehicles/sale-prices">
           <Button icon={<ArrowLeftOutlined />}>Quay lại danh sách</Button>
         </Link>
       </div>
@@ -207,7 +207,11 @@ export default function SalePriceDetail() {
           </Descriptions.Item>
 
           <Descriptions.Item label="Phiên bản xe" span={2}>
-            <span>{salePriceDetail.variantName || "N/A"}</span>
+            <Link
+              to={`/dealer-manager/vehicles/variants/${salePriceDetail.variantId}`}
+            >
+              {salePriceDetail.variantName || "N/A"}
+            </Link>
           </Descriptions.Item>
 
           <Descriptions.Item label="Đại lý" span={2}>
