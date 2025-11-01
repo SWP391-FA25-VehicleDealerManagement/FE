@@ -46,22 +46,21 @@ export default function VehicleList() {
         const newImageUrls = {};
 
         const fetchPromises = dealerCarLists.map(async (vehicle) => {
-          // *** SỬA ĐỔI 1: Đổi 'vehicle.imageUrl' thành 'vehicle.variantImage' ***
-          if (vehicle.variantImage) {
+          if (vehicle.imageUrl) {
             try {
-              const response = await axiosClient.get(vehicle.variantImage, {
+              const response = await axiosClient.get(vehicle.imageUrl, {
                 responseType: "blob",
               });
               const objectUrl = URL.createObjectURL(response.data);
               objectUrlsToRevoke.push(objectUrl);
               return {
-                path: vehicle.variantImage,
+                path: vehicle.imageUrl,
                 url: objectUrl,
               };
             } catch (error) {
-              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+              console.error("Không thể tải ảnh:", vehicle.imageUrl, error);
               return {
-                path: vehicle.variantImage,
+                path: vehicle.imageUrl,
                 url: null,
               };
             }
@@ -169,8 +168,8 @@ export default function VehicleList() {
     },
     {
       title: "Hình ảnh",
-      dataIndex: "variantImage",
-      key: "variantImage",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
       width: "25%",
       render: (imagePath, record) => {
         const blobUrl = imageUrls[imagePath];

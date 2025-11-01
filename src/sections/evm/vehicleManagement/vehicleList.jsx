@@ -12,6 +12,7 @@ import {
   Select,
   Form,
   Image,
+  Upload,
 } from "antd";
 import {
   SearchOutlined,
@@ -20,6 +21,7 @@ import {
   EyeOutlined,
   EditOutlined,
   CarOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -46,6 +48,7 @@ export default function VehicleList() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [selectedModelId, setSelectedModelId] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
@@ -71,21 +74,21 @@ export default function VehicleList() {
 
         // Tạo mảng các promise để tải ảnh song song
         const fetchPromises = vehicles.map(async (vehicle) => {
-          if (vehicle.variantImage) {
+          if (vehicle.imageUrl) {
             try {
-              const response = await axiosClient.get(vehicle.variantImage, {
+              const response = await axiosClient.get(vehicle.imageUrl, {
                 responseType: "blob",
               });
               const objectUrl = URL.createObjectURL(response.data);
               objectUrlsToRevoke.push(objectUrl);
               return {
-                path: vehicle.variantImage,
+                path: vehicle.imageUrl,
                 url: objectUrl,
               };
             } catch (error) {
-              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+              console.error("Không thể tải ảnh:", vehicle.imageUrl, error);
               return {
-                path: vehicle.variantImage,
+                path: vehicle.imageUrl,
                 url: null, // Đánh dấu là lỗi
               };
             }
@@ -167,18 +170,34 @@ export default function VehicleList() {
   const handleAddCancel = () => {
     setIsAddModalOpen(false);
     form.resetFields();
+    setFileList([]);
     setSelectedModelId(null);
   };
 
   const handleAddSubmit = async () => {
     try {
       const values = await form.validateFields();
-      console.log("check vaulue", values);
+      
+      // Validate file upload
+      if (fileList.length === 0) {
+        toast.error("Vui lòng chọn hình ảnh xe", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
 
-      const response = await createNewVehicle(values);
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("variantId", values.variantId);
+      formData.append("color", values.color);
+      formData.append("file", fileList[0].originFileObj);
+
+      const response = await createNewVehicle(formData);
       if (response && response.status === 200) {
         setIsAddModalOpen(false);
         form.resetFields();
+        setFileList([]);
         fetchVehicles();
         toast.success("Thêm phương tiện thành công", {
           position: "top-right",
@@ -187,11 +206,35 @@ export default function VehicleList() {
         });
       }
     } catch (error) {
-      toast.error("Thêm phương tiện thất bại", {
+      toast.error(error.response?.data?.message || "Thêm phương tiện thất bại", {
         position: "top-right",
         autoClose: 3000,
       });
     }
+  };
+
+  const handleUploadChange = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
+  };
+
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      toast.error("Chỉ được upload file hình ảnh!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return Upload.LIST_IGNORE;
+    }
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      toast.error("Hình ảnh phải nhỏ hơn 5MB!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return Upload.LIST_IGNORE;
+    }
+    return false;
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -261,8 +304,8 @@ export default function VehicleList() {
     },
     {
       title: "Hình ảnh",
-      dataIndex: "variantImage",
-      key: "variantImage",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
       width: "25%",
       render: (imagePath, record) => {
         const blobUrl = imageUrls[imagePath];
@@ -486,7 +529,6 @@ export default function VehicleList() {
           {/* === BƯỚC 1: CHỌN MODEL (ĐỂ LỌC) === */}
           <Form.Item
             label="Model"
-            // Lưu ý: KHÔNG CÓ 'name' prop, nên sẽ không được submit
             rules={[{ required: true, message: "Vui lòng chọn model" }]}
           >
             <Select
@@ -525,7 +567,7 @@ export default function VehicleList() {
               }
               loading={!variants.length}
               showSearch
-              disabled={!selectedModelId} // <-- Bị vô hiệu hóa nếu chưa chọn model
+              disabled={!selectedModelId} 
               filterOption={(input, option) =>
                 (option?.children ?? "")
                   .toLowerCase()
@@ -550,6 +592,29 @@ export default function VehicleList() {
             rules={[{ required: true, message: "Vui lòng chọn màu sắc" }]}
           >
             <Input placeholder="Nhập màu sắc xe" />
+          </Form.Item>
+
+          {/* === BƯỚC 4: TẢI ẢNH XE === */}
+          <Form.Item
+            label="Hình ảnh xe"
+            required
+            help="Chọn file hình ảnh (JPG, PNG, GIF), tối đa 5MB"
+          >
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={handleUploadChange}
+              beforeUpload={beforeUpload}
+              maxCount={1}
+              accept="image/*"
+            >
+              {fileList.length === 0 && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
           </Form.Item>
         </Form>
       </Modal>

@@ -65,22 +65,22 @@ export default function RequestVehicle() {
 
         // Tạo mảng các promise để tải ảnh song song
         const fetchPromises = vehicles.map(async (vehicle) => {
-          if (vehicle.variantImage) {
+          if (vehicle.imageUrl) {
             try {
-              const response = await axiosClient.get(vehicle.variantImage, {
+              const response = await axiosClient.get(vehicle.imageUrl, {
                 responseType: "blob",
               });
               const objectUrl = URL.createObjectURL(response.data);
               objectUrlsToRevoke.push(objectUrl);
               return {
-                path: vehicle.variantImage,
+                path: vehicle.imageUrl,
                 url: objectUrl,
               };
             } catch (error) {
-              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+              console.error("Không thể tải ảnh:", vehicle.imageUrl, error);
               return {
-                path: vehicle.variantImage,
-                url: null, // Đánh dấu là lỗi
+                path: vehicle.imageUrl,
+                url: null, 
               };
             }
           }
@@ -314,8 +314,8 @@ export default function RequestVehicle() {
     },
     {
       title: "Hình ảnh",
-      dataIndex: "variantImage",
-      key: "variantImage",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
       width: "25%",
       render: (imagePath, record) => {
         const blobUrl = imageUrls[imagePath];
