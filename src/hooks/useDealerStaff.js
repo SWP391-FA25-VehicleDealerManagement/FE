@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getDealerStaffByDealerId, getUserById } from "../api/dealerStaff";
+import { getDealerStaffByDealerId, getUserById, createDealerStaff } from "../api/dealerStaff";
 
 const useDealerStaff = create((set) => ({
   staffs: [],
@@ -39,9 +39,17 @@ const useDealerStaff = create((set) => ({
     return Promise.reject(new Error("Not supported"));
   },
 
-  createStaff: async () => {
-    toast.info("Tạo nhân viên hiện chưa được hỗ trợ bởi API.");
-    return Promise.reject(new Error("Not supported"));
+  createStaff: async (payload) => {
+    try {
+      set({ isLoading: true });
+      const res = await createDealerStaff(payload); // 200 OK (theo Swagger)
+      set({ isLoading: false });
+      return res?.data;
+    } catch (err) {
+      console.error("Error creating staff:", err);
+      set({ isLoading: false });
+      throw err;
+    }
   },
 
   updateStaff: async () => {

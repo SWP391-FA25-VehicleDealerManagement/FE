@@ -102,7 +102,9 @@ export default function WeeklyCalendar() {
     });
 
     setProcessedAppointments(processedData);
+    console.log("check data", processedAppointments);
   }, [testDrives]);
+
   useEffect(() => {
     const startOfWeek = currentDate.startOf("week");
     const days = [];
@@ -810,14 +812,13 @@ export default function WeeklyCalendar() {
 
   // Render Lịch Năm (Year View)
   const renderYearGrid = () => {
-
     return (
       <div style={{ borderTop: "1px solid #f0f0f0", padding: 8 }}>
         <Calendar
           value={currentDate}
           mode="year"
-          onPanelChange={handleYearPanelChange} 
-          onSelect={handleYearDateSelect}    
+          onPanelChange={handleYearPanelChange}
+          onSelect={handleYearDateSelect}
           headerRender={() => null}
         />
       </div>
@@ -847,6 +848,8 @@ export default function WeeklyCalendar() {
         return renderWeekGrid();
     }
   };
+
+  console.log("check select,", selectedAppointment);
 
   return (
     <>

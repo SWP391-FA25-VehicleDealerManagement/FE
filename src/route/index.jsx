@@ -154,6 +154,9 @@ const DeliveryPage = lazy(() =>
 const DeliveryDetailPage = lazy(() =>
   import("../page/dealer/staff/deliveryDetailPage.jsx")
 );
+const FeedbackListPage = lazy(() =>
+  import("../page/dealer/staff/feedbackListPage.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -280,8 +283,7 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <CustomerListPage /> },
-        { path: "customer-list/:id", element: <CustomerDetail /> },
-        { path: "customer-list/:customerId", element: <CustomerDetail /> },
+        { path: "customer-list/:id", element: <CustomerDetailPage /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
@@ -340,6 +342,7 @@ const Routes = () => {
         { path: "appointments", element: <AppointmentTestDrivePage /> },
         { path: "deliveries", element: <DeliveryPage /> },
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
+        { path: "reviews", element: <FeedbackListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

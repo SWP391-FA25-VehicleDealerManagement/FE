@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Form, Input, Button, Row, Col } from "antd";
-import { toast } from "react-toastify";
+import { Modal, Form, Input, Button } from "antd";
 import useEvmStaffStore from "../../../hooks/useEvmStaff";
 
 export default function CreateEvmStaffModal({ isOpen, onClose, onSuccess }) {
@@ -11,22 +10,25 @@ export default function CreateEvmStaffModal({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async (values) => {
     setIsLoading(true);
     try {
-      await createEvmStaff(values);
-      toast.success("Tạo nhân viên EVM thành công!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      const payload = {
+        userName: values.userName,
+        fullName: values.fullName,
+        password: values.password,
+        email: values.email,
+        phone: values.phone,
+        role: values.role || undefined,
+      };
+
+      // Gọi đúng 1 API qua store (store sẽ handle toast)
+      const created = await createEvmStaff(payload);
+
+      // chỉ xử lý UI (không toast ở đây)
       form.resetFields();
-      onSuccess && onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Error creating EVM staff:", error);
-      toast.error("Tạo nhân viên EVM thất bại!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      onClose?.();
+      onSuccess?.(created);
+    } catch (err) {
+      // lỗi đã được toast trong store; nếu cần hiển thị thêm xử lý ở modal thì làm ở đây
+      console.error("createEvmStaff failed (modal):", err?.response ?? err);
     } finally {
       setIsLoading(false);
     }
@@ -34,82 +36,39 @@ export default function CreateEvmStaffModal({ isOpen, onClose, onSuccess }) {
 
   const handleCancel = () => {
     form.resetFields();
-    onClose();
+    onClose?.();
   };
 
   return (
     <Modal
-      title="Thêm nhân viên EVM mới"
-      open={isOpen}
+      title="Tạo nhân viên EVM"
+      open={!!isOpen}
       onCancel={handleCancel}
-      footer={null}
-      width={600}
+      footer={[
+        <Button key="cancel" onClick={handleCancel} disabled={isLoading}>Hủy</Button>,
+        <Button key="submit" type="primary" loading={isLoading} onClick={() => form.submit()}>Tạo</Button>,
+      ]}
       destroyOnClose
-      closable={false}
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="staffName"
-              label="Tên nhân viên"
-              rules={[{ required: true, message: "Vui lòng nhập tên nhân viên!" }]}
-            >
-              <Input placeholder="Nhập tên nhân viên" size="large" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="phone"
-              label="Số điện thoại"
-              rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}
-            >
-              <Input placeholder="Nhập số điện thoại" size="large" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[{ required: true, message: "Vui lòng nhập email!" }]}
-            >
-              <Input placeholder="Nhập email" size="large" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="role"
-              label="Chức vụ"
-              rules={[{ required: true, message: "Vui lòng nhập chức vụ!" }]}
-            >
-              <Input placeholder="Nhập chức vụ" size="large" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="address"
-              label="Địa chỉ"
-              rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
-            >
-              <Input placeholder="Nhập địa chỉ" size="large" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <div className="flex justify-end gap-3 mt-6">
-          <Button onClick={handleCancel} size="large">
-            Hủy
-          </Button>
-          <Button type="primary" htmlType="submit" loading={isLoading} size="large">
-            Tạo nhân viên
-          </Button>
-        </div>
+      <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ role: "EVM_STAFF" }}>
+        <Form.Item name="userName" label="Tên đăng nhập" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="fullName" label="Họ và tên" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }, { min: 6 }]}>
+          <Input.Password />
+        </Form.Item>
+        <Form.Item name="email" label="Email" rules={[{ type: "email" }, { required: true }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="role" label="Vai trò">
+          <Input />
+        </Form.Item>
       </Form>
     </Modal>
   );
