@@ -23,7 +23,6 @@ import {
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import useDealerDebt from "../../../../hooks/useDealerDebt";
-import useAuthen from "../../../../hooks/useAuthen";
 import { useParams, useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -31,7 +30,6 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 export default function CustomerDebtDetail() {
-  const { userDetail } = useAuthen();
   const { debtId } = useParams();
   const navigate = useNavigate();
 
@@ -43,7 +41,6 @@ export default function CustomerDebtDetail() {
     isLoadingDebtSchedules,
     fetchDebtSchedules,
     clearDebtSchedules,
-    // 1. Thay đổi 'isMakingPayment' và 'makePayment'
     isLoadingCustomerPayment,
     makeCustomerPayment,
     paymentHistory,
@@ -93,8 +90,6 @@ export default function CustomerDebtDetail() {
   const handlePaymentSubmit = async (values) => {
     if (!debtId || !selectedSchedule) return;
     try {
-      // 2. Thay đổi hàm gọi từ makePayment sang makeCustomerPayment
-      // Hàm này chỉ nhận scheduleId và amount
       const response = await makeCustomerPayment(
         selectedSchedule.scheduleId,
         values.paymentAmount
@@ -314,7 +309,11 @@ export default function CustomerDebtDetail() {
     },
   ];
 
-  if (isLoadingDebtSchedules || isLoadingPaymentHistory || isLoadingDealerDebtById) {
+  if (
+    isLoadingDebtSchedules ||
+    isLoadingPaymentHistory ||
+    isLoadingDealerDebtById
+  ) {
     return (
       <div className="flex justify-center items-center h-96">
         <Spin size="large" />
@@ -356,10 +355,20 @@ export default function CustomerDebtDetail() {
                 color={
                   dealerDebtById.overdue && dealerDebtById.status !== "PAID"
                     ? "error"
+                    : dealerDebtById.status === "PAID"
+                    ? "success"
+                    : dealerDebtById.status === "ACTIVE"
+                    ? "processing"
                     : "default"
                 }
               >
                 {dealerDebtById.overdue && dealerDebtById.status !== "PAID"
+                  ? "Quá hạn"
+                  : dealerDebtById.status === "PAID"
+                  ? "Đã thanh toán"
+                  : dealerDebtById.status === "ACTIVE"
+                  ? "Đang hoạt động"
+                  : dealerDebtById.status === "OVERDUE"
                   ? "Quá hạn"
                   : dealerDebtById.status}
               </Tag>

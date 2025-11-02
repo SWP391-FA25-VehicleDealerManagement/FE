@@ -280,9 +280,11 @@ export default function SalePriceList() {
       key: "variantName",
       ...getColumnSearchProps("variantName"),
       render: (text, record) => {
+        const modelName = record.variant?.model?.name || "N/A";
         const variantName = record.variant?.name || "";
         return (
           <div>
+            <div className="font-semibold">{modelName}</div>
             <div className="text-sm text-gray-500">{variantName}</div>
           </div>
         );
