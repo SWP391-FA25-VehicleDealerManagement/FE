@@ -19,6 +19,7 @@ import isBetween from "dayjs/plugin/isBetween";
 import weekday from "dayjs/plugin/weekday";
 import weekOfYear from "dayjs/plugin/weekOfYear";
 import CreateAppointmentModal from "./CreateAppointmentModal";
+import AppointmentActionModal from "./AppointmentActionModal";
 import useTestDriveStore from "../../../../hooks/useTestDrive";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
@@ -68,6 +69,8 @@ export default function WeeklyCalendar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [actionType, setActionType] = useState(null);
   const { userDetail } = useAuthen();
   const dealerId = userDetail?.dealer?.dealerId;
   const { testDrives, fetchTestDrives, isLoadingTestDrives } =
@@ -163,10 +166,14 @@ export default function WeeklyCalendar() {
               <li key={item.testDriveId}>
                 <Tag
                   color={getStatusProps(item.status).color}
-                  style={{ fontSize: 10, margin: "1px 0" }}
+                  style={{ fontSize: 10, margin: "1px 0", cursor: "pointer" }}
+                  onClick={() => {
+                    setSelectedAppointment(item);
+                    setIsModalOpen(true);
+                  }}
                 >
                   {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
-                  {item.customer?.customerName}
+                  {item.customer?.customerName || "N/A"}
                 </Tag>
               </li>
             ))}
@@ -324,10 +331,59 @@ export default function WeeklyCalendar() {
     return minute === 0 ? baseRow : minute <= 30 ? baseRow + 1 : baseRow + 2;
   };
 
-  const renderDayGrid = () => {
-    const filteredAppointments = processedAppointments.filter((app) =>
-      dayjs(app.scheduledDate).isSame(currentDate, "day")
+  // Hàm phát hiện và xử lý overlap appointments
+  const groupOverlappingAppointments = (appointments) => {
+    if (appointments.length === 0) return [];
+
+    // Sort theo thời gian bắt đầu
+    const sorted = [...appointments].sort((a, b) =>
+      dayjs(a.scheduledDate).diff(dayjs(b.scheduledDate))
     );
+
+    const groups = [];
+    let currentGroup = [sorted[0]];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const current = sorted[i];
+      const lastInGroup = currentGroup[currentGroup.length - 1];
+
+      // Check nếu current overlap với bất kỳ appointment nào trong group
+      const hasOverlap = currentGroup.some((item) => {
+        const currentStart = dayjs(current.scheduledDate);
+        const currentEnd = dayjs(current.endDate);
+        const itemStart = dayjs(item.scheduledDate);
+        const itemEnd = dayjs(item.endDate);
+
+        return currentStart.isBefore(itemEnd) && currentEnd.isAfter(itemStart);
+      });
+
+      if (hasOverlap) {
+        currentGroup.push(current);
+      } else {
+        groups.push(currentGroup);
+        currentGroup = [current];
+      }
+    }
+    groups.push(currentGroup);
+
+    // Gán column cho mỗi appointment trong group
+    return groups.flatMap((group) =>
+      group.map((item, index) => ({
+        ...item,
+        columnIndex: index,
+        totalColumns: group.length,
+      }))
+    );
+  };
+
+  const renderDayGrid = () => {
+    const filteredAppointments = processedAppointments.filter((app) => {
+      const isSameDay = dayjs(app.scheduledDate).isSame(currentDate, "day");
+      const hour = dayjs(app.scheduledDate).hour();
+      const inWorkingHours = hour >= START_HOUR && hour < END_HOUR;
+      return isSameDay && inWorkingHours;
+    });
+    const groupedAppointments = groupOverlappingAppointments(filteredAppointments);
     const totalRows = (END_HOUR - START_HOUR) * 2;
     const isToday = currentDate.isSame(dayjs(), "day");
 
@@ -397,12 +453,15 @@ export default function WeeklyCalendar() {
         ))}
 
         {/* Các Cuộc Hẹn */}
-        {filteredAppointments.map((item) => {
-          const gridCol = 2;
+        {groupedAppointments.map((item) => {
           const gridRowStart = getRowStart(item.scheduledDate);
           const gridRowEnd = getRowEnd(item.endDate);
           const color = getStatusProps(item.status).color;
           const statusProps = getStatusProps(item.status);
+
+          // Tính toán vị trí và width dựa trên overlap
+          const columnWidth = 100 / item.totalColumns;
+          const leftPosition = item.columnIndex * columnWidth;
 
           return (
             <Tooltip
@@ -414,16 +473,19 @@ export default function WeeklyCalendar() {
               <Card
                 size="small"
                 style={{
-                  gridColumn: gridCol,
+                  gridColumn: 2,
                   gridRow: `${gridRowStart} / ${gridRowEnd}`,
-                  margin: "2px",
+                  position: "relative",
+                  left: `${leftPosition}%`,
+                  width: `calc(${columnWidth}% - ${item.totalColumns > 1 ? '4px' : '0px'})`,
+                  margin: "2px 0",
                   padding: "4px 6px",
                   backgroundColor: `${color}1A`,
                   borderLeft: `4px solid ${
                     color === "blue"
                       ? "#1890ff"
                       : color === "green"
-                      ? "#52c4a"
+                      ? "#52c41a"
                       : color === "gray"
                       ? "#d9d9d9"
                       : color === "red"
@@ -454,26 +516,24 @@ export default function WeeklyCalendar() {
                   style={{
                     fontSize: 12,
                     display: "block",
-                    whiteSpace: "normal",
+                    whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  KH: {item.customer?.customerName} - Xe:{" "}
-                  {item.vehicle?.variant?.model?.name}{" "}
-                  {item.vehicle?.variant?.name}
+                  {dayjs(item.scheduledDate).format("HH:mm")} - {item.customer?.customerName || "N/A"}
                 </Text>
                 <Text
                   type="secondary"
                   style={{
                     fontSize: 11,
                     display: "block",
-                    whiteSpace: "normal",
+                    whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  Ghi chú: {item.notes || "Không có ghi chú"}
+                  {item.vehicle?.variant?.model?.name} {item.vehicle?.variant?.name}
                 </Text>
                 <Tag
                   color={statusProps.color}
@@ -498,9 +558,41 @@ export default function WeeklyCalendar() {
     if (weekDays.length === 0) return <Spin />;
     const startOfWeek = weekDays[0].startOf("day");
     const endOfWeek = weekDays[6].endOf("day");
-    const filteredAppointments = processedAppointments.filter((app) =>
-      dayjs(app.scheduledDate).isBetween(startOfWeek, endOfWeek)
-    );
+    const filteredAppointments = processedAppointments.filter((app) => {
+      const inWeek = dayjs(app.scheduledDate).isBetween(startOfWeek, endOfWeek);
+      const hour = dayjs(app.scheduledDate).hour();
+      const inWorkingHours = hour >= START_HOUR && hour < END_HOUR;
+      return inWeek && inWorkingHours;
+    });
+    
+    console.log("Week View - Total appointments:", filteredAppointments.length);
+    console.log("Filtered (in working hours 8-18):", filteredAppointments);
+    
+    // Group appointments by day để xử lý overlap cho từng ngày
+    const appointmentsByDay = {};
+    filteredAppointments.forEach((app) => {
+      const dayKey = dayjs(app.scheduledDate).format("YYYY-MM-DD");
+      if (!appointmentsByDay[dayKey]) {
+        appointmentsByDay[dayKey] = [];
+      }
+      appointmentsByDay[dayKey].push(app);
+    });
+
+    console.log("Appointments by day:", appointmentsByDay);
+
+    // Group overlapping appointments cho từng ngày
+    const groupedAppointmentsByDay = {};
+    Object.keys(appointmentsByDay).forEach((dayKey) => {
+      groupedAppointmentsByDay[dayKey] = groupOverlappingAppointments(
+        appointmentsByDay[dayKey]
+      );
+    });
+
+    // Flatten lại thành mảng duy nhất
+    const allGroupedAppointments = Object.values(groupedAppointmentsByDay).flat();
+    
+    console.log("All grouped appointments:", allGroupedAppointments);
+    
     const totalRows = (END_HOUR - START_HOUR) * 2;
 
     const getColumn = (date) => {
@@ -512,7 +604,7 @@ export default function WeeklyCalendar() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "60px repeat(7, 1fr)",
+          gridTemplateColumns: "60px repeat(7, minmax(400px, 1fr))",
           gridTemplateRows: `auto repeat(${totalRows}, minmax(40px, auto))`,
           borderTop: "1px solid #f0f0f0",
           overflowX: "auto",
@@ -550,10 +642,9 @@ export default function WeeklyCalendar() {
                 borderBottom: "1px solid #f0f0f0",
                 borderLeft: "1px solid #f0f0f0",
                 backgroundColor: isToday ? "#f6ffed" : "#fff",
-                minWidth: 120,
               }}
             >
-              <Text strong>{currentDate.format("ddd")}</Text>
+              <Text strong>{day.format("ddd")}</Text>
               <br />
               <Text
                 style={{ fontSize: 18, color: isToday ? "#52c41a" : "inherit" }}
@@ -582,26 +673,40 @@ export default function WeeklyCalendar() {
         )}
 
         {/* Các Cuộc Hẹn */}
-        {filteredAppointments.map((item) => {
+        {allGroupedAppointments.map((item) => {
           const gridCol = getColumn(item.scheduledDate);
           const gridRowStart = getRowStart(item.scheduledDate);
           const gridRowEnd = getRowEnd(item.endDate);
+
+          console.log("Rendering appointment:", {
+            testDriveId: item.testDriveId,
+            gridCol,
+            gridRowStart,
+            gridRowEnd,
+            columnIndex: item.columnIndex,
+            totalColumns: item.totalColumns
+          });
 
           if (
             gridCol === -1 ||
             gridRowStart > totalRows + 1 ||
             gridRowEnd < 2
           ) {
+            console.log("Skipping appointment - out of bounds");
             return null;
           }
 
           const color = getStatusProps(item.status).color;
 
+          // Tính toán vị trí và width dựa trên overlap (giống Day View)
+          const columnWidth = 100 / item.totalColumns;
+          const leftPosition = item.columnIndex * columnWidth;
+
+          console.log("Card position:", { columnWidth, leftPosition });
+
           return (
             <Tooltip
-              title={`${dayjs(item.scheduledDate).format("HH:mm")} - ${dayjs(
-                item.endDate
-              ).format("HH:mm")}: ${item.notes || "Không có ghi chú"}`}
+              title={`${item.customer?.customerName || "N/A"} - ${item.vehicle?.variant?.model?.name} ${item.vehicle?.variant?.name} - ${dayjs(item.scheduledDate).format("HH:mm")} - ${item.notes || "Không có ghi chú"}`}
               key={item.testDriveId}
             >
               <Card
@@ -609,6 +714,9 @@ export default function WeeklyCalendar() {
                 style={{
                   gridColumn: gridCol,
                   gridRow: `${gridRowStart} / ${gridRowEnd}`,
+                  position: "relative",
+                  left: `${leftPosition}%`,
+                  width: `calc(${columnWidth}% - 4px)`,
                   margin: "2px",
                   padding: "4px 6px",
                   backgroundColor: `${color}1A`,
@@ -629,6 +737,7 @@ export default function WeeklyCalendar() {
                   cursor: "pointer",
                   zIndex: 1,
                   transition: "box-shadow 0.2s ease",
+                  minWidth: "100px",
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.boxShadow =
@@ -648,26 +757,24 @@ export default function WeeklyCalendar() {
                   style={{
                     fontSize: 12,
                     display: "block",
-                    whiteSpace: "normal",
+                    whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  KH: {item.customer?.customerName} - Xe:{" "}
-                  {item.vehicle?.variant?.model?.name}{" "}
-                  {item.vehicle?.variant?.name}
+                  {dayjs(item.scheduledDate).format("HH:mm")} - {item.customer?.customerName || "N/A"}
                 </Text>
                 <Text
                   type="secondary"
                   style={{
                     fontSize: 11,
                     display: "block",
-                    whiteSpace: "normal",
+                    whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  Ghi chú: {item.notes || "Không có ghi chú"}
+                  {item.vehicle?.variant?.model?.name} {item.vehicle?.variant?.name}
                 </Text>
                 <Tag
                   color={color}
@@ -754,22 +861,64 @@ export default function WeeklyCalendar() {
         title="Chi tiết lịch hẹn lái thử"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        footer={null}
+        footer={
+          selectedAppointment &&
+          (selectedAppointment.status === "SCHEDULED" ||
+            selectedAppointment.status === "CONFIRMED") ? (
+            <Space>
+              <Button
+                type="primary"
+                onClick={() => {
+                  setActionType("reschedule");
+                  setIsActionModalOpen(true);
+                }}
+              >
+                Đổi lịch
+              </Button>
+              <Button
+                danger
+                onClick={() => {
+                  setActionType("cancel");
+                  setIsActionModalOpen(true);
+                }}
+              >
+                Hủy lịch
+              </Button>
+            </Space>
+          ) : (
+            <Button onClick={() => setIsModalOpen(false)}>Đóng</Button>
+          )
+        }
+        width={600}
       >
         {selectedAppointment && (
           <div>
             <p>
-              <strong>ID:</strong> {selectedAppointment.testDriveId}
+              <strong>Mã lịch hẹn:</strong> #{selectedAppointment.testDriveId}
             </p>
             <p>
-              <strong>Thời gian bắt đầu:</strong>{" "}
+              <strong>Khách hàng:</strong> {selectedAppointment.customer?.customerName || "N/A"}
+            </p>
+            <p>
+              <strong>Số điện thoại:</strong> {selectedAppointment.customer?.phone || "N/A"}
+            </p>
+            <p>
+              <strong>Email:</strong> {selectedAppointment.customer?.email || "N/A"}
+            </p>
+            <p>
+              <strong>Xe:</strong> {selectedAppointment.vehicle?.variant?.model?.name} {selectedAppointment.vehicle?.variant?.name}
+            </p>
+            <p>
+              <strong>Màu xe:</strong> {selectedAppointment.vehicle?.color || "N/A"}
+            </p>
+            <p>
+              <strong>VIN:</strong> {selectedAppointment.vehicle?.vinNumber || "N/A"}
+            </p>
+            <p>
+              <strong>Thời gian:</strong>{" "}
               {dayjs(selectedAppointment.scheduledDate).format(
                 "DD/MM/YYYY HH:mm"
-              )}
-            </p>
-            <p>
-              <strong>Thời gian kết thúc:</strong>{" "}
-              {dayjs(selectedAppointment.endDate).format("DD/MM/YYYY HH:mm")}
+              )} - {dayjs(selectedAppointment.endDate).format("HH:mm")}
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
@@ -778,10 +927,7 @@ export default function WeeklyCalendar() {
               </Tag>
             </p>
             <p>
-              <strong>Khách hàng ID:</strong> {selectedAppointment.customerId}
-            </p>
-            <p>
-              <strong>Xe ID:</strong> {selectedAppointment.vehicleId}
+              <strong>Người tạo:</strong> {selectedAppointment.assignedBy || "N/A"}
             </p>
             <p>
               <strong>Ghi chú:</strong>{" "}
@@ -799,6 +945,26 @@ export default function WeeklyCalendar() {
           if (dealerId) {
             fetchTestDrives(dealerId);
           }
+        }}
+      />
+
+      <AppointmentActionModal
+        isOpen={isActionModalOpen}
+        onClose={() => {
+          setIsActionModalOpen(false);
+        }}
+        appointment={{
+          ...selectedAppointment,
+          customerName: selectedAppointment?.customer?.customerName,
+          vehicleInfo: `${selectedAppointment?.vehicle?.variant?.model?.name} ${selectedAppointment?.vehicle?.variant?.name}`,
+        }}
+        actionType={actionType}
+        onActionSuccess={() => {
+          if (dealerId) {
+            fetchTestDrives(dealerId);
+          }
+          setIsActionModalOpen(false);
+          setIsModalOpen(false);
         }}
       />
     </>

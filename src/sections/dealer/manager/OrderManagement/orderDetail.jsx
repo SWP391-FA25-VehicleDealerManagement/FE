@@ -57,8 +57,6 @@ export default function OrderDetail() {
   const [error, setError] = useState(null);
   const [vehicleImageUrls, setVehicleImageUrls] = useState({});
   const [totalPaidAmount, setTotalPaidAmount] = useState(0);
-
-  // 2. Thêm state cho PaymentModal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
@@ -165,21 +163,34 @@ export default function OrderDetail() {
   }, [vehicleDetails]);
 
   useEffect(() => {
-    if (payment && payment.length > 0 && orderId) {
-      const relevantPayments = payment.filter(
-        (p) =>
-          p.orderId == orderId &&
-          (p.status === "COMPLETED" || p.status === "Completed")
-      );
-      const totalPaid = relevantPayments.reduce(
-        (sum, p) => sum + (p.amount || 0),
-        0
-      );
-      setTotalPaidAmount(totalPaid);
-    } else {
-      setTotalPaidAmount(0);
-    }
-  }, [payment, orderId]);
+  // ✅ Ưu tiên dùng amountPaid từ Order (backend đã tính sẵn từ Debt hoặc Payment)
+  if (orderInfo && orderInfo.amountPaid != null && orderInfo.amountPaid > 0) {
+    setTotalPaidAmount(orderInfo.amountPaid);
+    return;
+  }
+  
+  if (payment && payment.length > 0 && orderId) {
+    const relevantPayments = payment.filter(
+      (p) => {
+        if (p.orderId != orderId) return false;
+        if (p.status === "COMPLETED" || p.status === "Completed") {
+          return true;
+        }
+        if (p.status === "PENDING" || p.status === "Pending") {
+          return p.paymentType === "INSTALLMENT";
+        }
+        return false;
+      }
+    );
+    const totalPaid = relevantPayments.reduce(
+      (sum, p) => sum + (p.amount || 0),
+      0
+    );
+    setTotalPaidAmount(totalPaid);
+  } else {
+    setTotalPaidAmount(0);
+  }
+}, [payment, orderId, orderInfo]);
 
   const mergedData = useMemo(() => {
     if (

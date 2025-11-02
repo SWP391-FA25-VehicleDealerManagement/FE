@@ -74,6 +74,12 @@ const CustomerListPage = lazy(() =>
 const CustomerDetailPage = lazy(() =>
   import("../page/dealer/manager/customerDetailPage.jsx")
 );
+const SalePriceListPage = lazy(() =>
+  import("../page/dealer/manager/salePriceListPage.jsx")
+);
+const SalePriceDetailPage = lazy(() =>
+  import("../page/dealer/manager/salePriceDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -147,6 +153,9 @@ const DeliveryPage = lazy(() =>
 );
 const DeliveryDetailPage = lazy(() =>
   import("../page/dealer/staff/deliveryDetailPage.jsx")
+);
+const FeedbackListPage = lazy(() =>
+  import("../page/dealer/staff/feedbackListPage.jsx")
 );
 
 const Routes = () => {
@@ -291,6 +300,8 @@ const Routes = () => {
         { path: "dealer-debt/:debtId", element: <DealerDebtDetailPage /> },
         { path: "dealer-orders", element: <DealerOrderList /> },
         { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
+        { path: "sale-prices", element: <SalePriceListPage /> },
+        { path: "sale-prices/:salePriceId", element: <SalePriceDetailPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -331,6 +342,7 @@ const Routes = () => {
         { path: "appointments", element: <AppointmentTestDrivePage /> },
         { path: "deliveries", element: <DeliveryPage /> },
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
+        { path: "reviews", element: <FeedbackListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },

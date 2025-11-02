@@ -16,7 +16,6 @@ import {
   Form,
   Input,
   Select,
-  Upload,
   Checkbox,
   InputNumber,
 } from "antd";
@@ -26,7 +25,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   TagOutlined,
-  UploadOutlined,
   ExclamationCircleOutlined,
   CheckCircleOutlined,
   PlusOutlined,
@@ -63,7 +61,6 @@ export default function VariantDetail() {
   const [form] = Form.useForm();
   const [detailForm] = Form.useForm();
   const [createDetailForm] = Form.useForm();
-  const [fileList, setFileList] = useState([]);
   const [imageUrl, setImageUrl] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
@@ -149,7 +146,6 @@ export default function VariantDetail() {
       msrp: variantDetail?.msrp,
       modelId: variantDetail?.modelId,
     });
-    setFileList([]);
     setIsEditModalOpen(true);
   };
 
@@ -233,41 +229,18 @@ export default function VariantDetail() {
     setIsEditDetailsModalOpen(false);
   };
 
-  const handleUploadChange = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
-  };
-
-  const beforeUpload = (file) => {
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
-      toast.error("Chỉ được upload file hình ảnh!", {
-        position: "top-right",
-      });
-      return Upload.LIST_IGNORE;
-    }
-    const isLt5M = file.size / 1024 / 1024 < 1;
-    if (!isLt5M) {
-      toast.error("Hình ảnh phải nhỏ hơn 1MB!", {
-        position: "top-right",
-      });
-      return Upload.LIST_IGNORE;
-    }
-    return false;
-  };
-
   const handleUpdate = async () => {
     try {
       const values = await form.validateFields();
       setIsUpdating(true);
-      const formData = new FormData();
-      formData.append("name", values.name);
-      formData.append("modelId", values.modelId);
-      formData.append("msrp", values.msrp);
-      if (fileList && fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append("image", fileList[0].originFileObj);
-      }
-      console.log("check form", formData);
-      const response = await updateVariant(variantId, formData);
+      
+      const variantData = {
+        name: values.name,
+        modelId: values.modelId,
+        msrp: values.msrp,
+      };
+      
+      const response = await updateVariant(variantId, variantData);
       if (response && response.status === 200) {
         toast.success("Cập nhật phiên bản thành công", {
           position: "top-right",
@@ -712,38 +685,6 @@ export default function VariantDetail() {
               style={{ width: "100%" }}
               min={0}
             />
-          </Form.Item>
-
-          <Form.Item
-            name="image"
-            label="Hình ảnh (tải lên)"
-            extra={
-              variantDetail?.defaultImageUrl ? (
-                <div style={{ marginTop: 8 }}>
-                  <div>Hình hiện tại:</div>
-                  <Image width={150} src={imageUrl} alt={variantDetail.name} />
-                </div>
-              ) : (
-                <div style={{ marginTop: 8 }}>Chưa có hình ảnh</div>
-              )
-            }
-            rules={[]}
-          >
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={handleUploadChange}
-              beforeUpload={beforeUpload}
-              maxCount={1}
-              accept="image/*"
-            >
-              {fileList.length === 0 && (
-                <div>
-                  <UploadOutlined />
-                  <div style={{ marginTop: 8 }}>Upload</div>
-                </div>
-              )}
-            </Upload>
           </Form.Item>
         </Form>
       </Modal>
