@@ -40,16 +40,14 @@ const useFeedback = create((set, get) => ({
   createFeedback: async (data) => {
     try {
       set({ isLoadingCreate: true, error: null });
-      const res = await createFeedback(data);
-      set({ isLoadingCreate: false });
-      toast.success("Tạo feedback thành công!");
-      // Refresh list
-      await get().fetchAll();
-      return res;
+      const response = await createFeedback(data);
+      if (response && response.status === 200) {
+        set({ isLoadingCreate: false });
+      }
+      return response;
     } catch (err) {
       console.error("createFeedback error:", err);
-      set({ isLoadingCreate: false, error: err });
-      toast.error(err?.response?.data?.message || "Không thể tạo feedback.");
+      set({ isLoadingCreate: false});
       throw err;
     }
   },
