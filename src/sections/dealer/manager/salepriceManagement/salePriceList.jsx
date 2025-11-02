@@ -113,7 +113,7 @@ export default function SalePriceList() {
       };
 
       const response = await createSalePrice(salePriceData);
-      if (response && response.status === 201) {
+      if (response && response.status === 200) {
         toast.success("Tạo giá bán thành công", {
           position: "top-right",
           autoClose: 3000,
