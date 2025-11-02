@@ -10,9 +10,10 @@ import {
   Space,
   Empty,
 } from "antd";
-import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
+import { SearchOutlined, EyeOutlined, PlusOutlined } from "@ant-design/icons";
 import useFeedback from "../../../../hooks/useFeedback";
 import { getFeedbackById } from "../../../../api/feedBack";
+import CreateFeedbackModal from "./CreateFeedbackModal";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -50,6 +51,7 @@ export default function DealerStaffFeedbackListPage() {
   const [filterType, setFilterType] = useState("");
   const [selected, setSelected] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // call fetchAll once on mount — keep dependency array size constant
   useEffect(() => {
@@ -176,32 +178,43 @@ export default function DealerStaffFeedbackListPage() {
           display: "flex",
           gap: 12,
           alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <Title level={4} style={{ margin: 0 }}>
-          Quản lý Feedback
-        </Title>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Title level={4} style={{ margin: 0 }}>
+            Quản lý Feedback
+          </Title>
 
-        <Input
-          placeholder="Tìm kiếm nội dung hoặc người phản hồi"
-          prefix={<SearchOutlined />}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          style={{ width: 360 }}
-          allowClear
-        />
+          <Input
+            placeholder="Tìm kiếm nội dung hoặc người phản hồi"
+            prefix={<SearchOutlined />}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            style={{ width: 360 }}
+            allowClear
+          />
 
-        <Select
-          placeholder="Lọc theo loại"
-          style={{ width: 160 }}
-          allowClear
-          value={filterType || undefined}
-          onChange={(val) => setFilterType(val || "")}
+          <Select
+            placeholder="Lọc theo loại"
+            style={{ width: 160 }}
+            allowClear
+            value={filterType || undefined}
+            onChange={(val) => setFilterType(val || "")}
+          >
+            <Option value="POSITIVE">POSITIVE</Option>
+            <Option value="NEGATIVE">NEGATIVE</Option>
+            <Option value="NEUTRAL">NEUTRAL</Option>
+          </Select>
+        </div>
+
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsCreateModalOpen(true)}
         >
-          <Option value="POSITIVE">POSITIVE</Option>
-          <Option value="NEGATIVE">NEGATIVE</Option>
-          <Option value="NEUTRAL">NEUTRAL</Option>
-        </Select>
+          Tạo Feedback
+        </Button>
       </div>
 
       <Table
@@ -214,7 +227,6 @@ export default function DealerStaffFeedbackListPage() {
       />
 
       <Modal
-        title="Chi tiết Feedback"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={[
@@ -225,42 +237,129 @@ export default function DealerStaffFeedbackListPage() {
         width={720}
       >
         {selected ? (
-          <div>
-            <Text strong>Người phản hồi: </Text>
-            <Text>{selected.customerName || selected.email || "—"}</Text>
-            <br />
-            <Text strong>Loại: </Text>
-            <Tag color={getTypeProps(selected.feedbackType).color}>
-              {getTypeProps(selected.feedbackType).text}
-            </Tag>
-            <br />
-            <Text strong>Trạng thái: </Text>
-            <Tag color={getStatusProps(selected.status).color}>
-              {getStatusProps(selected.status).text}
-            </Tag>
-            <br />
-            <br />
-            <Text strong>Mô tả:</Text>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
-              {selected.description || "—"}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Thông tin cơ bản */}
+            <div>
+              <Text strong style={{ fontSize: 16 }}>Thông tin Feedback</Text>
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <Text strong>ID: </Text>
+                  <Text>{selected.feedbackId || "—"}</Text>
+                </div>
+                <div>
+                  <Text strong>Loại: </Text>
+                  <Tag color={getTypeProps(selected.feedbackType).color}>
+                    {getTypeProps(selected.feedbackType).text}
+                  </Tag>
+                </div>
+                <div>
+                  <Text strong>Trạng thái: </Text>
+                  <Tag color={getStatusProps(selected.status).color}>
+                    {getStatusProps(selected.status).text}
+                  </Tag>
+                </div>
+              </div>
             </div>
-            <br />
-            <Text strong>Nội dung:</Text>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
-              {selected.content || "—"}
+
+            {/* Mô tả */}
+            <div>
+              <Text strong>Mô tả:</Text>
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 4,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {selected.description || "—"}
+              </div>
             </div>
-            <br />
-            <Text type="secondary">
-              Ngày:{" "}
-              {selected.createdAt
-                ? new Date(selected.createdAt).toLocaleString()
-                : "—"}
-            </Text>
+
+            {/* Nội dung */}
+            <div>
+              <Text strong>Nội dung:</Text>
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 4,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {selected.content || "—"}
+              </div>
+            </div>
+
+            {/* Thông tin Test Drive */}
+            {selected.testDrive && (
+              <div>
+                <Text strong style={{ fontSize: 16 }}>Thông tin Test Drive</Text>
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <Text strong>ID Test Drive: </Text>
+                    <Text>{selected.testDrive.testDriveId || "—"}</Text>
+                  </div>
+                  <div>
+                    <Text strong>Ngày hẹn: </Text>
+                    <Text>
+                      {selected.testDrive.scheduledDate
+                        ? new Date(selected.testDrive.scheduledDate).toLocaleString("vi-VN")
+                        : "—"}
+                    </Text>
+                  </div>
+                  <div>
+                    <Text strong>Trạng thái: </Text>
+                    <Tag color={selected.testDrive.status === "COMPLETED" ? "green" : "blue"}>
+                      {selected.testDrive.status === "COMPLETED" ? "Đã hoàn thành" : selected.testDrive.status}
+                    </Tag>
+                  </div>
+                  <div>
+                    <Text strong>Người phân công: </Text>
+                    <Text>{selected.testDrive.assignedBy || "—"}</Text>
+                  </div>
+                  <div>
+                    <Text strong>Ngày tạo: </Text>
+                    <Text>
+                      {selected.testDrive.createdDate
+                        ? new Date(selected.testDrive.createdDate).toLocaleString("vi-VN")
+                        : "—"}
+                    </Text>
+                  </div>
+                  {selected.testDrive.notes && (
+                    <div>
+                      <Text strong>Ghi chú: </Text>
+                      <div
+                        style={{
+                          marginTop: 4,
+                          padding: 8,
+                          backgroundColor: "#f5f5f5",
+                          borderRadius: 4,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {selected.testDrive.notes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div>Không có dữ liệu</div>
         )}
       </Modal>
+
+      <CreateFeedbackModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          fetchAll();
+        }}
+      />
     </>
   );
 }
