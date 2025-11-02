@@ -105,12 +105,7 @@ export default function DeliveryList() {
 
   // 5. Merge dữ liệu cho cả hai danh sách
   useEffect(() => {
-    if (
-      Customer &&
-      Customer.length > 0 &&
-      payment &&
-      payment.length >= 0
-    ) {
+    if (Customer && Customer.length > 0 && payment && payment.length >= 0) {
       const customerMap = new Map(
         Customer.map((customer) => [customer.customerId, customer])
       );
@@ -118,8 +113,9 @@ export default function DeliveryList() {
       const paymentMap = new Map();
       payment.forEach((p) => {
         const currentTotal = paymentMap.get(p.orderId) || 0;
-        if (p.status === "COMPLETED" || p.status === "Completed") {
-          paymentMap.set(p.orderId, currentTotal + (p.amount || 0));
+        if (p.amount && p.amount > 0) {
+          const newTotal = currentTotal + p.amount;
+          paymentMap.set(p.orderId, newTotal);
         }
       });
 
@@ -150,13 +146,12 @@ export default function DeliveryList() {
       setMergedProcessingOrders([]);
       setMergedCompletedOrders([]);
     }
-  }, [processingOrders, completedOrders, Customer, payment]); // dependencies
+  }, [processingOrders, completedOrders, Customer, payment]);
 
   const handleViewDetail = (orderId) => {
     navigate(`/dealer-staff/deliveries/${orderId}`);
   };
 
-  // ... (các hàm handleStartDelivery, handleCompleteDelivery, ... giữ nguyên)
   const handleStartDelivery = (orderId) => {
     setSelectedOrderForStart(orderId);
     setIsStartModalOpen(true);
@@ -367,7 +362,10 @@ export default function DeliveryList() {
         ) : (
           // 8. Thêm Tabs component
           <Tabs defaultActiveKey="1">
-            <TabPane tab={`Đang xử lý (${mergedProcessingOrders.length})`} key="1">
+            <TabPane
+              tab={`Đang xử lý (${mergedProcessingOrders.length})`}
+              key="1"
+            >
               <Table
                 columns={processingColumns}
                 dataSource={mergedProcessingOrders}

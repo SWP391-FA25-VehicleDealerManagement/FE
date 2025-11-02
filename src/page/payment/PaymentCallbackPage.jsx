@@ -16,36 +16,25 @@ export default function PaymentCallbackPage() {
   useEffect(() => {
     // ✅ Prevent multiple processing
     if (processedRef.current) {
-      console.log("⛔ Already processed, skipping...");
       return;
     }
 
-    console.log("🔍 PaymentCallback - Auth State:", {
-      isInitialized,
-      isAuthenticated,
-      role,
-      searchParams: searchParams.toString(),
-    });
-
     // Đợi auth state được khởi tạo
     if (!isInitialized) {
-      console.log("⏳ Waiting for auth initialization...");
       return;
     }
 
     // Nếu chưa đăng nhập, redirect về login
     if (!isAuthenticated) {
-      console.error("❌ Not authenticated, redirecting to login");
       processedRef.current = true;
       navigate("/", { replace: true });
       return;
     }
 
     const pendingPaymentStr = sessionStorage.getItem("pendingVNPayPayment");
-    console.log("📦 Pending Payment Data:", pendingPaymentStr);
+    
 
     if (!pendingPaymentStr) {
-      console.warn("⚠️ No pending payment found, redirecting to default page");
       processedRef.current = true;
       const defaultUrl =
         role === "DEALER_MANAGER"
@@ -66,11 +55,6 @@ export default function PaymentCallbackPage() {
         const pendingPayment = JSON.parse(pendingPaymentStr);
         const vnpResponseCode = searchParams.get("vnp_ResponseCode");
         const vnpTransactionStatus = searchParams.get("vnp_TransactionStatus");
-
-        console.log("🔍 VNPay Response:", {
-          responseCode: vnpResponseCode,
-          transactionStatus: vnpTransactionStatus,
-        });
 
         // ✅ Kiểm tra kết quả thanh toán
         if (vnpResponseCode === "00" && vnpTransactionStatus === "00") {
@@ -101,7 +85,6 @@ export default function PaymentCallbackPage() {
             ? "/dealer-manager/dealer-orders"
             : "/dealer-staff/orders";
 
-        console.log("✅ Redirecting to:", redirectUrl);
         navigate(redirectUrl, { replace: true });
       } catch (error) {
         console.error("❌ Error processing VNPay callback:", error);

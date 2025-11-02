@@ -27,7 +27,6 @@ const useAuthen = create((set, get) => ({
         localStorage.setItem("userRole", user.role);
         localStorage.setItem("userDetail", JSON.stringify(user));
 
-        console.log("✅ Login successful:", { role: user.role, userId: user.userId });
 
         // Update state
         set({
@@ -101,7 +100,6 @@ const useAuthen = create((set, get) => ({
     if (token && isAuthenticated === "true" && userRole && userDetail) {
       try {
         const parsedUserDetail = JSON.parse(userDetail);
-        console.log("✅ InitAuth - User authenticated:", { userRole, userId: parsedUserDetail?.userId });
         set({
           isAuthenticated: true,
           role: userRole,
@@ -122,7 +120,6 @@ const useAuthen = create((set, get) => ({
         });
       }
     } else {
-      console.warn("⚠️ InitAuth - No valid auth data, clearing storage");
       // Clear any invalid data
       Cookies.remove("token");
       localStorage.removeItem("isAuthenticated");

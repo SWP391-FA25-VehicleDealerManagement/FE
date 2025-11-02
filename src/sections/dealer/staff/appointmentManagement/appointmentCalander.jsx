@@ -385,7 +385,8 @@ export default function WeeklyCalendar() {
       const inWorkingHours = hour >= START_HOUR && hour < END_HOUR;
       return isSameDay && inWorkingHours;
     });
-    const groupedAppointments = groupOverlappingAppointments(filteredAppointments);
+    const groupedAppointments =
+      groupOverlappingAppointments(filteredAppointments);
     const totalRows = (END_HOUR - START_HOUR) * 2;
     const isToday = currentDate.isSame(dayjs(), "day");
 
@@ -479,7 +480,9 @@ export default function WeeklyCalendar() {
                   gridRow: `${gridRowStart} / ${gridRowEnd}`,
                   position: "relative",
                   left: `${leftPosition}%`,
-                  width: `calc(${columnWidth}% - ${item.totalColumns > 1 ? '4px' : '0px'})`,
+                  width: `calc(${columnWidth}% - ${
+                    item.totalColumns > 1 ? "4px" : "0px"
+                  })`,
                   margin: "2px 0",
                   padding: "4px 6px",
                   backgroundColor: `${color}1A`,
@@ -523,7 +526,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {dayjs(item.scheduledDate).format("HH:mm")} - {item.customer?.customerName || "N/A"}
+                  {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
+                  {item.customer?.customerName || "N/A"}
                 </Text>
                 <Text
                   type="secondary"
@@ -535,7 +539,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.vehicle?.variant?.model?.name} {item.vehicle?.variant?.name}
+                  {item.vehicle?.variant?.model?.name}{" "}
+                  {item.vehicle?.variant?.name}
                 </Text>
                 <Tag
                   color={statusProps.color}
@@ -566,10 +571,10 @@ export default function WeeklyCalendar() {
       const inWorkingHours = hour >= START_HOUR && hour < END_HOUR;
       return inWeek && inWorkingHours;
     });
-    
+
     console.log("Week View - Total appointments:", filteredAppointments.length);
     console.log("Filtered (in working hours 8-18):", filteredAppointments);
-    
+
     // Group appointments by day để xử lý overlap cho từng ngày
     const appointmentsByDay = {};
     filteredAppointments.forEach((app) => {
@@ -591,10 +596,11 @@ export default function WeeklyCalendar() {
     });
 
     // Flatten lại thành mảng duy nhất
-    const allGroupedAppointments = Object.values(groupedAppointmentsByDay).flat();
-    
-    console.log("All grouped appointments:", allGroupedAppointments);
-    
+    const allGroupedAppointments = Object.values(
+      groupedAppointmentsByDay
+    ).flat();
+
+
     const totalRows = (END_HOUR - START_HOUR) * 2;
 
     const getColumn = (date) => {
@@ -686,7 +692,7 @@ export default function WeeklyCalendar() {
             gridRowStart,
             gridRowEnd,
             columnIndex: item.columnIndex,
-            totalColumns: item.totalColumns
+            totalColumns: item.totalColumns,
           });
 
           if (
@@ -708,7 +714,11 @@ export default function WeeklyCalendar() {
 
           return (
             <Tooltip
-              title={`${item.customer?.customerName || "N/A"} - ${item.vehicle?.variant?.model?.name} ${item.vehicle?.variant?.name} - ${dayjs(item.scheduledDate).format("HH:mm")} - ${item.notes || "Không có ghi chú"}`}
+              title={`${item.customer?.customerName || "N/A"} - ${
+                item.vehicle?.variant?.model?.name
+              } ${item.vehicle?.variant?.name} - ${dayjs(
+                item.scheduledDate
+              ).format("HH:mm")} - ${item.notes || "Không có ghi chú"}`}
               key={item.testDriveId}
             >
               <Card
@@ -729,6 +739,8 @@ export default function WeeklyCalendar() {
                       ? "#52c41a"
                       : color === "gray"
                       ? "#d9d9d9"
+                      : color === "orange"
+                      ? "#fa8c16"
                       : color === "red"
                       ? "#ff4d4f"
                       : "#d9d9d9"
@@ -764,7 +776,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {dayjs(item.scheduledDate).format("HH:mm")} - {item.customer?.customerName || "N/A"}
+                  {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
+                  {item.customer?.customerName || "N/A"}
                 </Text>
                 <Text
                   type="secondary"
@@ -776,7 +789,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.vehicle?.variant?.model?.name} {item.vehicle?.variant?.name}
+                  {item.vehicle?.variant?.model?.name}{" "}
+                  {item.vehicle?.variant?.name}
                 </Text>
                 <Tag
                   color={color}
@@ -899,28 +913,36 @@ export default function WeeklyCalendar() {
               <strong>Mã lịch hẹn:</strong> #{selectedAppointment.testDriveId}
             </p>
             <p>
-              <strong>Khách hàng:</strong> {selectedAppointment.customer?.customerName || "N/A"}
+              <strong>Khách hàng:</strong>{" "}
+              {selectedAppointment.customer?.customerName || "N/A"}
             </p>
             <p>
-              <strong>Số điện thoại:</strong> {selectedAppointment.customer?.phone || "N/A"}
+              <strong>Số điện thoại:</strong>{" "}
+              {selectedAppointment.customer?.phone || "N/A"}
             </p>
             <p>
-              <strong>Email:</strong> {selectedAppointment.customer?.email || "N/A"}
+              <strong>Email:</strong>{" "}
+              {selectedAppointment.customer?.email || "N/A"}
             </p>
             <p>
-              <strong>Xe:</strong> {selectedAppointment.vehicle?.variant?.model?.name} {selectedAppointment.vehicle?.variant?.name}
+              <strong>Xe:</strong>{" "}
+              {selectedAppointment.vehicle?.variant?.model?.name}{" "}
+              {selectedAppointment.vehicle?.variant?.name}
             </p>
             <p>
-              <strong>Màu xe:</strong> {selectedAppointment.vehicle?.color || "N/A"}
+              <strong>Màu xe:</strong>{" "}
+              {selectedAppointment.vehicle?.color || "N/A"}
             </p>
             <p>
-              <strong>VIN:</strong> {selectedAppointment.vehicle?.vinNumber || "N/A"}
+              <strong>VIN:</strong>{" "}
+              {selectedAppointment.vehicle?.vinNumber || "N/A"}
             </p>
             <p>
               <strong>Thời gian:</strong>{" "}
               {dayjs(selectedAppointment.scheduledDate).format(
                 "DD/MM/YYYY HH:mm"
-              )} - {dayjs(selectedAppointment.endDate).format("HH:mm")}
+              )}{" "}
+              - {dayjs(selectedAppointment.endDate).format("HH:mm")}
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
@@ -929,7 +951,8 @@ export default function WeeklyCalendar() {
               </Tag>
             </p>
             <p>
-              <strong>Người tạo:</strong> {selectedAppointment.assignedBy || "N/A"}
+              <strong>Người tạo:</strong>{" "}
+              {selectedAppointment.assignedBy || "N/A"}
             </p>
             <p>
               <strong>Ghi chú:</strong>{" "}
