@@ -1,10 +1,22 @@
 import { Button, Result } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAuthen from "../hooks/useAuthen";
+import { useEffect } from "react";
 
 const Error = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role, isAuthenticated , logout} = useAuthen();
+
+  useEffect(() => {
+    console.error("🚫 403 Error Page - Triggered from:", {
+      pathname: location.pathname,
+      search: location.search,
+      isAuthenticated,
+      role,
+      state: location.state,
+    });
+  }, [location, isAuthenticated, role]);
 
    const handleLogout = async () => {
     await logout();

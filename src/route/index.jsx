@@ -1,6 +1,6 @@
 import React from "react";
 import { Suspense, lazy } from "react";
-import { useRoutes, Outlet, Navigate } from "react-router-dom";
+import { useRoutes, Outlet, Navigate, useLocation } from "react-router-dom";
 import Dealer from "../layout/dealer.jsx";
 import Admin from "../layout/admin.jsx";
 import EvmStaff from "../layout/evmStaff.jsx";
@@ -11,6 +11,11 @@ import Error404 from "../components/404.jsx";
 import Error403 from "../components/403.jsx";
 import useAuthen from "../hooks/useAuthen";
 import CustomerDetail from "../sections/dealer/manager/customerManagement/customerDetail.jsx";
+
+//Payment Callback Page
+const PaymentCallbackPage = lazy(() =>
+  import("../page/payment/PaymentCallbackPage")
+);
 
 //Import page
 //Authentication
@@ -77,7 +82,6 @@ const CustomerDetailPage = lazy(() =>
 const SalePriceListPage = lazy(() =>
   import("../page/dealer/manager/salePriceListPage.jsx")
 );
-
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -158,6 +162,7 @@ const FeedbackListPage = lazy(() =>
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
+  const location = useLocation();
 
   // Hiển thị loading trong khi đang khởi tạo auth state
   if (!isInitialized) {
@@ -175,7 +180,7 @@ const Routes = () => {
     }
 
     return children;
-  };
+  };  
 
   // Redirect authenticated users từ login page
   const AuthGuard = ({ children }) => {
@@ -207,6 +212,22 @@ const Routes = () => {
       ),
     },
     { path: "/403", element: <Error403 /> },
+    {
+      path: "/vnpay-return",
+      element: (
+        <Suspense fallback={<Loading />}>
+          <PaymentCallbackPage />
+        </Suspense>
+      ),
+    },
+    {
+      path: "/payment-callback",
+      element: (
+        <Suspense fallback={<Loading />}>
+          <PaymentCallbackPage />
+        </Suspense>
+      ),
+    },
 
     // Admin routes
     {

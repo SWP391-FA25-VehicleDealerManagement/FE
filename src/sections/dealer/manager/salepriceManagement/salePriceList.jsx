@@ -149,7 +149,7 @@ export default function SalePriceList() {
       };
 
       const response = await updateSalePrice(
-        selectedSalePrice.salePriceId,
+        selectedSalePrice.salepriceId,
         updateData
       );
       if (response && response.status === 200) {
@@ -356,7 +356,7 @@ export default function SalePriceList() {
           <Table
             columns={columns}
             dataSource={salePrices}
-            rowKey="salePriceId"
+            rowKey="salepriceId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
           />

@@ -1,4 +1,3 @@
-// components/order/orderList.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, Card, Typography, Spin, Tag, Modal } from "antd";
 import {
@@ -32,7 +31,7 @@ export default function OrderList() {
     Customer,
     isLoadingCustomer,
   } = useDealerOrder();
-  const { payment, isLoadingPayment, getPayment } = usePaymentStore();
+  const { payment, getPayment } = usePaymentStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [mergedOrders, setMergedOrders] = useState([]);

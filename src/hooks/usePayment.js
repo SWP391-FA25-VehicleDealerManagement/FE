@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import {
   createPayment,
+  createPaymentWithVNPay,
   paymentSuccess,
   getPayment,
   getPaymentById,
@@ -50,6 +51,22 @@ const usePaymentStore = create((set) => ({
     } catch (error) {
       console.error("Error creating payment:", error);
       set({ isLoadingCreatePayment: false });
+    }
+  },
+
+  isLoadingCreateVNPayPayment: false,
+  createPaymentWithVNPay: async (data) => {
+    set({ isLoadingCreateVNPayPayment: true });
+    try {
+      const response = await createPaymentWithVNPay(data);
+      if (response && response.status === 200) {
+        set({ isLoadingCreateVNPayPayment: false });
+      }
+      return response;
+    } catch (error) {
+      console.error("Error creating VNPay payment:", error);
+      set({ isLoadingCreateVNPayPayment: false });
+      throw error;
     }
   },
 
