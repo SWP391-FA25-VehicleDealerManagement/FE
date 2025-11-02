@@ -96,13 +96,12 @@ const useSalePrice = create((set) => ({
       throw error;
     }
   },
-
   // Tạo sale price mới
   createSalePrice: async (data) => {
     set({ isLoadingCreate: true });
     try {
       const response = await createSalePrice(data);
-      if (response && response.status === 201) {
+      if (response && response.status === 200) {
         set({ isLoadingCreate: false });
         return response;
       }

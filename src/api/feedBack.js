@@ -9,3 +9,8 @@ export const getAllFeedbacks = () => {
 export const getFeedbackById = (id) => {
   return axiosClient.get(`/api/feedbacks/${id}`);
 };
+
+// Create feedback
+export const createFeedback = (data) => {
+  return axiosClient.post("/api/feedbacks", data);
+};

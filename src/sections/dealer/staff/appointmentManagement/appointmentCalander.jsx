@@ -11,8 +11,14 @@ import {
   Tooltip,
   Calendar,
   Modal,
+  Alert,
 } from "antd";
-import { LeftOutlined, RightOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  LeftOutlined,
+  RightOutlined,
+  PlusOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import isBetween from "dayjs/plugin/isBetween";
@@ -20,9 +26,8 @@ import weekday from "dayjs/plugin/weekday";
 import weekOfYear from "dayjs/plugin/weekOfYear";
 import CreateAppointmentModal from "./CreateAppointmentModal";
 import AppointmentActionModal from "./AppointmentActionModal";
+import CompleteAppointmentModal from "./CompleteAppointmentModal";
 import useTestDriveStore from "../../../../hooks/useTestDrive";
-import useVehicleStore from "../../../../hooks/useVehicle";
-import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
 
 dayjs.locale("vi");
@@ -47,6 +52,8 @@ const getStatusProps = (status) => {
       return { color: "gray", text: "Đã hoàn thành" };
     case "CANCELLED":
       return { color: "red", text: "Đã hủy" };
+    case "RESCHEDULED":
+      return { color: "orange", text: "Đã đổi lịch" };
     default:
       return { color: "default", text: status || "Không rõ" };
   }
@@ -70,6 +77,7 @@ export default function WeeklyCalendar() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [actionType, setActionType] = useState(null);
   const { userDetail } = useAuthen();
   const dealerId = userDetail?.dealer?.dealerId;
@@ -383,7 +391,8 @@ export default function WeeklyCalendar() {
       const inWorkingHours = hour >= START_HOUR && hour < END_HOUR;
       return isSameDay && inWorkingHours;
     });
-    const groupedAppointments = groupOverlappingAppointments(filteredAppointments);
+    const groupedAppointments =
+      groupOverlappingAppointments(filteredAppointments);
     const totalRows = (END_HOUR - START_HOUR) * 2;
     const isToday = currentDate.isSame(dayjs(), "day");
 
@@ -477,7 +486,9 @@ export default function WeeklyCalendar() {
                   gridRow: `${gridRowStart} / ${gridRowEnd}`,
                   position: "relative",
                   left: `${leftPosition}%`,
-                  width: `calc(${columnWidth}% - ${item.totalColumns > 1 ? '4px' : '0px'})`,
+                  width: `calc(${columnWidth}% - ${
+                    item.totalColumns > 1 ? "4px" : "0px"
+                  })`,
                   margin: "2px 0",
                   padding: "4px 6px",
                   backgroundColor: `${color}1A`,
@@ -488,6 +499,8 @@ export default function WeeklyCalendar() {
                       ? "#52c41a"
                       : color === "gray"
                       ? "#d9d9d9"
+                      : color === "orange"
+                      ? "#fa8c16"
                       : color === "red"
                       ? "#ff4d4f"
                       : "#d9d9d9"
@@ -521,7 +534,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {dayjs(item.scheduledDate).format("HH:mm")} - {item.customer?.customerName || "N/A"}
+                  {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
+                  {item.customer?.customerName || "N/A"}
                 </Text>
                 <Text
                   type="secondary"
@@ -533,7 +547,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.vehicle?.variant?.model?.name} {item.vehicle?.variant?.name}
+                  {item.vehicle?.variant?.model?.name}{" "}
+                  {item.vehicle?.variant?.name}
                 </Text>
                 <Tag
                   color={statusProps.color}
@@ -564,10 +579,10 @@ export default function WeeklyCalendar() {
       const inWorkingHours = hour >= START_HOUR && hour < END_HOUR;
       return inWeek && inWorkingHours;
     });
-    
+
     console.log("Week View - Total appointments:", filteredAppointments.length);
     console.log("Filtered (in working hours 8-18):", filteredAppointments);
-    
+
     // Group appointments by day để xử lý overlap cho từng ngày
     const appointmentsByDay = {};
     filteredAppointments.forEach((app) => {
@@ -589,10 +604,10 @@ export default function WeeklyCalendar() {
     });
 
     // Flatten lại thành mảng duy nhất
-    const allGroupedAppointments = Object.values(groupedAppointmentsByDay).flat();
-    
-    console.log("All grouped appointments:", allGroupedAppointments);
-    
+    const allGroupedAppointments = Object.values(
+      groupedAppointmentsByDay
+    ).flat();
+
     const totalRows = (END_HOUR - START_HOUR) * 2;
 
     const getColumn = (date) => {
@@ -684,7 +699,7 @@ export default function WeeklyCalendar() {
             gridRowStart,
             gridRowEnd,
             columnIndex: item.columnIndex,
-            totalColumns: item.totalColumns
+            totalColumns: item.totalColumns,
           });
 
           if (
@@ -706,7 +721,11 @@ export default function WeeklyCalendar() {
 
           return (
             <Tooltip
-              title={`${item.customer?.customerName || "N/A"} - ${item.vehicle?.variant?.model?.name} ${item.vehicle?.variant?.name} - ${dayjs(item.scheduledDate).format("HH:mm")} - ${item.notes || "Không có ghi chú"}`}
+              title={`${item.customer?.customerName || "N/A"} - ${
+                item.vehicle?.variant?.model?.name
+              } ${item.vehicle?.variant?.name} - ${dayjs(
+                item.scheduledDate
+              ).format("HH:mm")} - ${item.notes || "Không có ghi chú"}`}
               key={item.testDriveId}
             >
               <Card
@@ -727,6 +746,8 @@ export default function WeeklyCalendar() {
                       ? "#52c41a"
                       : color === "gray"
                       ? "#d9d9d9"
+                      : color === "orange"
+                      ? "#fa8c16"
                       : color === "red"
                       ? "#ff4d4f"
                       : "#d9d9d9"
@@ -762,7 +783,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {dayjs(item.scheduledDate).format("HH:mm")} - {item.customer?.customerName || "N/A"}
+                  {dayjs(item.scheduledDate).format("HH:mm")} -{" "}
+                  {item.customer?.customerName || "N/A"}
                 </Text>
                 <Text
                   type="secondary"
@@ -774,7 +796,8 @@ export default function WeeklyCalendar() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {item.vehicle?.variant?.model?.name} {item.vehicle?.variant?.name}
+                  {item.vehicle?.variant?.model?.name}{" "}
+                  {item.vehicle?.variant?.name}
                 </Text>
                 <Tag
                   color={color}
@@ -862,28 +885,56 @@ export default function WeeklyCalendar() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={
-          selectedAppointment &&
-          (selectedAppointment.status === "SCHEDULED" ||
-            selectedAppointment.status === "CONFIRMED") ? (
+          selectedAppointment ? (
             <Space>
-              <Button
-                type="primary"
-                onClick={() => {
-                  setActionType("reschedule");
-                  setIsActionModalOpen(true);
-                }}
-              >
-                Đổi lịch
-              </Button>
-              <Button
-                danger
-                onClick={() => {
-                  setActionType("cancel");
-                  setIsActionModalOpen(true);
-                }}
-              >
-                Hủy lịch
-              </Button>
+              {/* Hiện nút Hoàn thành nếu lịch đã qua và chưa hoàn thành/hủy */}
+              {selectedAppointment &&
+                dayjs(selectedAppointment.endDate).isBefore(dayjs()) &&
+                selectedAppointment.status !== "COMPLETED" &&
+                selectedAppointment.status !== "CANCELLED" && (
+                  <Button
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => {
+                      setIsCompleteModalOpen(true);
+                    }}
+                    style={{
+                      backgroundColor: "#52c41a",
+                      borderColor: "#52c41a",
+                    }}
+                  >
+                    Hoàn thành
+                  </Button>
+                )}
+
+              {/* Hiện nút Đổi lịch và Hủy lịch nếu chưa qua giờ và chưa hoàn thành/hủy */}
+              {selectedAppointment &&
+                (selectedAppointment.status === "SCHEDULED" ||
+                  selectedAppointment.status === "CONFIRMED") &&
+                dayjs(selectedAppointment.scheduledDate).isAfter(dayjs()) && (
+                  <>
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        setActionType("reschedule");
+                        setIsActionModalOpen(true);
+                      }}
+                    >
+                      Đổi lịch
+                    </Button>
+                    <Button
+                      danger
+                      onClick={() => {
+                        setActionType("cancel");
+                        setIsActionModalOpen(true);
+                      }}
+                    >
+                      Hủy lịch
+                    </Button>
+                  </>
+                )}
+
+              <Button onClick={() => setIsModalOpen(false)}>Đóng</Button>
             </Space>
           ) : (
             <Button onClick={() => setIsModalOpen(false)}>Đóng</Button>
@@ -893,32 +944,53 @@ export default function WeeklyCalendar() {
       >
         {selectedAppointment && (
           <div>
+            {/* Alert nếu lịch đã qua giờ nhưng chưa hoàn thành */}
+            {dayjs(selectedAppointment.endDate).isBefore(dayjs()) &&
+              selectedAppointment.status !== "COMPLETED" &&
+              selectedAppointment.status !== "CANCELLED" && (
+                <Alert
+                  message="Lịch hẹn đã qua thời gian"
+                  description="Lịch hẹn này đã kết thúc. Vui lòng đánh dấu hoàn thành hoặc cập nhật trạng thái."
+                  type="warning"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
+              )}
+
             <p>
               <strong>Mã lịch hẹn:</strong> #{selectedAppointment.testDriveId}
             </p>
             <p>
-              <strong>Khách hàng:</strong> {selectedAppointment.customer?.customerName || "N/A"}
+              <strong>Khách hàng:</strong>{" "}
+              {selectedAppointment.customer?.customerName || "N/A"}
             </p>
             <p>
-              <strong>Số điện thoại:</strong> {selectedAppointment.customer?.phone || "N/A"}
+              <strong>Số điện thoại:</strong>{" "}
+              {selectedAppointment.customer?.phone || "N/A"}
             </p>
             <p>
-              <strong>Email:</strong> {selectedAppointment.customer?.email || "N/A"}
+              <strong>Email:</strong>{" "}
+              {selectedAppointment.customer?.email || "N/A"}
             </p>
             <p>
-              <strong>Xe:</strong> {selectedAppointment.vehicle?.variant?.model?.name} {selectedAppointment.vehicle?.variant?.name}
+              <strong>Xe:</strong>{" "}
+              {selectedAppointment.vehicle?.variant?.model?.name}{" "}
+              {selectedAppointment.vehicle?.variant?.name}
             </p>
             <p>
-              <strong>Màu xe:</strong> {selectedAppointment.vehicle?.color || "N/A"}
+              <strong>Màu xe:</strong>{" "}
+              {selectedAppointment.vehicle?.color || "N/A"}
             </p>
             <p>
-              <strong>VIN:</strong> {selectedAppointment.vehicle?.vinNumber || "N/A"}
+              <strong>VIN:</strong>{" "}
+              {selectedAppointment.vehicle?.vinNumber || "N/A"}
             </p>
             <p>
               <strong>Thời gian:</strong>{" "}
               {dayjs(selectedAppointment.scheduledDate).format(
                 "DD/MM/YYYY HH:mm"
-              )} - {dayjs(selectedAppointment.endDate).format("HH:mm")}
+              )}{" "}
+              - {dayjs(selectedAppointment.endDate).format("HH:mm")}
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
@@ -927,7 +999,8 @@ export default function WeeklyCalendar() {
               </Tag>
             </p>
             <p>
-              <strong>Người tạo:</strong> {selectedAppointment.assignedBy || "N/A"}
+              <strong>Người tạo:</strong>{" "}
+              {selectedAppointment.assignedBy || "N/A"}
             </p>
             <p>
               <strong>Ghi chú:</strong>{" "}
@@ -964,6 +1037,25 @@ export default function WeeklyCalendar() {
             fetchTestDrives(dealerId);
           }
           setIsActionModalOpen(false);
+          setIsModalOpen(false);
+        }}
+      />
+
+      <CompleteAppointmentModal
+        isOpen={isCompleteModalOpen}
+        onClose={() => {
+          setIsCompleteModalOpen(false);
+        }}
+        appointment={{
+          ...selectedAppointment,
+          customerName: selectedAppointment?.customer?.customerName,
+          vehicleInfo: `${selectedAppointment?.vehicle?.variant?.model?.name} ${selectedAppointment?.vehicle?.variant?.name}`,
+        }}
+        onActionSuccess={() => {
+          if (dealerId) {
+            fetchTestDrives(dealerId);
+          }
+          setIsCompleteModalOpen(false);
           setIsModalOpen(false);
         }}
       />

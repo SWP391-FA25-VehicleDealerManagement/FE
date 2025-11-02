@@ -10,9 +10,15 @@ const createTestDrive = async (data) => {
   return await axiosClient.post("/api/testdrives/create-test-drive", data);
 };
 
-const updateTestDriveStatus = async (testDriveId, status, note) => {
+const updateTestDriveStatus = async (testDriveId, status, note = "") => {
   return await axiosClient.put(
     `/api/testdrives/update-test-drive-status/${testDriveId}/status?status=${status}&note=${note}`
+  );
+};
+
+const completeTestDrive = async (testDriveId, note = "") => {
+  return await axiosClient.put(
+    `/api/testdrives/update-test-drive-status/${testDriveId}/status?status=COMPLETED&note=${note}`
   );
 };
 
@@ -28,4 +34,11 @@ const cancelTestDrive = async (testDriveId) => {
   );
 };
 
-export { getTestDrives, createTestDrive, updateTestDriveStatus, cancelTestDrive, ReschuduleTestDrive };
+export { 
+  getTestDrives, 
+  createTestDrive, 
+  updateTestDriveStatus, 
+  cancelTestDrive, 
+  ReschuduleTestDrive,
+  completeTestDrive 
+};

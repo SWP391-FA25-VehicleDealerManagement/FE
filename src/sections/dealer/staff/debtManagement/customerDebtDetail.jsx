@@ -383,7 +383,7 @@ export default function CustomerDebtDetail() {
         </Card>
 
         {/* 3. Bảng Lịch sử thanh toán */}
-        {/* <Card title="Lịch sử thanh toán" size="small">
+        <Card title="Lịch sử thanh toán" size="small">
           <Spin spinning={isLoadingPaymentHistory}>
             <Table
               dataSource={paymentHistory}
@@ -394,7 +394,7 @@ export default function CustomerDebtDetail() {
               locale={{ emptyText: "Chưa có lịch sử thanh toán" }}
             />
           </Spin>
-        </Card> */}
+        </Card>
       </Space>
 
       <Modal

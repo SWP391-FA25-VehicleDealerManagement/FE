@@ -10,7 +10,7 @@ import {
   ContainerOutlined,
   FormOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useAuthen from "../../../../hooks/useAuthen";
@@ -27,7 +27,7 @@ export default function OrderList() {
     isLoadingCustomerOrder,
     getCustomerOrders,
   } = useDealerOrder();
-  const { payment, isLoadingPayment, getPayment } = usePaymentStore();
+  const { payment, getPayment } = usePaymentStore();
   const [mergedOrders, setMergedOrders] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);

@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
-import { getAllFeedbacks, getFeedbackById } from "../api/feedBack";
+import { getAllFeedbacks, getFeedbackById, createFeedback } from "../api/feedBack";
 
 const useFeedback = create((set, get) => ({
   list: [],
   detail: null,
   isLoading: false,
+  isLoadingCreate: false,
   error: null,
 
   fetchAll: async () => {
@@ -28,10 +29,26 @@ const useFeedback = create((set, get) => ({
       const res = await getFeedbackById(id);
       const data = res?.data?.data ?? res?.data ?? null;
       set({ detail: data, isLoading: false });
+      return data;
     } catch (err) {
       console.error("fetchById feedback error:", err);
       set({ isLoading: false, error: err, detail: null });
       toast.error("Không tải được chi tiết phản hồi.");
+    }
+  },
+
+  createFeedback: async (data) => {
+    try {
+      set({ isLoadingCreate: true, error: null });
+      const response = await createFeedback(data);
+      if (response && response.status === 200) {
+        set({ isLoadingCreate: false });
+      }
+      return response;
+    } catch (err) {
+      console.error("createFeedback error:", err);
+      set({ isLoadingCreate: false});
+      throw err;
     }
   },
 }));
