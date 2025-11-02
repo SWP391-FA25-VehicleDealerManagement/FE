@@ -171,11 +171,16 @@ export default function OrderDetail() {
 
   useEffect(() => {
     if (payment && payment.length > 0 && orderId) {
-      const relevantPayments = payment.filter(
-        (p) =>
-          p.orderId == orderId &&
-          (p.status === "COMPLETED" || p.status === "Completed")
-      );
+      const relevantPayments = payment.filter((p) => {
+        if (p.orderId != orderId) return false;
+        if (p.status === "COMPLETED" || p.status === "Completed") {
+          return true;
+        }
+        if (p.status === "PENDING" || p.status === "Pending") {
+          return p.paymentType === "INSTALLMENT";
+        }
+        return false;
+      });
       const totalPaid = relevantPayments.reduce(
         (sum, p) => sum + (p.amount || 0),
         0
@@ -314,10 +319,10 @@ export default function OrderDetail() {
 
   const { order, customer, items } = mergedData;
   const isActionDisabled =
-    order.status === "COMPLETED" || 
+    order.status === "COMPLETED" ||
     order.status === "CANCELLED" ||
     order.status === "PAID" ||
-    order.status === "PARTIAL"; 
+    order.status === "PARTIAL";
 
   return (
     <div>
@@ -332,7 +337,6 @@ export default function OrderDetail() {
 
       <div className="flex justify-between items-center mb-6">
         <Title level={2}>Chi tiết đơn hàng: #{order.orderId}</Title>
-        
         <Space>
           <Button
             type="primary"
@@ -346,7 +350,7 @@ export default function OrderDetail() {
             danger
             icon={<CloseCircleOutlined />}
             onClick={handleCancelOrder}
-            disabled={isActionDisabled || order.status === "PENDING"} 
+            disabled={isActionDisabled || order.status === "PENDING"}
           >
             Huỷ đơn
           </Button>

@@ -22,11 +22,8 @@ const { Title, Text } = Typography;
 export default function OrderList() {
   const navigate = useNavigate();
   const { userDetail } = useAuthen();
-  const {
-    CustomerOrder,
-    isLoadingCustomerOrder,
-    getCustomerOrders,
-  } = useDealerOrder();
+  const { CustomerOrder, isLoadingCustomerOrder, getCustomerOrders } =
+    useDealerOrder();
   const { payment, getPayment } = usePaymentStore();
   const [mergedOrders, setMergedOrders] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -56,8 +53,9 @@ export default function OrderList() {
       payment.forEach((p) => {
         const currentTotal = paymentMap.get(p.orderId) || 0;
 
-        if (p.status === "COMPLETED" || p.status === "Completed") {
-          paymentMap.set(p.orderId, currentTotal + (p.amount || 0));
+        if (p.amount && p.amount > 0) {
+          const newTotal = currentTotal + p.amount;
+          paymentMap.set(p.orderId, newTotal);
         }
       });
       const combinedData = filteredOrders.map((order) => {
@@ -105,9 +103,9 @@ export default function OrderList() {
       sorter: (a, b) => a.orderId - b.orderId,
     },
     {
-      title: "Đại lý", 
-      dataIndex: "dealerName", 
-      key: "dealerName", 
+      title: "Đại lý",
+      dataIndex: "dealerName",
+      key: "dealerName",
     },
     {
       title: "Ngày tạo",
