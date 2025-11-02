@@ -17,18 +17,31 @@ import { getFeedbackById } from "../../../../api/feedBack";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const typeColor = (t) =>
-  (t || "").toUpperCase() === "POSITIVE"
-    ? "green"
-    : (t || "").toUpperCase() === "NEGATIVE"
-    ? "red"
-    : "blue";
-const statusColor = (s) =>
-  (s || "").toUpperCase() === "REVIEWED"
-    ? "geekblue"
-    : (s || "").toUpperCase() === "PENDING"
-    ? "gold"
-    : "default";
+const getTypeProps = (type) => {
+  const upperType = type?.toUpperCase();
+  switch (upperType) {
+    case "POSITIVE":
+      return { color: "green", text: "Tích cực" };
+    case "NEGATIVE":
+      return { color: "red", text: "Tiêu cực" };
+    case "NEUTRAL":
+      return { color: "blue", text: "Trung lập" };
+    default:
+      return { color: "default", text: type || "Không rõ" };
+  }
+};
+
+const getStatusProps = (status) => {
+  const upperStatus = status?.toUpperCase();
+  switch (upperStatus) {
+    case "REVIEWED":
+      return { color: "geekblue", text: "Đã xem xét" };
+    case "PENDING":
+      return { color: "gold", text: "Đang chờ" };
+    default:
+      return { color: "default", text: status || "Không rõ" };
+  }
+};
 
 export default function DealerStaffFeedbackListPage() {
   const { list = [], isLoading = false, fetchAll, fetchById } = useFeedback();
@@ -61,8 +74,11 @@ export default function DealerStaffFeedbackListPage() {
     return data.filter((it) => {
       const text = (it.content || it.description || "").toLowerCase();
       const meta = (it.customerName || it.email || "").toLowerCase();
-      const textMatch = !q || text.includes(q.toLowerCase()) || meta.includes(q.toLowerCase());
-      const typeMatch = !filterType || (String(it.feedbackType || "").toUpperCase() === filterType);
+      const textMatch =
+        !q || text.includes(q.toLowerCase()) || meta.includes(q.toLowerCase());
+      const typeMatch =
+        !filterType ||
+        String(it.feedbackType || "").toUpperCase() === filterType;
       return textMatch && typeMatch;
     });
   }, [data, q, filterType]);
@@ -107,38 +123,36 @@ export default function DealerStaffFeedbackListPage() {
       render: (v, r, i) => v ?? i + 1,
     },
     {
-      title: "Người phản hồi",
-      dataIndex: "customerName",
-      key: "customerName",
-      render: (v, r) => v || r.email || "Khách",
-    },
-    {
       title: "Loại",
       dataIndex: "feedbackType",
       key: "feedbackType",
       width: 120,
-      render: (t) => <Tag color={typeColor(t)}>{t ?? "NEUTRAL"}</Tag>,
+      render: (t) => {
+        const { color, text } = getTypeProps(t);
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
     {
       title: "Nội dung",
       dataIndex: "content",
       key: "content",
       ellipsis: true,
-      render: (c, r) => (c ? String(c).slice(0, 120) : r.description ? String(r.description).slice(0, 120) : "—"),
+      render: (c, r) =>
+        c
+          ? String(c).slice(0, 120)
+          : r.description
+          ? String(r.description).slice(0, 120)
+          : "—",
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (s) => <Tag color={statusColor(s)}>{s ?? "PENDING"}</Tag>,
-    },
-    {
-      title: "Ngày",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 140,
-      render: (d) => (d ? new Date(d).toLocaleString() : "—"),
+      render: (s) => {
+        const { color, text } = getStatusProps(s);
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
     {
       title: "Thao tác",
@@ -156,7 +170,14 @@ export default function DealerStaffFeedbackListPage() {
 
   return (
     <>
-      <div style={{ marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+        }}
+      >
         <Title level={4} style={{ margin: 0 }}>
           Quản lý Feedback
         </Title>
@@ -209,19 +230,32 @@ export default function DealerStaffFeedbackListPage() {
             <Text>{selected.customerName || selected.email || "—"}</Text>
             <br />
             <Text strong>Loại: </Text>
-            <Tag color={typeColor(selected.feedbackType)}>{selected.feedbackType || "NEUTRAL"}</Tag>
+            <Tag color={getTypeProps(selected.feedbackType).color}>
+              {getTypeProps(selected.feedbackType).text}
+            </Tag>
             <br />
             <Text strong>Trạng thái: </Text>
-            <Tag color={statusColor(selected.status)}>{selected.status || "PENDING"}</Tag>
+            <Tag color={getStatusProps(selected.status).color}>
+              {getStatusProps(selected.status).text}
+            </Tag>
             <br />
             <br />
             <Text strong>Mô tả:</Text>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{selected.description || "—"}</div>
+            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
+              {selected.description || "—"}
+            </div>
             <br />
             <Text strong>Nội dung:</Text>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{selected.content || "—"}</div>
+            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
+              {selected.content || "—"}
+            </div>
             <br />
-            <Text type="secondary">Ngày: {selected.createdAt ? new Date(selected.createdAt).toLocaleString() : "—"}</Text>
+            <Text type="secondary">
+              Ngày:{" "}
+              {selected.createdAt
+                ? new Date(selected.createdAt).toLocaleString()
+                : "—"}
+            </Text>
           </div>
         ) : (
           <div>Không có dữ liệu</div>

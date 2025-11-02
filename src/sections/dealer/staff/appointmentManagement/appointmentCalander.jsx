@@ -47,6 +47,8 @@ const getStatusProps = (status) => {
       return { color: "gray", text: "Đã hoàn thành" };
     case "CANCELLED":
       return { color: "red", text: "Đã hủy" };
+    case "RESCHEDULED":
+      return { color: "orange", text: "Đã đổi lịch" };
     default:
       return { color: "default", text: status || "Không rõ" };
   }

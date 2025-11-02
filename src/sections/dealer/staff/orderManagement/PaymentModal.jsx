@@ -121,7 +121,7 @@ export default function PaymentModal({ isOpen, onClose, order }) {
             toast.success("Thanh toán và cập nhật trạng thái thành công!");
           }
 
-          onClose(); // Đóng modal và tải lại dữ liệu (do logic ở component cha)
+          onClose();
         } else {
           toast.error(
             "Tạo thanh toán thành công nhưng cập nhật trạng thái đơn hàng thất bại."

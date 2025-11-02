@@ -263,10 +263,10 @@ export default function SalePriceList() {
   const columns = [
     {
       title: "ID",
-      dataIndex: "salePriceId",
-      key: "salePriceId",
+      dataIndex: "salepriceId",
+      key: "salepriceId",
       width: 80,
-      sorter: (a, b) => a.salePriceId - b.salePriceId,
+      sorter: (a, b) => a.salepriceId - b.salepriceId,
     },
     {
       title: "Phiên bản xe",
