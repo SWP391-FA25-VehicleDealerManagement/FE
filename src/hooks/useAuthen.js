@@ -17,11 +17,16 @@ const useAuthen = create((set, get) => ({
         const user = response.data.data?.user;
         const accessToken = response.data.data?.accessToken;
 
-        // Save to storage
-        Cookies.set("token", accessToken);
+        // Save to storage with proper cookie settings
+        Cookies.set("token", accessToken, {
+          expires: 7, // 7 days
+          sameSite: "Lax", // Allow cookie on redirect from external sites
+          secure: false, // Set to true in production with HTTPS
+        });
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userRole", user.role);
         localStorage.setItem("userDetail", JSON.stringify(user));
+
 
         // Update state
         set({
@@ -85,16 +90,24 @@ const useAuthen = create((set, get) => ({
     const userRole = localStorage.getItem("userRole");
     const userDetail = localStorage.getItem("userDetail");
 
+    console.log("🔐 InitAuth - Checking storage:", {
+      hasToken: !!token,
+      isAuthenticated,
+      userRole,
+      hasUserDetail: !!userDetail,
+    });
+
     if (token && isAuthenticated === "true" && userRole && userDetail) {
       try {
+        const parsedUserDetail = JSON.parse(userDetail);
         set({
           isAuthenticated: true,
           role: userRole,
-          userDetail: JSON.parse(userDetail),
+          userDetail: parsedUserDetail,
           isInitialized: true,
         });
       } catch (err) {
-        console.error("Error parsing stored user data:", err);
+        console.error("❌ InitAuth - Error parsing stored user data:", err);
         Cookies.remove("token");
         localStorage.removeItem("isAuthenticated");
         localStorage.removeItem("userRole");

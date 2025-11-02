@@ -150,15 +150,14 @@ export default function DeliveryDetail() {
 
   useEffect(() => {
     if (payment && payment.length > 0 && orderId) {
-      const relevantPayments = payment.filter(
-        (p) =>
-          p.orderId == orderId &&
-          (p.status === "COMPLETED" || p.status === "Completed")
-      );
-      const totalPaid = relevantPayments.reduce(
-        (sum, p) => sum + (p.amount || 0),
-        0
-      );
+      const relevantPayments = payment.filter((p) => p.orderId == orderId);
+      const totalPaid = relevantPayments.reduce((sum, p) => {
+        if (p.amount && p.amount > 0) {
+          return sum + p.amount;
+        }
+        return sum;
+      }, 0);
+
       setTotalPaidAmount(totalPaid);
     } else {
       setTotalPaidAmount(0);
@@ -243,7 +242,9 @@ export default function DeliveryDetail() {
   if (error) {
     return (
       <Card>
-        <Title level={4} type="danger">Lỗi tải dữ liệu</Title>
+        <Title level={4} type="danger">
+          Lỗi tải dữ liệu
+        </Title>
         <Text>{error}</Text>
         <Button onClick={() => navigate(-1)} style={{ marginTop: "16px" }}>
           Quay lại
@@ -269,7 +270,7 @@ export default function DeliveryDetail() {
       <Button
         type="link"
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/dealer-staff/deliveries")} 
+        onClick={() => navigate("/dealer-staff/deliveries")}
         className="mb-4"
       >
         Quay lại danh sách

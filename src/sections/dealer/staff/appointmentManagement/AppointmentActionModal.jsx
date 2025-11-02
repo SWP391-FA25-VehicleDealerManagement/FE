@@ -57,7 +57,8 @@ export default function AppointmentActionModal({
 
   const handleReschedule = async (values) => {
     try {
-      const newDate = values.newDate.toISOString();
+      const newDate = values.newDate.format("YYYY-MM-DDTHH:mm:ss");
+      console.log("📅 Sending date:", newDate);
       const response = await rescheduleTestDrive(
         appointment.testDriveId,
         newDate

@@ -24,7 +24,7 @@ import {
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import useSalePrice from "../../../../hooks/useSalePrice";
-import useVariantStore from "../../../../hooks/useVariant";
+import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import dayjs from "dayjs";
 
@@ -44,7 +44,8 @@ export default function SalePriceList() {
     updateSalePrice,
     deleteSalePrice,
   } = useSalePrice();
-  const { variants, fetchVariants } = useVariantStore();
+  const { dealerCarLists, isLoadingVehicleDealers, fetchVehicleDealers } =
+    useVehicleStore();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -71,7 +72,10 @@ export default function SalePriceList() {
 
   const fetchData = async () => {
     try {
-      await Promise.all([fetchSalePricesByDealer(dealerId), fetchVariants()]);
+      await Promise.all([
+        fetchSalePricesByDealer(dealerId),
+        fetchVehicleDealers(dealerId),
+      ]);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Không thể tải dữ liệu", {
@@ -95,10 +99,15 @@ export default function SalePriceList() {
     try {
       const values = await form.validateFields();
 
+      // Tìm vehicle được chọn để lấy thông tin
+      const selectedVehicle = dealerCarLists.find(
+        (v) => v.vehicleId === values.vehicleId
+      );
+
       const salePriceData = {
         dealerId: dealerId,
-        variantId: values.variantId,
-        basePrice: values.basePrice,
+        variantId: selectedVehicle.variantId,
+        basePrice: selectedVehicle.msrp, // Lấy từ MSRP của vehicle
         price: values.price,
         effectiveDate: values.effectiveDate.format("YYYY-MM-DD"),
       };
@@ -114,13 +123,10 @@ export default function SalePriceList() {
       }
     } catch (error) {
       console.error("Error creating sale price:", error);
-      toast.error(
-        error.response?.data?.message || "Tạo giá bán thất bại",
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
+      toast.error(error.response?.data?.message || "Tạo giá bán thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -149,7 +155,7 @@ export default function SalePriceList() {
       };
 
       const response = await updateSalePrice(
-        selectedSalePrice.salePriceId,
+        selectedSalePrice.salepriceId,
         updateData
       );
       if (response && response.status === 200) {
@@ -263,21 +269,26 @@ export default function SalePriceList() {
   const columns = [
     {
       title: "ID",
-      dataIndex: "salePriceId",
-      key: "salePriceId",
+      dataIndex: "salepriceId",
+      key: "salepriceId",
       width: 80,
-      sorter: (a, b) => a.salePriceId - b.salePriceId,
+      sorter: (a, b) => a.salepriceId - b.salepriceId,
     },
     {
       title: "Phiên bản xe",
       dataIndex: "variantName",
       key: "variantName",
       ...getColumnSearchProps("variantName"),
-      render: (text, record) => (
-        <Link to={`/dealer-manager/vehicles/variants/${record.variantId}`}>
-          {text || "N/A"}
-        </Link>
-      ),
+      render: (text, record) => {
+        const modelName = record.variant?.model?.name || "N/A";
+        const variantName = record.variant?.name || "";
+        return (
+          <div>
+            <div className="font-semibold">{modelName}</div>
+            <div className="text-sm text-gray-500">{variantName}</div>
+          </div>
+        );
+      },
     },
     {
       title: "Giá gốc (MSRP)",
@@ -356,7 +367,7 @@ export default function SalePriceList() {
           <Table
             columns={columns}
             dataSource={salePrices}
-            rowKey="salePriceId"
+            rowKey="salepriceId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
           />
@@ -376,45 +387,27 @@ export default function SalePriceList() {
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            name="variantId"
-            label="Phiên bản xe"
-            rules={[{ required: true, message: "Vui lòng chọn phiên bản xe" }]}
+            name="vehicleId"
+            label="Chọn xe"
+            rules={[{ required: true, message: "Vui lòng chọn xe" }]}
           >
             <Select
-              placeholder="Chọn phiên bản xe"
+              placeholder="Chọn xe"
               showSearch
+              loading={isLoadingVehicleDealers}
               filterOption={(input, option) =>
-                (option?.children ?? "")
+                (option?.label ?? "")
                   .toLowerCase()
                   .includes(input.toLowerCase())
               }
-            >
-              {variants.map((variant) => (
-                <Option key={variant.variantId} value={variant.variantId}>
-                  {variant.name} - {formatVnd(variant.msrp)}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="basePrice"
-            label="Giá gốc (MSRP)"
-            rules={[
-              { required: true, message: "Vui lòng nhập giá gốc" },
-              { type: "number", min: 0, message: "Giá phải lớn hơn 0" },
-            ]}
-            extra="Giá niêm yết từ nhà sản xuất"
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="Nhập giá gốc"
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-              min={0}
-              step={1000000}
+              options={dealerCarLists
+                .filter((vehicle) => vehicle.price === null)
+                .map((vehicle) => ({
+                  value: vehicle.vehicleId,
+                  label: `${vehicle.modelName || "N/A"} - ${
+                    vehicle.variantName || ""
+                  } - ${vehicle.color} (MSRP: ${formatVnd(vehicle.msrp || 0)})`,
+                }))}
             />
           </Form.Item>
 

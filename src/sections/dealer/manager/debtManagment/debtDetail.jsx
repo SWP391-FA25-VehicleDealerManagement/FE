@@ -100,6 +100,7 @@ export default function DebtDetailPage() {
         notes: values.notes || "",
         createdBy: userDetail?.fullName || "Unknown",
       };
+      console.log("dealer payment payload", paymentData);
 
       const response = await makePayment(debtId, paymentData);
 
