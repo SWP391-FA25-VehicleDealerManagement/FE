@@ -6,6 +6,7 @@ import {
   deleteVehicle,
   createVehicle,
   updateVehicle,
+  getEVMVehicles,
 } from "../api/vehicle";
 
 const useVehicleStore = create((set) => ({
@@ -18,6 +19,25 @@ const useVehicleStore = create((set) => ({
       set({ vehicles: response.data.data, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
+    }
+  },
+
+  evmVehiclesList: [],
+  isLoadingEVMVehicles: false,
+  fetchEVMVehicles: async () => {
+    try {
+      set({ isLoadingEVMVehicles: true });
+      const response = await getEVMVehicles();
+      if (response && response.status === 200) {
+        set({
+          evmVehiclesList: response.data.data,
+          isLoadingEVMVehicles: false,
+        });
+      }
+      return response;
+    } catch (error) {
+      console.log("error at fetchEVMVehicles", error);
+      set({ isLoadingEVMVehicles: false });
     }
   },
 
@@ -76,7 +96,10 @@ const useVehicleStore = create((set) => ({
     try {
       set({ isLoadingVehicleDealers: true });
       const response = await getVehicleDealers(id);
-      set({ isLoadingVehicleDealers: false, dealerCarLists: response.data.data });
+      set({
+        isLoadingVehicleDealers: false,
+        dealerCarLists: response.data.data,
+      });
       return response;
     } catch (error) {
       set({ isLoadingVehicleDealers: false });

@@ -4,6 +4,10 @@ const getAllVehicles = () => {
   return axiosClient.get("/api/vehicles");
 };
 
+const getEVMVehicles = () => {
+  return axiosClient.get("/api/vehicles/manufacturer/vehicles");
+}
+
 const getVehicleById = (id) => {
   return axiosClient.get(`/api/vehicles/${id}`);
 };
@@ -39,4 +43,5 @@ export {
   createVehicle,
   updateVehicle,
   deleteVehicle,
+  getEVMVehicles,
 };
