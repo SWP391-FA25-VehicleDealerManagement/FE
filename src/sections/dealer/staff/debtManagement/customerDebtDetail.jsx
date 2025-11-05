@@ -19,6 +19,7 @@ import {
   FileTextOutlined,
   CreditCardOutlined,
   LeftOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -92,7 +93,9 @@ export default function CustomerDebtDetail() {
     try {
       const response = await makeCustomerPayment(
         selectedSchedule.scheduleId,
-        values.paymentAmount
+        values.paymentAmount,
+        values.paymentMethod,
+        values.notes
       );
 
       if (response && response.status === 200) {
@@ -108,8 +111,15 @@ export default function CustomerDebtDetail() {
     }
   };
 
+  const handleRefresh = () => {
+    if (debtId) {
+      fetchDealerDebtById(debtId);
+      fetchDebtSchedules(debtId);
+      fetchPaymentHistory(debtId);
+    }
+  };
+
   const scheduleColumns = [
-    // ... (các cột không đổi) ...
     {
       title: "Kỳ",
       dataIndex: "periodNo",
@@ -230,7 +240,6 @@ export default function CustomerDebtDetail() {
   ];
 
   const paymentHistoryColumns = [
-    // ... (các cột không đổi) ...
     {
       title: "Ngày trả",
       dataIndex: "paymentDate",
@@ -288,13 +297,6 @@ export default function CustomerDebtDetail() {
       width: 110,
     },
     {
-      title: "Người xác nhận",
-      dataIndex: "confirmedBy",
-      key: "confirmedBy",
-      width: 120,
-      render: (text) => text || "N/A",
-    },
-    {
       title: "Mã tham chiếu",
       dataIndex: "referenceNumber",
       key: "referenceNumber",
@@ -325,10 +327,24 @@ export default function CustomerDebtDetail() {
     <div>
       {/* Header của trang */}
       <Space direction="vertical" style={{ width: "100%" }} size="large">
+        <div className="flex flex-row justify-between">
         <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
           Quay lại danh sách
         </Button>
 
+        <Button
+          type="primary"
+          icon={<ReloadOutlined />}
+          onClick={handleRefresh}
+          loading={
+            isLoadingDealerDebtById ||
+            isLoadingDebtSchedules ||
+            isLoadingPaymentHistory
+          }
+        >
+          Làm mới
+        </Button>
+        </div>
         <Title level={2} className="flex items-center">
           <FileTextOutlined style={{ marginRight: 8 }} />
           Chi tiết công nợ - Mã #{dealerDebtById?.debtId || debtId}

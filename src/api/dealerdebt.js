@@ -32,8 +32,8 @@ const makePayment = (debtId, paymentData) => {
   return axiosClient.post(`/api/debts/${debtId}/payments`, paymentData); //
 };
 
-const makeCustomerPayment = (scheduleId, amount) => {
-  return axiosClient.post(`/api/debts/schedules/${scheduleId}/direct-pay?amount=${amount}`);
+const makeCustomerPayment = (scheduleId, amount, paymentMethod, note) => {
+  return axiosClient.post(`/api/debts/schedules/${scheduleId}/direct-pay?amount=${amount}&paymentMethod=${paymentMethod}&notes=${note}`);
 }
 
 const getPaymentHistory = (id) => {
