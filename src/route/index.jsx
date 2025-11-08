@@ -80,6 +80,9 @@ const SalePriceListPage = lazy(() =>
 const SalePriceDetailPage = lazy(() =>
   import("../page/dealer/manager/salePriceDetailPage.jsx")
 );
+const SalesReportPage = lazy(() =>
+  import("../page/dealer/manager/salesReportPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -306,6 +309,7 @@ const Routes = () => {
         { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
         { path: "sale-prices", element: <SalePriceListPage /> },
         { path: "sale-prices/:salePriceId", element: <SalePriceDetailPage /> },
+        { path: "sales-report", element: <SalesReportPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
