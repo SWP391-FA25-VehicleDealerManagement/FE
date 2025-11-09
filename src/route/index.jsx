@@ -344,7 +344,6 @@ const Routes = () => {
         { path: "dealer-orders", element: <DealerOrderList /> },
         { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
         { path: "sale-prices", element: <SalePriceListPage /> },
-        { path: "sale-prices/:salePriceId", element: <SalePriceDetailPage /> },
         { path: "sales-report", element: <SalesReportPage /> },
         { path: "customer-contract", element: <CustomerContractListPage /> },
         {
