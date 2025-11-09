@@ -32,6 +32,10 @@ const getDealerDebtData = async (dealerId) => {
   return axiosClient.get(`/api/debts/dealer/${dealerId}`);
 };
 
+const getStaffData = async (dealerId) => {
+  return axiosClient.get(`/api/users/dealer/${dealerId}/staff`);
+}
+
 export {
   getStaffSalesData,
   getDealerCustomerData,
@@ -40,4 +44,5 @@ export {
   getDealerEvmDebtData,
   getDealerRevenueData,
   getDealerDebtData,
+  getStaffData,
 };

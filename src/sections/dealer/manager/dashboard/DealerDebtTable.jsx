@@ -4,17 +4,15 @@ import { BankOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const DealerDebtTable = ({ data }) => {
+  // Filter only DEALER_DEBT type
+  const dealerDebts = data?.filter((debt) => debt.debtType === "DEALER_DEBT") || [];
+
   const columns = [
     {
       title: "Mã nợ",
       dataIndex: "debtId",
       key: "debtId",
       render: (id) => `#${id}`,
-    },
-    {
-      title: "Loại nợ",
-      dataIndex: "debtType",
-      key: "debtType",
     },
     {
       title: "Tổng nợ (VNĐ)",
@@ -99,7 +97,7 @@ const DealerDebtTable = ({ data }) => {
             <span>Nợ với hãng (VinFast)</span>
           </div>
           <div className="text-sm font-normal text-gray-500">
-            Tổng: {data?.length || 0} khoản nợ
+            Tổng: {dealerDebts.length} khoản nợ
           </div>
         </div>
       }
@@ -107,7 +105,7 @@ const DealerDebtTable = ({ data }) => {
     >
       <Table
         columns={columns}
-        dataSource={data}
+        dataSource={dealerDebts}
         pagination={{ pageSize: 10 }}
         size="middle"
         rowKey="debtId"

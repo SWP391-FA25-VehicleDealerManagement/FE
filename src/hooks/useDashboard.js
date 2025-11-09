@@ -7,11 +7,13 @@ import {
   getDealerEvmDebtData,
   getDealerRevenueData,
   getDealerDebtData,
+  getStaffData,
 } from "../api/dashboard";
 
 const useDashboard = create((set, get) => ({
   // State
   staffSalesData: null,
+  staffData: null,
   customerData: null,
   orderData: null,
   customerDebtData: null,
@@ -147,6 +149,24 @@ const useDashboard = create((set, get) => ({
     }
   },
 
+  // Fetch staff data
+  fetchStaffData: async (dealerId) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await getStaffData(dealerId);
+      if (response?.data?.success) {
+        set({ staffData: response.data.data, isLoading: false });
+        return response.data.data;
+      }
+      set({ isLoading: false });
+      return null;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      console.error("Error fetching staff data:", error);
+      return null;
+    }
+  },
+
   // Fetch all dashboard data
   fetchAllDashboardData: async (dealerId, year, month) => {
     try {
@@ -155,6 +175,7 @@ const useDashboard = create((set, get) => ({
       
       await Promise.all([
         state.fetchStaffSalesData(dealerId, year, month),
+        state.fetchStaffData(dealerId),
         state.fetchCustomerData(dealerId),
         state.fetchOrderData(dealerId),
         state.fetchCustomerDebtData(dealerId),
@@ -174,6 +195,7 @@ const useDashboard = create((set, get) => ({
   clearData: () => {
     set({
       staffSalesData: null,
+      staffData: null,
       customerData: null,
       orderData: null,
       customerDebtData: null,

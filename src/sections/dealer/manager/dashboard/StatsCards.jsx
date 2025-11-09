@@ -3,6 +3,7 @@ import { Card, Col, Row, Tag } from "antd";
 import {
   DollarOutlined,
   UserOutlined,
+  TeamOutlined,
   ShoppingCartOutlined,
   CreditCardOutlined,
   BankOutlined,
@@ -14,6 +15,7 @@ const StatsCards = ({ stats }) => {
   const getIcon = (type) => {
     const icons = {
       revenue: <DollarOutlined className="text-blue-600" />,
+      staff: <TeamOutlined className="text-cyan-600" />,
       customers: <UserOutlined className="text-green-600" />,
       orders: <ShoppingCartOutlined className="text-purple-600" />,
       customerDebt: <CreditCardOutlined className="text-yellow-600" />,
@@ -25,6 +27,7 @@ const StatsCards = ({ stats }) => {
   const getColor = (type) => {
     const colors = {
       revenue: "#1890ff",
+      staff: "#13c2c2",
       customers: "#52c41a",
       orders: "#722ed1",
       customerDebt: "#faad14",
@@ -38,7 +41,7 @@ const StatsCards = ({ stats }) => {
       {stats.map((stat, index) => {
         const color = getColor(stat.type);
         return (
-          <Col xs={24} sm={12} lg={6} key={index}>
+          <Col xs={24} sm={12} lg={8} key={index}>
             <Card
               className="h-full shadow-sm hover:shadow-md transition-shadow border-t-4"
               style={{ borderTopColor: color }}

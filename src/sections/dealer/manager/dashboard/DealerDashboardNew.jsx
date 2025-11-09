@@ -15,6 +15,7 @@ export default function DealerDashboard() {
   const {
     fetchAllDashboardData,
     staffSalesData,
+    staffData,
     customerData,
     orderData,
     customerDebtData,
@@ -23,7 +24,6 @@ export default function DealerDashboard() {
     isLoading,
   } = useDashboard();
 
-  const [timePeriod, setTimePeriod] = useState("month");
   const [currentDate, setCurrentDate] = useState(dayjs());
 
   // Fetch data on mount and when filters change
@@ -85,6 +85,13 @@ export default function DealerDashboard() {
         isPositive: true,
       },
       {
+        type: "staff",
+        title: "Nhân viên",
+        value: staffData?.length || 0,
+        change: "+5%",
+        isPositive: true,
+      },
+      {
         type: "customers",
         title: "Khách hàng",
         value: customerData?.length || 0,
@@ -117,87 +124,36 @@ export default function DealerDashboard() {
     ];
   };
 
-  // Process revenue chart data by time period
+  // Process revenue chart data by month only
   const getRevenueChartData = () => {
     const ordersInfo = processOrdersData();
     const orders = ordersInfo.orders || [];
 
-    if (timePeriod === "week") {
-      // Group by week (last 8 weeks)
-      const weeks = [];
-      const values = [];
+    // Group by month (last 12 months)
+    const months = [];
+    const values = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const month = dayjs().subtract(i, "month");
       
-      for (let i = 7; i >= 0; i--) {
-        const weekStart = dayjs().subtract(i, "week").startOf("week");
-        const weekEnd = dayjs().subtract(i, "week").endOf("week");
-        
-        const weekOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return orderDate.isAfter(weekStart) && orderDate.isBefore(weekEnd);
-        });
-
-        const weekRevenue = weekOrders.reduce(
-          (sum, order) => sum + (order.totalPrice || 0),
-          0
+      const monthOrders = orders.filter((order) => {
+        const orderDate = dayjs(order.createdDate);
+        return (
+          orderDate.year() === month.year() &&
+          orderDate.month() === month.month()
         );
+      });
 
-        weeks.push(`Tuần ${weekStart.format("DD/MM")}`);
-        values.push(weekRevenue);
-      }
+      const monthRevenue = monthOrders.reduce(
+        (sum, order) => sum + (order.totalPrice || 0),
+        0
+      );
 
-      return { categories: weeks, values };
-    } else if (timePeriod === "month") {
-      // Group by month (last 12 months)
-      const months = [];
-      const values = [];
-
-      for (let i = 11; i >= 0; i--) {
-        const month = dayjs().subtract(i, "month");
-        
-        const monthOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return (
-            orderDate.year() === month.year() &&
-            orderDate.month() === month.month()
-          );
-        });
-
-        const monthRevenue = monthOrders.reduce(
-          (sum, order) => sum + (order.totalPrice || 0),
-          0
-        );
-
-        months.push(month.format("MM/YYYY"));
-        values.push(monthRevenue);
-      }
-
-      return { categories: months, values };
-    } else if (timePeriod === "year") {
-      // Group by year (last 5 years)
-      const years = [];
-      const values = [];
-
-      for (let i = 4; i >= 0; i--) {
-        const year = dayjs().subtract(i, "year");
-        
-        const yearOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return orderDate.year() === year.year();
-        });
-
-        const yearRevenue = yearOrders.reduce(
-          (sum, order) => sum + (order.totalPrice || 0),
-          0
-        );
-
-        years.push(year.format("YYYY"));
-        values.push(yearRevenue);
-      }
-
-      return { categories: years, values };
+      months.push(month.format("MM/YYYY"));
+      values.push(monthRevenue);
     }
 
-    return { categories: [], values: [] };
+    return { categories: months, values };
   };
 
   // Process order status chart data
@@ -237,10 +193,6 @@ export default function DealerDashboard() {
     });
   };
 
-  const handleTimePeriodChange = (value) => {
-    setTimePeriod(value);
-  };
-
   return (
     <div className="fade-in">
       <Spin spinning={isLoading}>
@@ -253,18 +205,6 @@ export default function DealerDashboard() {
               Tổng quan về doanh thu, đơn hàng và công nợ
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <Select
-              value={timePeriod}
-              style={{ width: 150 }}
-              onChange={handleTimePeriodChange}
-              options={[
-                { value: "week", label: "Theo tuần" },
-                { value: "month", label: "Theo tháng" },
-                { value: "year", label: "Theo năm" },
-              ]}
-            />
-          </div>
         </div>
 
         {/* Statistics Cards */}
@@ -272,7 +212,7 @@ export default function DealerDashboard() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <RevenueChart data={getRevenueChartData()} timePeriod={timePeriod} />
+          <RevenueChart data={getRevenueChartData()} />
           <OrderStatusChart data={getOrderStatusChartData()} />
         </div>
 

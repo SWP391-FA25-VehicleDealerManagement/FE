@@ -29,7 +29,7 @@ const OrderStatusChart = ({ data }) => {
     return null;
   };
 
-  // Custom label
+  // Custom label - only show if percentage is significant
   const renderCustomLabel = ({
     cx,
     cy,
@@ -37,7 +37,11 @@ const OrderStatusChart = ({ data }) => {
     innerRadius,
     outerRadius,
     percent,
+    value,
   }) => {
+    // Only show label if slice is bigger than 5%
+    if (percent < 0.05) return null;
+
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
     const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
@@ -49,10 +53,10 @@ const OrderStatusChart = ({ data }) => {
         fill="white"
         textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
-        fontSize="12px"
+        fontSize="14px"
         fontWeight="bold"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {value}
       </text>
     );
   };
@@ -95,20 +99,25 @@ const OrderStatusChart = ({ data }) => {
             <Tooltip content={<CustomTooltip />} />
             <Legend
               verticalAlign="bottom"
-              height={36}
+              height={50}
               iconType="circle"
-              formatter={(value, entry) => (
-                <span className="text-sm">
-                  {value} ({entry.payload.value})
-                </span>
-              )}
+              wrapperStyle={{ paddingTop: "20px" }}
+              formatter={(value, entry) => {
+                const total = data.values.reduce((a, b) => a + b, 0);
+                const percentage = ((entry.payload.value / total) * 100).toFixed(1);
+                return (
+                  <span className="text-sm">
+                    {value}: <span className="font-semibold">{entry.payload.value}</span> ({percentage}%)
+                  </span>
+                );
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
         {/* Center text showing total */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-          <div className="text-2xl font-bold text-gray-700">{totalOrders}</div>
-          <div className="text-sm text-gray-500">Tổng đơn</div>
+        <div className="absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+          <div className="text-3xl font-bold text-gray-700">{totalOrders}</div>
+          <div className="text-sm text-gray-500 mt-1">Tổng đơn</div>
         </div>
       </div>
     </Card>

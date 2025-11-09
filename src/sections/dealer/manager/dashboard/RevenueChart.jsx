@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const RevenueChart = ({ data, timePeriod }) => {
+const RevenueChart = ({ data }) => {
   // Transform data for Recharts
   const chartData = data.categories.map((category, index) => ({
     name: category,
