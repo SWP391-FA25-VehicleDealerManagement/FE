@@ -60,12 +60,12 @@ const StatsCards = ({ stats }) => {
                     {stat.title}
                   </span>
                 </div>
-                {stat.change && (
+                {/* {stat.change && (
                   <Tag color={stat.isPositive ? "success" : "error"}>
                     {stat.isPositive ? <RiseOutlined /> : <FallOutlined />}{" "}
                     {stat.change}
                   </Tag>
-                )}
+                )} */}
               </div>
               <div className="mt-2">
                 <span

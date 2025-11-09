@@ -158,7 +158,7 @@ export default function EvmContractList() {
       render: (_, record) => (
         <Space>
           <Button
-            type="link"
+            type="primary"
             icon={<EyeOutlined />}
             onClick={() =>
               navigate(`/dealer-manager/evm-contract/${record.contractId}`)
