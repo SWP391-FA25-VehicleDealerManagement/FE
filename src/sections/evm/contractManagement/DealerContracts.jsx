@@ -51,6 +51,8 @@ export default function ContractsTargets() {
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // add or edit
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [form] = Form.useForm();
   const [targetForm] = Form.useForm();
 
@@ -262,22 +264,28 @@ export default function ContractsTargets() {
       title: "Số HĐ",
       dataIndex: "contractNumber",
       key: "contractNumber",
-      width: 120,
+      width: 150,
+      render: (text) => <span className="font-semibold">{text}</span>,
     },
     {
       title: "Đại lý",
       dataIndex: "dealerName",
       key: "dealerName",
+      width: 200,
     },
     {
       title: "Thời hạn",
       key: "duration",
       width: 200,
       render: (_, record) => (
-        <span>
-          {dayjs(record.startDate).format("DD/MM/YYYY")} -{" "}
-          {dayjs(record.endDate).format("DD/MM/YYYY")}
-        </span>
+        <div>
+          <div className="text-sm">
+            {dayjs(record.startDate).format("DD/MM/YYYY")}
+          </div>
+          <div className="text-xs text-gray-500">
+            đến {dayjs(record.endDate).format("DD/MM/YYYY")}
+          </div>
+        </div>
       ),
     },
     {
@@ -286,18 +294,30 @@ export default function ContractsTargets() {
       key: "contractValue",
       width: 150,
       render: (value) => (
-        <Text strong>{value.toLocaleString("vi-VN")} đ</Text>
+        <span className="font-semibold text-green-600">
+          {new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(value)}
+        </span>
       ),
+    },
+    {
+      title: "Điều khoản thanh toán",
+      dataIndex: "paymentTerms",
+      key: "paymentTerms",
+      width: 200,
+      ellipsis: true,
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 150,
       render: (status) => {
         const statusConfig = {
-          active: { color: "success", text: "Đang hoạt động", icon: <CheckCircleOutlined /> },
-          pending: { color: "warning", text: "Chờ duyệt", icon: <ClockCircleOutlined /> },
+          active: { color: "green", text: "Đang hoạt động", icon: <CheckCircleOutlined /> },
+          pending: { color: "orange", text: "Chờ duyệt", icon: <ClockCircleOutlined /> },
           expired: { color: "default", text: "Hết hạn", icon: <ExclamationCircleOutlined /> },
         };
         const config = statusConfig[status] || statusConfig.pending;
@@ -312,26 +332,26 @@ export default function ContractsTargets() {
       title: "Thao tác",
       key: "action",
       width: 200,
+      fixed: "right",
       render: (_, record) => (
         <Space size="small">
           <Button
-            type="primary"
-            size="small"
+            type="link"
             icon={<EyeOutlined />}
             onClick={() => showContractDetail(record)}
           >
             Chi tiết
           </Button>
           <Button
-            size="small"
+            type="link"
             icon={<EditOutlined />}
             onClick={() => showEditContractModal(record)}
           >
             Sửa
           </Button>
           <Button
+            type="link"
             danger
-            size="small"
             icon={<DeleteOutlined />}
             onClick={() => handleDeleteContract(record)}
           >
@@ -385,10 +405,14 @@ export default function ContractsTargets() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <Title level={2} className="flex items-center">
-          <FileTextOutlined style={{ marginRight: 8 }} /> Hợp đồng & Mục tiêu
+      <div className="mb-6">
+        <Title level={3} className="!mb-2">
+          <FileTextOutlined className="mr-2" />
+          Hợp đồng & Mục tiêu Đại lý
         </Title>
+        <p className="text-gray-500">
+          Quản lý hợp đồng hợp tác và mục tiêu kinh doanh với các đại lý
+        </p>
       </div>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
@@ -403,64 +427,104 @@ export default function ContractsTargets() {
           key="contracts"
         >
           {/* Statistics Cards */}
-          <Row gutter={16} className="mb-4">
-            <Col span={8}>
-              <Card>
+          <Row gutter={[16, 16]} className="mb-6">
+            <Col xs={24} sm={12} lg={8}>
+              <Card className="shadow-sm hover:shadow-md transition-shadow">
                 <Statistic
-                  title="Tổng số hợp đồng"
+                  title={<span className="text-gray-600">Tổng số hợp đồng</span>}
                   value={contractStats.total}
-                  prefix={<FileTextOutlined />}
+                  prefix={<FileTextOutlined className="text-blue-500" />}
+                  valueStyle={{ color: "#1890ff", fontWeight: "bold" }}
                 />
               </Card>
             </Col>
-            <Col span={8}>
-              <Card>
+            <Col xs={24} sm={12} lg={8}>
+              <Card className="shadow-sm hover:shadow-md transition-shadow">
                 <Statistic
-                  title="Hợp đồng đang hoạt động"
+                  title={<span className="text-gray-600">Hợp đồng đang hoạt động</span>}
                   value={contractStats.active}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: "#3f8600" }}
+                  prefix={<CheckCircleOutlined className="text-green-500" />}
+                  valueStyle={{ color: "#52c41a", fontWeight: "bold" }}
                 />
               </Card>
             </Col>
-            <Col span={8}>
-              <Card>
+            <Col xs={24} sm={12} lg={8}>
+              <Card className="shadow-sm hover:shadow-md transition-shadow">
                 <Statistic
-                  title="Tổng giá trị hợp đồng"
+                  title={<span className="text-gray-600">Tổng giá trị hợp đồng</span>}
                   value={contractStats.totalValue}
-                  prefix={<DollarOutlined />}
-                  suffix="đ"
-                  precision={0}
-                  valueStyle={{ color: "#1890ff" }}
+                  prefix={<DollarOutlined className="text-orange-500" />}
+                  formatter={(value) =>
+                    new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(value)
+                  }
+                  valueStyle={{ color: "#fa8c16", fontWeight: "bold" }}
                 />
               </Card>
             </Col>
           </Row>
 
-          <Card
-            extra={
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex-1 max-w-2xl">
+                <Input
+                  placeholder="Tìm kiếm theo số HĐ, đại lý..."
+                  prefix={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  size="large"
+                  allowClear
+                />
+              </div>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={showAddContractModal}
+                size="large"
+                className="ml-4"
               >
                 Thêm hợp đồng
               </Button>
+            </div>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              size="large"
+              style={{ width: 250 }}
+              options={[
+                { value: "all", label: "Tất cả trạng thái" },
+                { value: "active", label: "🟢 Đang hoạt động" },
+                { value: "pending", label: "🟠 Chờ duyệt" },
+                { value: "expired", label: "⚪ Hết hạn" },
+              ]}
+            />
+          </div>
+
+          <Table
+            columns={contractColumns}
+            dataSource={contracts.filter((contract) => {
+              const searchLower = searchText.toLowerCase();
+              const matchSearch =
+                contract.contractNumber?.toLowerCase().includes(searchLower) ||
+                contract.dealerName?.toLowerCase().includes(searchLower);
+              const matchStatus =
+                statusFilter === "all" || contract.status === statusFilter;
+              return matchSearch && matchStatus;
+            })}
+            rowKey="contractId"
+            loading={isLoading}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `Tổng ${total} hợp đồng`,
+            }}
+            scroll={{ x: 1200 }}
+            rowClassName={(record) =>
+              record.status === "pending" ? "bg-orange-50" : ""
             }
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center p-10">
-                <Spin size="large" />
-              </div>
-            ) : (
-              <Table
-                columns={contractColumns}
-                dataSource={contracts}
-                rowKey="contractId"
-                pagination={{ pageSize: 10 }}
-              />
-            )}
-          </Card>
+          />
         </TabPane>
       </Tabs>
 
