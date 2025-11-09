@@ -187,22 +187,6 @@ export default function EvmContractList() {
           <p className="text-gray-500">
             Danh sách hợp đồng mua xe từ EVM (Electric Vehicle Manufacturer)
           </p>
-          <div className="flex gap-2 mt-2">
-            {pendingCount > 0 && (
-              <Badge
-                count={pendingCount}
-                showZero
-                style={{ backgroundColor: "#ff7a00" }}
-              >
-                <Tag color="orange" className="px-3 py-1">
-                  ⏳ Hợp đồng chờ xác nhận
-                </Tag>
-              </Badge>
-            )}
-            <Tag color="blue" icon={<InfoCircleOutlined />} className="px-3 py-1">
-              📌 Chỉ có thể xem và xác nhận đã ký hợp đồng
-            </Tag>
-          </div>
         </div>
       </div>
 
