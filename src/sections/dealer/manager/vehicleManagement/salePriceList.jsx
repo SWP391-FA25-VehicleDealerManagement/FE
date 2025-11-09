@@ -24,7 +24,7 @@ import {
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import useSalePrice from "../../../../hooks/useSalePrice";
-import useVariantStore from "../../../../hooks/useVariant";
+import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import dayjs from "dayjs";
 
@@ -44,7 +44,8 @@ export default function SalePriceList() {
     updateSalePrice,
     deleteSalePrice,
   } = useSalePrice();
-  const { variants, fetchVariants } = useVariantStore();
+  const { dealerCarLists, isLoadingVehicleDealers, fetchVehicleDealers } =
+    useVehicleStore();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -71,7 +72,10 @@ export default function SalePriceList() {
 
   const fetchData = async () => {
     try {
-      await Promise.all([fetchSalePricesByDealer(dealerId), fetchVariants()]);
+      await Promise.all([
+        fetchSalePricesByDealer(dealerId),
+        fetchVehicleDealers(dealerId),
+      ]);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Không thể tải dữ liệu", {
@@ -263,10 +267,10 @@ export default function SalePriceList() {
   const columns = [
     {
       title: "ID",
-      dataIndex: "salePriceId",
-      key: "salePriceId",
+      dataIndex: "salepriceId",
+      key: "salepriceId",
       width: 80,
-      sorter: (a, b) => a.salePriceId - b.salePriceId,
+      sorter: (a, b) => a.salepriceId - b.salepriceId,
     },
     {
       title: "Phiên bản xe",

@@ -5,6 +5,7 @@ import {
   updateTestDriveStatus,
   cancelTestDrive,
   ReschuduleTestDrive,
+  completeTestDrive,
 } from "../api/appointment";
 
 const useTestDriveStore = create((set, get) => ({
@@ -69,6 +70,19 @@ const useTestDriveStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await cancelTestDrive(testDriveId);
+      if (response && response.status === 200) {
+        set({ isLoading: false });
+      }
+      return response;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  completeTestDrive: async (testDriveId, note = "") => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await completeTestDrive(testDriveId, note);
       if (response && response.status === 200) {
         set({ isLoading: false });
       }

@@ -165,19 +165,25 @@ export default function DealerList() {
               type="primary"
               icon={<EyeOutlined />}
               size="small"
-              onClick={() => console.log("View customer:", record)}
             >
               Xem
             </Button>
           </Link>
           <Button
+            type="default"
+            size="small"
+            onClick={() => showDeleteConfirm(record)}
+          >
+            Chỉnh sửa
+          </Button>
+          {/* <Button
             danger
             icon={<DeleteOutlined />}
             size="small"
             onClick={() => showDeleteConfirm(record)}
           >
             Xóa
-          </Button>
+          </Button> */}
         </Space>
       ),
     },

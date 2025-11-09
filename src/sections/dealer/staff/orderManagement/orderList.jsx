@@ -1,4 +1,3 @@
-// components/order/orderList.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, Card, Typography, Spin, Tag, Modal } from "antd";
 import {
@@ -17,6 +16,7 @@ import useAuthen from "../../../../hooks/useAuthen";
 import CreateOrderModal from "./createOrderModal";
 import CreateQuoteModal from "./CreateQuoteModal.jsx";
 import PaymentModal from "./PaymentModal.jsx";
+import CancelOrderModal from "./CancelOrderModal.jsx";
 import usePaymentStore from "../../../../hooks/usePayment.js";
 
 const { Title, Text } = Typography;
@@ -32,12 +32,14 @@ export default function OrderList() {
     Customer,
     isLoadingCustomer,
   } = useDealerOrder();
-  const { payment, isLoadingPayment, getPayment } = usePaymentStore();
+  const { payment, getPayment } = usePaymentStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [mergedOrders, setMergedOrders] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
@@ -76,20 +78,25 @@ export default function OrderList() {
       payment.forEach((p) => {
         const currentTotal = paymentMap.get(p.orderId) || 0;
 
-        if (p.status === "COMPLETED" || p.status === "Completed") {
-          paymentMap.set(p.orderId, currentTotal + (p.amount || 0));
+        // ✅ Tính tổng TẤT CẢ payments có amount > 0 (bỏ qua check status)
+        // Vì nếu order status = PAID thì payment đã được xử lý thành công
+        if (p.amount && p.amount > 0) {
+          const newTotal = currentTotal + p.amount;
+          paymentMap.set(p.orderId, newTotal);
         }
       });
+
       const combinedData = filteredOrders.map((order) => {
         const customer = customerMap.get(order.customerId);
         const totalPaid = paymentMap.get(order.orderId) || 0;
 
         return {
           ...order,
-          customerName: customer ? customer.customerName : "N/A", //
+          customerName: customer ? customer.customerName : "N/A",
           totalPaid: totalPaid,
         };
       });
+
       setMergedOrders(combinedData);
     } else {
       setMergedOrders([]);
@@ -106,17 +113,17 @@ export default function OrderList() {
   };
 
   const handleCancelOrder = (record) => {
-    // Logic huỷ đơn
-    Modal.confirm({
-      title: "Xác nhận huỷ đơn hàng",
-      content: `Bạn có chắc muốn huỷ đơn hàng ${record.orderId}?`,
-      okText: "Xác nhận",
-      cancelText: "Không",
-      onOk: () => {
-        // Gọi API huỷ đơn...
-        toast.success(`Đã huỷ đơn hàng ${record.orderId}`);
-      },
-    });
+    setSelectedOrderForCancel(record);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCloseCancelModal = () => {
+    setIsCancelModalOpen(false);
+    setSelectedOrderForCancel(null);
+  };
+
+  const handleOrderCancelled = () => {
+    loadData(); // Reload data after cancellation
   };
 
   const handleClosePaymentModal = () => {
@@ -289,15 +296,22 @@ export default function OrderList() {
 
       <CreateQuoteModal
         isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
         onOrderCreated={() => {
           loadData();
-          setIsModalOpen(false);
+          setIsQuoteModalOpen(false);
         }}
       />
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePaymentModal}
         order={selectedOrderForPayment}
+      />
+      <CancelOrderModal
+        isOpen={isCancelModalOpen}
+        onClose={handleCloseCancelModal}
+        order={selectedOrderForCancel}
+        onCancelled={handleOrderCancelled}
       />
     </div>
   );

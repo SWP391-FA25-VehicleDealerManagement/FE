@@ -1,6 +1,6 @@
 import React from "react";
 import { Suspense, lazy } from "react";
-import { useRoutes, Outlet, Navigate } from "react-router-dom";
+import { useRoutes, Outlet, Navigate, useLocation } from "react-router-dom";
 import Dealer from "../layout/dealer.jsx";
 import Admin from "../layout/admin.jsx";
 import EvmStaff from "../layout/evmStaff.jsx";
@@ -11,6 +11,11 @@ import Error404 from "../components/404.jsx";
 import Error403 from "../components/403.jsx";
 import useAuthen from "../hooks/useAuthen";
 import CustomerDetail from "../sections/dealer/manager/customerManagement/customerDetail.jsx";
+
+//Payment Callback Page
+const PaymentCallbackPage = lazy(() =>
+  import("../page/payment/PaymentCallbackPage")
+);
 
 //Import page
 //Authentication
@@ -77,8 +82,17 @@ const CustomerDetailPage = lazy(() =>
 const SalePriceListPage = lazy(() =>
   import("../page/dealer/manager/salePriceListPage.jsx")
 );
-const SalePriceDetailPage = lazy(() =>
-  import("../page/dealer/manager/salePriceDetailPage.jsx")
+const CustomerContractDetailPage = lazy(() =>
+  import("../page/dealer/manager/customerContractDetailPage.jsx")
+);
+const CustomerContractListPage = lazy(() =>
+  import("../page/dealer/manager/customerContractListPage.jsx")
+);
+const EvmContractListPage = lazy(() =>
+  import("../page/dealer/manager/evmContractListPage.jsx")
+);
+const EvmContractDetailPage = lazy(() =>
+  import("../page/dealer/manager/evmContractDetailPage.jsx")
 );
 const SalesReportPage = lazy(() =>
   import("../page/dealer/manager/salesReportPage.jsx")
@@ -163,6 +177,12 @@ const DeliveryDetailPage = lazy(() =>
 const FeedbackListPage = lazy(() =>
   import("../page/dealer/staff/feedbackListPage.jsx")
 );
+const ContractListPage = lazy(() =>
+  import("../page/dealer/staff/contractListPage.jsx")
+);
+const ContractDetailPage = lazy(() =>
+  import("../page/dealer/staff/contractDetailPage.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -215,6 +235,22 @@ const Routes = () => {
       ),
     },
     { path: "/403", element: <Error403 /> },
+    {
+      path: "/vnpay-return",
+      element: (
+        <Suspense fallback={<Loading />}>
+          <PaymentCallbackPage />
+        </Suspense>
+      ),
+    },
+    {
+      path: "/payment-callback",
+      element: (
+        <Suspense fallback={<Loading />}>
+          <PaymentCallbackPage />
+        </Suspense>
+      ),
+    },
 
     // Admin routes
     {
@@ -310,6 +346,16 @@ const Routes = () => {
         { path: "sale-prices", element: <SalePriceListPage /> },
         { path: "sale-prices/:salePriceId", element: <SalePriceDetailPage /> },
         { path: "sales-report", element: <SalesReportPage /> },
+        { path: "customer-contract", element: <CustomerContractListPage /> },
+        {
+          path: "customer-contract/:contractId",
+          element: <CustomerContractDetailPage />,
+        },
+        { path: "evm-contract", element: <EvmContractListPage /> },
+        {
+          path: "evm-contract/:contractId",
+          element: <EvmContractDetailPage />,
+        },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -351,6 +397,11 @@ const Routes = () => {
         { path: "deliveries", element: <DeliveryPage /> },
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
         { path: "reviews", element: <FeedbackListPage /> },
+        { path: "customer-contract", element: <ContractListPage /> },
+        {
+          path: "customer-contract/:contractId",
+          element: <ContractDetailPage />,
+        },
         { path: "*", element: <Error404 /> },
       ],
     },

@@ -5,6 +5,7 @@ import {
   getCustomer,
   getCustomerOrderById,
   getCustomerById,
+  CancelCustomerOrderById,
 } from "../api/dealerOrder";
 
 const useDealerOrder = create((set) => ({
@@ -95,6 +96,22 @@ const useDealerOrder = create((set) => ({
     } catch (error) {
       console.error("Failed to create dealer order:", error);
       set({ isLoadingCreateOrder: false });
+      throw error;
+    }
+  },
+
+  isLoadingCancelOrder: false,
+  CancelCustomerOrderById: async (id) => {
+    set({ isLoadingCancelOrder: true });
+    try {
+      const response = await CancelCustomerOrderById(id);
+      if (response && response.status === 200) {
+        set({ isLoadingCancelOrder: false });
+      }
+      return response;
+    } catch (error) {
+      console.error("Failed to cancel customer order:", error);
+      set({ isLoadingCancelOrder: false });
       throw error;
     }
   },

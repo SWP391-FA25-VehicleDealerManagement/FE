@@ -60,7 +60,7 @@ const useEvmStaffStore = create(
         } catch (err) {
           console.error("createEvmStaff error:", err);
           set({ isLoading: false });
-          toast.error("Tạo nhân viên thất bại.");
+          toast.error(err?.response.data.message);
           throw err;
         }
       },
@@ -74,7 +74,9 @@ const useEvmStaffStore = create(
           if (updated) {
             set({
               evmStaffs: get().evmStaffs.map((s) =>
-                String(s.staffId ?? s.id ?? s.userId) === String(id) ? updated : s
+                String(s.staffId ?? s.id ?? s.userId) === String(id)
+                  ? updated
+                  : s
               ),
               isLoading: false,
             });

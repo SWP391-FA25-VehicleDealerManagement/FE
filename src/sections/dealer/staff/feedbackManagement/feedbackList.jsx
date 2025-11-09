@@ -10,25 +10,39 @@ import {
   Space,
   Empty,
 } from "antd";
-import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
+import { SearchOutlined, EyeOutlined, PlusOutlined } from "@ant-design/icons";
 import useFeedback from "../../../../hooks/useFeedback";
 import { getFeedbackById } from "../../../../api/feedBack";
+import CreateFeedbackModal from "./CreateFeedbackModal";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const typeColor = (t) =>
-  (t || "").toUpperCase() === "POSITIVE"
-    ? "green"
-    : (t || "").toUpperCase() === "NEGATIVE"
-    ? "red"
-    : "blue";
-const statusColor = (s) =>
-  (s || "").toUpperCase() === "REVIEWED"
-    ? "geekblue"
-    : (s || "").toUpperCase() === "PENDING"
-    ? "gold"
-    : "default";
+const getTypeProps = (type) => {
+  const upperType = type?.toUpperCase();
+  switch (upperType) {
+    case "POSITIVE":
+      return { color: "green", text: "Tích cực" };
+    case "NEGATIVE":
+      return { color: "red", text: "Tiêu cực" };
+    case "NEUTRAL":
+      return { color: "blue", text: "Trung lập" };
+    default:
+      return { color: "default", text: type || "Không rõ" };
+  }
+};
+
+const getStatusProps = (status) => {
+  const upperStatus = status?.toUpperCase();
+  switch (upperStatus) {
+    case "REVIEWED":
+      return { color: "geekblue", text: "Đã xem xét" };
+    case "PENDING":
+      return { color: "gold", text: "Đang chờ" };
+    default:
+      return { color: "default", text: status || "Không rõ" };
+  }
+};
 
 export default function DealerStaffFeedbackListPage() {
   const { list = [], isLoading = false, fetchAll, fetchById } = useFeedback();
@@ -37,6 +51,7 @@ export default function DealerStaffFeedbackListPage() {
   const [filterType, setFilterType] = useState("");
   const [selected, setSelected] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // call fetchAll once on mount — keep dependency array size constant
   useEffect(() => {
@@ -61,8 +76,11 @@ export default function DealerStaffFeedbackListPage() {
     return data.filter((it) => {
       const text = (it.content || it.description || "").toLowerCase();
       const meta = (it.customerName || it.email || "").toLowerCase();
-      const textMatch = !q || text.includes(q.toLowerCase()) || meta.includes(q.toLowerCase());
-      const typeMatch = !filterType || (String(it.feedbackType || "").toUpperCase() === filterType);
+      const textMatch =
+        !q || text.includes(q.toLowerCase()) || meta.includes(q.toLowerCase());
+      const typeMatch =
+        !filterType ||
+        String(it.feedbackType || "").toUpperCase() === filterType;
       return textMatch && typeMatch;
     });
   }, [data, q, filterType]);
@@ -107,38 +125,36 @@ export default function DealerStaffFeedbackListPage() {
       render: (v, r, i) => v ?? i + 1,
     },
     {
-      title: "Người phản hồi",
-      dataIndex: "customerName",
-      key: "customerName",
-      render: (v, r) => v || r.email || "Khách",
-    },
-    {
       title: "Loại",
       dataIndex: "feedbackType",
       key: "feedbackType",
       width: 120,
-      render: (t) => <Tag color={typeColor(t)}>{t ?? "NEUTRAL"}</Tag>,
+      render: (t) => {
+        const { color, text } = getTypeProps(t);
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
     {
       title: "Nội dung",
       dataIndex: "content",
       key: "content",
       ellipsis: true,
-      render: (c, r) => (c ? String(c).slice(0, 120) : r.description ? String(r.description).slice(0, 120) : "—"),
+      render: (c, r) =>
+        c
+          ? String(c).slice(0, 120)
+          : r.description
+          ? String(r.description).slice(0, 120)
+          : "—",
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (s) => <Tag color={statusColor(s)}>{s ?? "PENDING"}</Tag>,
-    },
-    {
-      title: "Ngày",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 140,
-      render: (d) => (d ? new Date(d).toLocaleString() : "—"),
+      render: (s) => {
+        const { color, text } = getStatusProps(s);
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
     {
       title: "Thao tác",
@@ -156,31 +172,49 @@ export default function DealerStaffFeedbackListPage() {
 
   return (
     <>
-      <div style={{ marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
-        <Title level={4} style={{ margin: 0 }}>
-          Quản lý Feedback
-        </Title>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Title level={4} style={{ margin: 0 }}>
+            Quản lý Feedback
+          </Title>
 
-        <Input
-          placeholder="Tìm kiếm nội dung hoặc người phản hồi"
-          prefix={<SearchOutlined />}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          style={{ width: 360 }}
-          allowClear
-        />
+          <Input
+            placeholder="Tìm kiếm nội dung hoặc người phản hồi"
+            prefix={<SearchOutlined />}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            style={{ width: 360 }}
+            allowClear
+          />
 
-        <Select
-          placeholder="Lọc theo loại"
-          style={{ width: 160 }}
-          allowClear
-          value={filterType || undefined}
-          onChange={(val) => setFilterType(val || "")}
+          <Select
+            placeholder="Lọc theo loại"
+            style={{ width: 160 }}
+            allowClear
+            value={filterType || undefined}
+            onChange={(val) => setFilterType(val || "")}
+          >
+            <Option value="POSITIVE">POSITIVE</Option>
+            <Option value="NEGATIVE">NEGATIVE</Option>
+            <Option value="NEUTRAL">NEUTRAL</Option>
+          </Select>
+        </div>
+
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsCreateModalOpen(true)}
         >
-          <Option value="POSITIVE">POSITIVE</Option>
-          <Option value="NEGATIVE">NEGATIVE</Option>
-          <Option value="NEUTRAL">NEUTRAL</Option>
-        </Select>
+          Tạo Feedback
+        </Button>
       </div>
 
       <Table
@@ -193,7 +227,6 @@ export default function DealerStaffFeedbackListPage() {
       />
 
       <Modal
-        title="Chi tiết Feedback"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={[
@@ -204,29 +237,129 @@ export default function DealerStaffFeedbackListPage() {
         width={720}
       >
         {selected ? (
-          <div>
-            <Text strong>Người phản hồi: </Text>
-            <Text>{selected.customerName || selected.email || "—"}</Text>
-            <br />
-            <Text strong>Loại: </Text>
-            <Tag color={typeColor(selected.feedbackType)}>{selected.feedbackType || "NEUTRAL"}</Tag>
-            <br />
-            <Text strong>Trạng thái: </Text>
-            <Tag color={statusColor(selected.status)}>{selected.status || "PENDING"}</Tag>
-            <br />
-            <br />
-            <Text strong>Mô tả:</Text>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{selected.description || "—"}</div>
-            <br />
-            <Text strong>Nội dung:</Text>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{selected.content || "—"}</div>
-            <br />
-            <Text type="secondary">Ngày: {selected.createdAt ? new Date(selected.createdAt).toLocaleString() : "—"}</Text>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Thông tin cơ bản */}
+            <div>
+              <Text strong style={{ fontSize: 16 }}>Thông tin Feedback</Text>
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <Text strong>ID: </Text>
+                  <Text>{selected.feedbackId || "—"}</Text>
+                </div>
+                <div>
+                  <Text strong>Loại: </Text>
+                  <Tag color={getTypeProps(selected.feedbackType).color}>
+                    {getTypeProps(selected.feedbackType).text}
+                  </Tag>
+                </div>
+                <div>
+                  <Text strong>Trạng thái: </Text>
+                  <Tag color={getStatusProps(selected.status).color}>
+                    {getStatusProps(selected.status).text}
+                  </Tag>
+                </div>
+              </div>
+            </div>
+
+            {/* Mô tả */}
+            <div>
+              <Text strong>Mô tả:</Text>
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 4,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {selected.description || "—"}
+              </div>
+            </div>
+
+            {/* Nội dung */}
+            <div>
+              <Text strong>Nội dung:</Text>
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 4,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {selected.content || "—"}
+              </div>
+            </div>
+
+            {/* Thông tin Test Drive */}
+            {selected.testDrive && (
+              <div>
+                <Text strong style={{ fontSize: 16 }}>Thông tin Test Drive</Text>
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <Text strong>ID Test Drive: </Text>
+                    <Text>{selected.testDrive.testDriveId || "—"}</Text>
+                  </div>
+                  <div>
+                    <Text strong>Ngày hẹn: </Text>
+                    <Text>
+                      {selected.testDrive.scheduledDate
+                        ? new Date(selected.testDrive.scheduledDate).toLocaleString("vi-VN")
+                        : "—"}
+                    </Text>
+                  </div>
+                  <div>
+                    <Text strong>Trạng thái: </Text>
+                    <Tag color={selected.testDrive.status === "COMPLETED" ? "green" : "blue"}>
+                      {selected.testDrive.status === "COMPLETED" ? "Đã hoàn thành" : selected.testDrive.status}
+                    </Tag>
+                  </div>
+                  <div>
+                    <Text strong>Người phân công: </Text>
+                    <Text>{selected.testDrive.assignedBy || "—"}</Text>
+                  </div>
+                  <div>
+                    <Text strong>Ngày tạo: </Text>
+                    <Text>
+                      {selected.testDrive.createdDate
+                        ? new Date(selected.testDrive.createdDate).toLocaleString("vi-VN")
+                        : "—"}
+                    </Text>
+                  </div>
+                  {selected.testDrive.notes && (
+                    <div>
+                      <Text strong>Ghi chú: </Text>
+                      <div
+                        style={{
+                          marginTop: 4,
+                          padding: 8,
+                          backgroundColor: "#f5f5f5",
+                          borderRadius: 4,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {selected.testDrive.notes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div>Không có dữ liệu</div>
         )}
       </Modal>
+
+      <CreateFeedbackModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          fetchAll();
+        }}
+      />
     </>
   );
 }
