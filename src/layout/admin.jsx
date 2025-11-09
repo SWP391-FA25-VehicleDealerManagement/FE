@@ -31,14 +31,7 @@ const adminMenuItems = [
     null,
     "/admin/dashboard"
   ),
-  getItem("Báo cáo & Phân tích", "reports", <BarChartOutlined />, [
-    getItem(
-      "Doanh số theo vùng",
-      "sales-by-region",
-      <LineChartOutlined />,
-      null,
-      "/admin/sales-by-region"
-    ),
+  getItem("Báo cáo", "reports", <BarChartOutlined />, [
     getItem(
       "Doanh số theo đại lý",
       "sales-by-dealer",
@@ -52,13 +45,6 @@ const adminMenuItems = [
       <FileTextOutlined />,
       null,
       "/admin/inventory-consumption"
-    ),
-    getItem(
-      "Báo cáo tổng hợp",
-      "summary-reports",
-      <BarChartOutlined />,
-      null,
-      "/admin/summary-reports"
     ),
   ]),
   getItem(
