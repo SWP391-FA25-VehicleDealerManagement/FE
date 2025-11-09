@@ -1,23 +1,31 @@
 import axiosClient from "../config/axiosClient";
 
 const getDealerData = async () => {
-    return axiosClient.get(`/api/dealers/all/`);
-}
+  return axiosClient.get(`/api/dealers/all`);
+};
 
 const getDealerRequestData = async () => {
-    return axiosClient.get(`/api/dealer-requests/status/DELIVERED`);
-}
-
-const getCustomerDebtData = async (dealerId) => {
-    return axiosClient.get(`/api/debts/customer-debts/${dealerId}`);
-}
+  return axiosClient.get(`/api/dealer-requests`);
+};
 
 const getDealerSaleData = async (year, month) => {
-    return axiosClient.get(
-      `/api/reports/dealer/summary?year=${year}&month=${month}`
-    );
-  }
+  return axiosClient.get(
+    `/api/reports/dealers/summary?year=${year}&month=${month}`
+  );
+};
 
+const getDealerDebtData = async () => {
+  return axiosClient.get(`/api/debts/dealer-debts`);
+};
 
+const getEvmStaffData = async () => {
+  return axiosClient.get(`/api/evmstaff`);
+}
 
-export { getDealerData, getDealerRequestData, getCustomerDebtData, getDealerSaleData };
+export {
+  getDealerData,
+  getDealerRequestData,
+  getDealerDebtData,
+  getDealerSaleData,
+  getEvmStaffData,
+};
