@@ -1,4 +1,3 @@
-// src/sections/dealer/manager/customerManagement/customerDetail.jsx
 import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -24,12 +23,30 @@ import useCustomerStore from "../../../../hooks/useCustomer";
 const { Title } = Typography;
 
 export default function CustomerDetail() {
-  const { customerId } = useParams();
-  const { customerDetail, isLoading, getCustomerById } = useCustomerStore();
+  const params = useParams();
+  // support both :customerId and :id route param
+  const customerId = params.customerId ?? params.id ?? params.customer?.customerId;
+
+  // support both possible hook APIs: getCustomerById or fetchCustomerById
+  const {
+    customerDetail,
+    isLoading,
+    getCustomerById,
+    fetchCustomerById,
+  } = useCustomerStore();
 
   useEffect(() => {
-    if (customerId) getCustomerById(customerId);
-  }, [customerId, getCustomerById]);
+    if (!customerId) return;
+    const fn = typeof getCustomerById === "function" ? getCustomerById : fetchCustomerById;
+    if (typeof fn === "function") {
+      fn(customerId).catch((err) => {
+        // optional: debug
+        console.error("load customer detail failed:", err);
+      });
+    } else {
+      console.warn("No function found in useCustomerStore to load customer by id");
+    }
+  }, [customerId, getCustomerById, fetchCustomerById]);
 
   // demo data – thay bằng dữ liệu thực nếu có
   const interactions = [
@@ -89,7 +106,7 @@ export default function CustomerDetail() {
                   </>
                 }
               >
-                {customerDetail?.phone || "—"}
+                {customerDetail?.phone || customerDetail?.mobile || "—"}
               </Descriptions.Item>
               <Descriptions.Item
                 label={
@@ -98,10 +115,10 @@ export default function CustomerDetail() {
                   </>
                 }
               >
-                {customerDetail?.address || "—"}
+                {customerDetail?.address || customerDetail?.location || "—"}
               </Descriptions.Item>
               <Descriptions.Item label="Ghi chú">
-                {customerDetail?.note || "—"}
+                {customerDetail?.note || customerDetail?.description || "—"}
               </Descriptions.Item>
             </Descriptions>
           </Card>

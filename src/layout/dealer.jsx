@@ -39,7 +39,7 @@ const menuItems = [
       "evm-contract",
       null,
       null,
-      "/dealer-manager/evm=-contract"
+      "/dealer-manager/evm-contract"
     ),
     getItem(
       "Công nợ với hãng",

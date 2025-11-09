@@ -16,13 +16,13 @@ const activateModel = (id) => {
   return axiosClient.put(`/api/models/activate/${id}`);
 };
 
-const deactivateModel = (id) => {
-  return axiosClient.delete(`/api/models/deactivate/${id}`);
+const deleteModel = (id) => {
+  return axiosClient.delete(`/api/models/${id}`);
 };
 export {
   getAllModels,
   createModel,
   updateModel,
   activateModel,
-  deactivateModel,
+  deleteModel,
 };

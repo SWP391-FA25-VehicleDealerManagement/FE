@@ -36,6 +36,10 @@ const deleteVehicle = (id) => {
   return axiosClient.delete(`/api/vehicles/${id}`);
 };
 
+const getTestDriverVehicles = (id) => {
+  return axiosClient.get(`/api/vehicles/test-drive`);
+}
+
 export {
   getAllVehicles,
   getVehicleById,
@@ -44,4 +48,5 @@ export {
   updateVehicle,
   deleteVehicle,
   getEVMVehicles,
+  getTestDriverVehicles,
 };

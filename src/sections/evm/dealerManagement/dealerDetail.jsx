@@ -101,7 +101,7 @@ export default function DealerDetail() {
         autoClose: 3000,
         hideProgressBar: false,
       });
-      window.location.href = "/evm-staff/dealer-list"; // Redirect to dealer list
+      window.location.href = "/evm-staff/dealer-list";
     } catch (error) {
       console.error("Error deleting dealer:", error);
       toast.error(error.response?.data?.message || "Xóa đại lý thất bại", {
@@ -245,9 +245,15 @@ export default function DealerDetail() {
           >
             Chỉnh sửa
           </Button>
-          <Button danger icon={<DeleteOutlined />} onClick={showDeleteModal}>
-            Xóa
-          </Button>
+          {dealerAccounts.length === 0 && (
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={showDeleteModal}
+            >
+              Xóa
+            </Button>
+          )}
         </Space>
       </div>
 
@@ -268,7 +274,7 @@ export default function DealerDetail() {
 
       <Row gutter={16}>
         <Col span={8}>
-          <Card title="Thông tin Đại lý" bordered={false}>
+          <Card title="Thông tin Đại lý" variant="outlined">
             <div className="flex flex-col items-center mb-6">
               <Avatar size={100} icon={<UserOutlined />} />
               <Title level={3} style={{ marginTop: 16, marginBottom: 0 }}>
