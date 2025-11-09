@@ -34,7 +34,7 @@ const { Option } = Select;
 
 export default function RequestVehicle() {
   const navigate = useNavigate();
-  const { vehicles, isLoading, fetchVehicles } = useVehicleStore();
+  const { evmVehiclesList, isLoadingEVMVehicles, fetchEVMVehicles } = useVehicleStore();
   const { userDetail } = useAuthen();
   const { createRequestVehicle } = useDealerRequest();
   const [searchText, setSearchText] = useState("");
@@ -53,18 +53,18 @@ export default function RequestVehicle() {
   const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
-    fetchVehicles();
-  }, [fetchVehicles]);
+    fetchEVMVehicles();
+  }, [fetchEVMVehicles]);
 
   useEffect(() => {
     const objectUrlsToRevoke = [];
 
     const fetchAllImages = async () => {
-      if (vehicles && vehicles.length > 0) {
+      if (evmVehiclesList && evmVehiclesList.length > 0) {
         const newImageUrls = {};
 
         // Tạo mảng các promise để tải ảnh song song
-        const fetchPromises = vehicles.map(async (vehicle) => {
+        const fetchPromises = evmVehiclesList.map(async (vehicle) => {
           if (vehicle.imageUrl) {
             try {
               const response = await axiosClient.get(vehicle.imageUrl, {
@@ -107,7 +107,7 @@ export default function RequestVehicle() {
     return () => {
       objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [vehicles]);
+  }, [evmVehiclesList]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -488,14 +488,14 @@ export default function RequestVehicle() {
       </div>
 
       <Card>
-        {isLoading ? (
+        {isLoadingEVMVehicles ? (
           <div className="flex justify-center items-center p-10">
             <Spin size="large" />
           </div>
         ) : (
           <Table
             columns={columns}
-            dataSource={vehicles}
+            dataSource={evmVehiclesList}
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}

@@ -35,11 +35,12 @@ const { Option } = Select;
 
 export default function VehicleList() {
   const {
-    vehicles,
-    isLoading,
     fetchVehicles,
     createNewVehicle,
     deleteVehicleById,
+    fetchEVMVehicles,
+    evmVehiclesList,
+    isLoadingEVMVehicles,
   } = useVehicleStore();
   const { variants, fetchVariants } = useVariantStore();
   const { models, fetchModels } = useModelStore();
@@ -60,20 +61,20 @@ export default function VehicleList() {
   const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
-    fetchVehicles();
     fetchModels();
     fetchVariants();
+    fetchEVMVehicles();
   }, [fetchVehicles, fetchModels, fetchVariants]);
 
   useEffect(() => {
     const objectUrlsToRevoke = [];
 
     const fetchAllImages = async () => {
-      if (vehicles && vehicles.length > 0) {
+      if (evmVehiclesList && evmVehiclesList.length > 0) {
         const newImageUrls = {};
 
         // Tạo mảng các promise để tải ảnh song song
-        const fetchPromises = vehicles.map(async (vehicle) => {
+        const fetchPromises = evmVehiclesList.map(async (vehicle) => {
           if (vehicle.imageUrl) {
             try {
               const response = await axiosClient.get(vehicle.imageUrl, {
@@ -116,7 +117,7 @@ export default function VehicleList() {
     return () => {
       objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [vehicles]);
+  }, [evmVehiclesList]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -142,7 +143,7 @@ export default function VehicleList() {
       if (response && response.status === 200) {
         setIsDeleteModalOpen(false);
         setSelectedVehicle(null);
-        fetchVehicles();
+        fetchEVMVehicles();
 
         toast.success("Xóa phương tiện thành công", {
           position: "top-right",
@@ -198,7 +199,7 @@ export default function VehicleList() {
         setIsAddModalOpen(false);
         form.resetFields();
         setFileList([]);
-        fetchVehicles();
+        fetchEVMVehicles();
         toast.success("Thêm phương tiện thành công", {
           position: "top-right",
           autoClose: 3000,
@@ -477,14 +478,14 @@ export default function VehicleList() {
       </div>
 
       <Card>
-        {isLoading ? (
+        {isLoadingEVMVehicles ? (
           <div className="flex justify-center items-center p-10">
             <Spin size="large" />
           </div>
         ) : (
           <Table
             columns={columns}
-            dataSource={vehicles}
+            dataSource={evmVehiclesList}
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}

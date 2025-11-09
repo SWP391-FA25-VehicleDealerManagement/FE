@@ -15,9 +15,9 @@ import {
 } from "antd";
 import {
   FileTextOutlined,
-  LeftOutlined, // Icon quay lại
-  CheckOutlined, // Icon xác nhận
-  CloseOutlined, // Icon từ chối
+  LeftOutlined,
+  CheckOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -28,7 +28,6 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const { Option } = Select;
 
 export default function DeaerDebtDetail() {
   const { debtId } = useParams();
@@ -403,8 +402,26 @@ export default function DeaerDebtDetail() {
                     </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Trạng thái" span={2}>
-                    <Tag color={selectedDebt.overdue ? "error" : "processing"}>
-                      {selectedDebt.status}
+                    <Tag
+                      color={
+                        selectedDebt.overdue && selectedDebt.status !== "PAID"
+                          ? "error"
+                          : selectedDebt.status === "PAID"
+                          ? "success"
+                          : selectedDebt.status === "ACTIVE"
+                          ? "processing"
+                          : "default"
+                      }
+                    >
+                      {selectedDebt.overdue && selectedDebt.status !== "PAID"
+                        ? "Quá hạn"
+                        : selectedDebt.status === "PAID"
+                        ? "Đã thanh toán"
+                        : selectedDebt.status === "ACTIVE"
+                        ? "Đang hoạt động"
+                        : selectedDebt.status === "OVERDUE"
+                        ? "Quá hạn"
+                        : selectedDebt.status}
                     </Tag>
                   </Descriptions.Item>
                 </Descriptions>

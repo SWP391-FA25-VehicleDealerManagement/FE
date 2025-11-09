@@ -114,12 +114,17 @@ const ModelLists = () => {
 
       const data = {
         name: values.name,
+        manufacturer: "Vinfast",
+        year: values.year,
+        body_type: values.bodyType,
         description: values.description,
       };
 
+      console.log("Payload to send:", data);
+
       const response = await createModel(data);
 
-      if (response.data.success) {
+      if (response && response.status === 200) {
         toast.success("Thêm model thành công", {
           position: "top-right",
           autoClose: 3000,
@@ -128,11 +133,6 @@ const ModelLists = () => {
         setIsAddModalOpen(false);
         form.resetFields();
         fetchModels();
-      } else {
-        toast.error(response.data.message || "Thêm model thất bại", {
-          position: "top-right",
-          autoClose: 3000,
-        });
       }
     } catch (error) {
       console.error("Error creating model:", error);
@@ -296,8 +296,8 @@ const ModelLists = () => {
         confirmLoading={isDeleting}
       >
         <p>
-          Bạn có chắc chắn muốn xóa model{" "}
-          <strong>{selectedModel?.name}</strong> không?
+          Bạn có chắc chắn muốn xóa model <strong>{selectedModel?.name}</strong>{" "}
+          không?
         </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
@@ -319,7 +319,28 @@ const ModelLists = () => {
             label="Tên Model"
             rules={[{ required: true, message: "Vui lòng nhập tên model" }]}
           >
-            <Input placeholder="Ví dụ: Toyota Vios" />
+            <Input placeholder="Ví dụ: VF 8" />
+          </Form.Item>
+
+          <Form.Item
+            name="year"
+            label="Năm sản xuất"
+            rules={[{ required: true, message: "Vui lòng nhập năm sản xuất" }]}
+          >
+            <Input
+              type="number"
+              placeholder="Ví dụ: 2024"
+              min={1900}
+              max={2100}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="bodyType"
+            label="Kiểu dáng"
+            rules={[{ required: true, message: "Vui lòng nhập kiểu dáng" }]}
+          >
+            <Input placeholder="Ví dụ: SUV, Sedan, Hatchback" />
           </Form.Item>
 
           <Form.Item

@@ -296,9 +296,10 @@ export default function OrderList() {
 
       <CreateQuoteModal
         isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
         onOrderCreated={() => {
           loadData();
-          setIsModalOpen(false);
+          setIsQuoteModalOpen(false);
         }}
       />
       <PaymentModal

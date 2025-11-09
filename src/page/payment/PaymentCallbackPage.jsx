@@ -5,12 +5,14 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useAuthen from "../../hooks/useAuthen";
 import usePaymentStore from "../../hooks/usePayment";
+import useCustomerDebt from "../../hooks/useCustomerDebt"; 
 
 export default function PaymentCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthenticated, role, isInitialized } = useAuthen();
   const { paymentSuccess } = usePaymentStore();
+  const { createCustomerDebtFromPayment } = useCustomerDebt(); 
   const processedRef = useRef(false);
 
   useEffect(() => {
@@ -32,7 +34,6 @@ export default function PaymentCallbackPage() {
     }
 
     const pendingPaymentStr = sessionStorage.getItem("pendingVNPayPayment");
-    
 
     if (!pendingPaymentStr) {
       processedRef.current = true;
@@ -53,23 +54,56 @@ export default function PaymentCallbackPage() {
         processedRef.current = true;
 
         const pendingPayment = JSON.parse(pendingPaymentStr);
+        const {
+          orderId,
+          paymentType,
+          paymentId,
+          userRole,
+        } = pendingPayment;
+
         const vnpResponseCode = searchParams.get("vnp_ResponseCode");
         const vnpTransactionStatus = searchParams.get("vnp_TransactionStatus");
 
         // ✅ Kiểm tra kết quả thanh toán
         if (vnpResponseCode === "00" && vnpTransactionStatus === "00") {
-          // Thanh toán thành công
-          const statusToUpdate =
-            pendingPayment.paymentType === "FULL" ? "PAID" : "PARTIAL";
+          // ========== THANH TOÁN THÀNH CÔNG ==========
+          
+          // B1: Cập nhật trạng thái đơn hàng
+          const statusToUpdate = paymentType === "FULL" ? "PAID" : "PARTIAL";
+          await paymentSuccess(orderId, statusToUpdate);
 
-          await paymentSuccess(pendingPayment.orderId, statusToUpdate);
-
-          toast.success("Thanh toán VNPay thành công!", {
-            position: "top-right",
-            autoClose: 3000,
-          });
+          // B2: Tạo công nợ CHỈ KHI LÀ DEALER_STAFF + INSTALLMENT
+          if (paymentType === "INSTALLMENT" && userRole === "DEALER_STAFF" && paymentId) {
+            try {
+              const debtResponse = await createCustomerDebtFromPayment(paymentId);
+              
+              if (debtResponse?.status === 200) {
+                toast.success("✅ Thanh toán VNPay và tạo công nợ thành công!", {
+                  position: "top-right",
+                  autoClose: 3000,
+                });
+              } else {
+                toast.warn("⚠️ Thanh toán thành công nhưng tạo công nợ thất bại!", {
+                  position: "top-right",
+                  autoClose: 3000,
+                });
+              }
+            } catch (debtError) {
+              console.error("❌ Error creating debt:", debtError);
+              toast.error("❌ Thanh toán thành công nhưng lỗi khi tạo công nợ!", {
+                position: "top-right",
+                autoClose: 3000,
+              });
+            }
+          } else {
+            // ✅ Dealer Manager hoặc thanh toán FULL
+            toast.success("✅ Thanh toán VNPay thành công!", {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          }
         } else {
-          // Thanh toán thất bại
+          // ========== THANH TOÁN THẤT BẠI ==========
           toast.error("❌ Thanh toán VNPay thất bại hoặc đã bị hủy!", {
             position: "top-right",
             autoClose: 3000,
@@ -79,9 +113,9 @@ export default function PaymentCallbackPage() {
         // ✅ Clear pending payment
         sessionStorage.removeItem("pendingVNPayPayment");
 
-        // ✅ Redirect về trang order list (KHÔNG có query params)
+        // ✅ Redirect về trang order list theo role
         const redirectUrl =
-          pendingPayment.userRole === "DEALER_MANAGER"
+          userRole === "DEALER_MANAGER"
             ? "/dealer-manager/dealer-orders"
             : "/dealer-staff/orders";
 
@@ -101,7 +135,15 @@ export default function PaymentCallbackPage() {
     };
 
     handleCallback();
-  }, [navigate, searchParams, isAuthenticated, role, isInitialized, paymentSuccess]);
+  }, [
+    navigate,
+    searchParams,
+    isAuthenticated,
+    role,
+    isInitialized,
+    paymentSuccess,
+    createCustomerDebtFromPayment, 
+  ]);
 
   return (
     <div className="flex justify-center items-center min-h-screen">
