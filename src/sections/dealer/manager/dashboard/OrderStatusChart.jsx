@@ -1,0 +1,118 @@
+import React from "react";
+import { Card } from "antd";
+import { PieChartOutlined } from "@ant-design/icons";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+const OrderStatusChart = ({ data }) => {
+  // Transform data for Recharts
+  const chartData = data.labels.map((label, index) => ({
+    name: label,
+    value: data.values[index],
+  }));
+
+  // Colors matching the previous ApexCharts colors
+  const COLORS = ["#52c41a", "#1890ff", "#faad14", "#f5222d", "#722ed1"];
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const total = data.values.reduce((a, b) => a + b, 0);
+      const percentage = ((payload[0].value / total) * 100).toFixed(1);
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
+          <p className="font-semibold">{payload[0].name}</p>
+          <p className="text-blue-600">{payload[0].value} đơn hàng</p>
+          {/* <p className="text-gray-500 text-sm">{percentage}%</p> */}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom label
+  const renderCustomLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+    const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        fontSize="12px"
+        fontWeight="bold"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  // Calculate total for center display
+  const totalOrders = data.values.reduce((a, b) => a + b, 0);
+
+  return (
+    <Card
+      title={
+        <div className="flex items-center">
+          <PieChartOutlined className="mr-2 text-purple-600" />
+          <span>Trạng thái đơn hàng</span>
+        </div>
+      }
+      className="shadow-sm mb-6"
+    >
+      <div className="relative">
+        <ResponsiveContainer width="100%" height={350}>
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderCustomLabel}
+              outerRadius={120}
+              innerRadius={70}
+              fill="#8884d8"
+              dataKey="value"
+              paddingAngle={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              verticalAlign="bottom"
+              height={36}
+              iconType="circle"
+              formatter={(value, entry) => (
+                <span className="text-sm">
+                  {value} ({entry.payload.value})
+                </span>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        {/* Center text showing total */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+          <div className="text-2xl font-bold text-gray-700">{totalOrders}</div>
+          <div className="text-sm text-gray-500">Tổng đơn</div>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+export default OrderStatusChart;

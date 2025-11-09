@@ -78,33 +78,33 @@ export default function PaymentCallbackPage() {
               const debtResponse = await createCustomerDebtFromPayment(paymentId);
               
               if (debtResponse?.status === 200) {
-                toast.success("✅ Thanh toán VNPay và tạo công nợ thành công!", {
+                toast.success("Thanh toán VNPay thành công!", {
                   position: "top-right",
                   autoClose: 3000,
                 });
               } else {
-                toast.warn("⚠️ Thanh toán thành công nhưng tạo công nợ thất bại!", {
+                toast.warn("Thanh toán thành công nhưng tạo công nợ thất bại!", {
                   position: "top-right",
                   autoClose: 3000,
                 });
               }
             } catch (debtError) {
               console.error("❌ Error creating debt:", debtError);
-              toast.error("❌ Thanh toán thành công nhưng lỗi khi tạo công nợ!", {
+              toast.error("Thanh toán thành công nhưng lỗi khi tạo công nợ!", {
                 position: "top-right",
                 autoClose: 3000,
               });
             }
           } else {
             // ✅ Dealer Manager hoặc thanh toán FULL
-            toast.success("✅ Thanh toán VNPay thành công!", {
+            toast.success("Thanh toán VNPay thành công!", {
               position: "top-right",
               autoClose: 3000,
             });
           }
         } else {
           // ========== THANH TOÁN THẤT BẠI ==========
-          toast.error("❌ Thanh toán VNPay thất bại hoặc đã bị hủy!", {
+          toast.error("Thanh toán VNPay thất bại hoặc đã bị hủy!", {
             position: "top-right",
             autoClose: 3000,
           });

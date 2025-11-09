@@ -32,10 +32,13 @@ const EvmStaffDetailPage = lazy(() =>
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
-  import("../sections/dealer/manager/dashboard/dealerdashboard.jsx")
+  import("../sections/dealer/manager/dashboard/DealerDashboardNew.jsx")
 );
 const VehicleListPage = lazy(() =>
   import("../page/dealer/manager/vehicleListPage.jsx")
+);
+const TestDriveVehicleListPage = lazy(() =>
+  import("../page/dealer/manager/testDriveVehicleListPage.jsx")
 );
 const VehicleDetailPage = lazy(() =>
   import("../page/dealer/manager/vehicleDetailPage.jsx")
@@ -142,6 +145,9 @@ const UserProfilePage = lazy(() =>
 //Dealer Staff
 const DealerStaffVehicleListPage = lazy(() =>
   import("../page/dealer/staff/vehicleListPage.jsx")
+);
+const DealerStaffTestDriveVehicleListPage = lazy(() =>
+  import("../page/dealer/staff/testDriveVehicleListPage.jsx")
 );
 const DealerStaffVehicleDetailPage = lazy(() =>
   import("../page/dealer/staff/vehicleDetail.jsx")
@@ -330,6 +336,7 @@ const Routes = () => {
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <VehicleListPage /> },
         { path: "vehicles/:id", element: <VehicleDetailPage /> },
+        { path: "test-drive-vehicles", element: <TestDriveVehicleListPage /> },
         { path: "vehicle-requests", element: <RequestVehiclePage /> },
         { path: "vehicle-requests/:id", element: <RequestVehicleDetailPage /> },
         { path: "request-list", element: <RequestListPage /> },
@@ -385,6 +392,10 @@ const Routes = () => {
         {
           path: "vehicles/:vehicleId",
           element: <DealerStaffVehicleDetailPage />,
+        },
+        {
+          path: "test-drive-vehicles",
+          element: <DealerStaffTestDriveVehicleListPage />,
         },
         { path: "inventory", element: <InventoryPage /> },
         { path: "orders", element: <CustomerOrderPage /> },

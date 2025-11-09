@@ -7,15 +7,15 @@ import {
   Card,
   Typography,
   Spin,
-  Tag,
   Image,
   Modal,
+  Tag,
 } from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
   CarOutlined,
-  ExperimentOutlined,
+  CheckCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -23,9 +23,11 @@ import { toast } from "react-toastify";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import axiosClient from "../../../../config/axiosClient";
-const { Title } = Typography;
 
-export default function VehicleList() {
+const { Title } = Typography;
+const { confirm } = Modal;
+
+export default function TestDriveVehicleList() {
   const navigate = useNavigate();
   const { userDetail } = useAuthen();
   const {
@@ -44,8 +46,6 @@ export default function VehicleList() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
   const [imageUrls, setImageUrls] = useState({});
-  const [isTestDriveModalOpen, setIsTestDriveModalOpen] = useState(false);
-  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
@@ -55,14 +55,19 @@ export default function VehicleList() {
     }
   }, [dealerId, fetchVehicleDealers]);
 
+  // Filter only TEST_DRIVE vehicles
+  const testDriveVehicles = dealerCarLists.filter(
+    (vehicle) => vehicle.status === "TEST_DRIVE"
+  );
+
   useEffect(() => {
     const objectUrlsToRevoke = [];
 
     const fetchAllImages = async () => {
-      if (dealerCarLists && dealerCarLists.length > 0) {
+      if (testDriveVehicles && testDriveVehicles.length > 0) {
         const newImageUrls = {};
 
-        const fetchPromises = dealerCarLists.map(async (vehicle) => {
+        const fetchPromises = testDriveVehicles.map(async (vehicle) => {
           if (vehicle.imageUrl) {
             try {
               const response = await axiosClient.get(vehicle.imageUrl, {
@@ -102,7 +107,7 @@ export default function VehicleList() {
     return () => {
       objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [dealerCarLists]);
+  }, [testDriveVehicles]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -118,39 +123,36 @@ export default function VehicleList() {
     navigate(`/dealer-manager/vehicles/${vehicleId}`);
   };
 
-  const showTestDriveModal = (vehicleId) => {
-    setSelectedVehicleId(vehicleId);
-    setIsTestDriveModalOpen(true);
-  };
-
-  const handleTestDriveCancel = () => {
-    setIsTestDriveModalOpen(false);
-    setSelectedVehicleId(null);
-  };
-
-  const handleSetTestDrive = async () => {
-    try {
-      const response = await updateTestDriveStatus(selectedVehicleId);
-      if (response && response.status === 200) {
-        toast.success("Chuyển xe sang trạng thái lái thử thành công", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        handleTestDriveCancel();
-        // Refresh data
-        fetchVehicleDealers(dealerId);
-      }
-    } catch (error) {
-      console.error("Error updating test drive status:", error);
-      toast.error(
-        error.response?.data?.message ||
-          "Chuyển xe sang trạng thái lái thử thất bại",
-        {
-          position: "top-right",
-          autoClose: 3000,
+  const handleUpdateStatus = (vehicleId) => {
+    confirm({
+      title: "Xác nhận cập nhật",
+      icon: <ExclamationCircleOutlined />,
+      content: "Bạn có chắc chắn muốn chuyển xe này về trạng thái sẵn sàng bán?",
+      okText: "Xác nhận",
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          const response = await updateTestDriveStatus(vehicleId);
+          if (response && response.status === 200) {
+            toast.success("Cập nhật trạng thái xe thành công", {
+              position: "top-right",
+              autoClose: 3000,
+            });
+            // Refresh data
+            fetchVehicleDealers(dealerId);
+          }
+        } catch (error) {
+          console.error("Error updating test drive status:", error);
+          toast.error(
+            error.response?.data?.message || "Cập nhật trạng thái xe thất bại",
+            {
+              position: "top-right",
+              autoClose: 3000,
+            }
+          );
         }
-      );
-    }
+      },
+    });
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -207,7 +209,7 @@ export default function VehicleList() {
       title: "Mã",
       dataIndex: "vehicleId",
       key: "vehicleId",
-      width: "10%",
+      width: "8%",
       ...getColumnSearchProps("vehicleId"),
       sorter: (a, b) => a.vehicleId - b.vehicleId,
     },
@@ -222,7 +224,7 @@ export default function VehicleList() {
       title: "Hình ảnh",
       dataIndex: "imageUrl",
       key: "imageUrl",
-      width: "25%",
+      width: "20%",
       render: (imagePath, record) => {
         const blobUrl = imageUrls[imagePath];
         if (!imagePath) {
@@ -244,7 +246,6 @@ export default function VehicleList() {
         }
 
         if (blobUrl) {
-          // Trường hợp đã tải xong, dùng blobUrl
           return (
             <Image
               src={blobUrl}
@@ -260,7 +261,6 @@ export default function VehicleList() {
           );
         }
 
-        // Trường hợp đang tải
         return (
           <div
             style={{
@@ -282,7 +282,7 @@ export default function VehicleList() {
       title: "Mẫu xe",
       dataIndex: "modelName",
       key: "modelName",
-      width: "15%",
+      width: "12%",
       ...getColumnSearchProps("modelName"),
       sorter: (a, b) => a.modelName.localeCompare(b.modelName),
     },
@@ -290,93 +290,38 @@ export default function VehicleList() {
       title: "Phiên bản",
       dataIndex: "variantName",
       key: "variantName",
-      width: "15%",
+      width: "12%",
       ...getColumnSearchProps("variantName"),
-    },
-    {
-      title: "Hãng sản xuất",
-      dataIndex: "manufacturer",
-      key: "manufacturer",
-      width: "15%",
-      ...getColumnSearchProps("manufacturer"),
-    },
-    {
-      title: "Kiểu dáng",
-      dataIndex: "bodyType",
-      key: "bodyType",
-      width: "10%",
-      ...getColumnSearchProps("bodyType"),
     },
     {
       title: "Màu sắc",
       dataIndex: "color",
       key: "color",
       width: "10%",
-      filters: [
-        { text: "Black", value: "Black" },
-        { text: "White", value: "White" },
-        { text: "Red", value: "Red" },
-        { text: "Green", value: "Green" },
-        { text: "Đen", value: "Đen" },
-      ],
-      onFilter: (value, record) => record.color === value,
       render: (text) => <span>{text}</span>,
     },
     {
-      title: "Giá bán (VNĐ)",
-      dataIndex: "price",
-      key: "price",
-      width: "15%",
-      sorter: (a, b) => {
-        const priceA = a.price ? parseFloat(a.price.replace(/[^0-9]/g, "")) : 0;
-        const priceB = b.price ? parseFloat(b.price.replace(/[^0-9]/g, "")) : 0;
-        return priceA - priceB;
-      },
-      render: (msrp) => {
-        if (!msrp) {
-          return "N/A";
-        }
-        return msrp.toLocaleString("vi-VN");
-      },
-    },
-    {
-      title: "Giá niêm yết (VNĐ)",
-      dataIndex: "msrp",
-      key: "msrp",
-      width: "15%",
-      sorter: (a, b) => {
-        const msrpA = a.msrp ? parseFloat(a.msrp.replace(/[^0-9]/g, "")) : 0;
-        const msrpB = b.msrp ? parseFloat(b.msrp.replace(/[^0-9]/g, "")) : 0;
-        return msrpA - msrpB;
-      },
-      render: (msrp) => {
-        if (!msrp) {
-          return "N/A";
-        }
-        return msrp.toLocaleString("vi-VN");
-      },
-    },
-    {
-      title: "Ngày SX",
-      dataIndex: "manufactureDate",
-      key: "manufactureDate",
-      width: "15%",
-      render: (text) =>
-        text ? new Date(text).toLocaleDateString("vi-VN") : "N/A",
-      sorter: (a, b) =>
-        new Date(a.manufactureDate) - new Date(b.manufactureDate),
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: "12%",
+      render: (status) => (
+        <Tag color="orange" icon={<CarOutlined />}>
+          Xe lái thử
+        </Tag>
+      ),
     },
     {
       title: "Năm",
       dataIndex: "year",
       key: "year",
-      width: "10%",
+      width: "8%",
       sorter: (a, b) => a.year - b.year,
     },
     {
       title: "Thao tác",
       key: "action",
-      width: 200,
+      width: "15%",
       fixed: "right",
       render: (_, record) => (
         <Space size="small">
@@ -388,16 +333,6 @@ export default function VehicleList() {
           >
             Chi tiết
           </Button>
-          {record.status !== "TEST_DRIVE" && (
-            <Button
-              type="default"
-              icon={<ExperimentOutlined />}
-              size="small"
-              onClick={() => showTestDriveModal(record.vehicleId)}
-            >
-              Lái thử
-            </Button>
-          )}
         </Space>
       ),
     },
@@ -407,7 +342,7 @@ export default function VehicleList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
-          <CarOutlined style={{ marginRight: 8 }} /> Danh sách xe tại đại lý
+          <CarOutlined style={{ marginRight: 8 }} /> Danh sách xe lái thử
         </Title>
       </div>
 
@@ -419,39 +354,14 @@ export default function VehicleList() {
         ) : (
           <Table
             columns={columns}
-            dataSource={dealerCarLists}
+            dataSource={testDriveVehicles}
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
-            scroll={{ x: 2000 }}
+            scroll={{ x: 1800 }}
           />
         )}
       </Card>
-
-      {/* Modal xác nhận chuyển xe lái thử */}
-      <Modal
-        title="Xác nhận chuyển xe lái thử"
-        open={isTestDriveModalOpen}
-        onOk={handleSetTestDrive}
-        onCancel={handleTestDriveCancel}
-        okText="Xác nhận"
-        cancelText="Hủy"
-        okType="primary"
-        confirmLoading={isLoadingUpdateTestDriveStatus}
-      >
-        <div className="flex items-center mb-4">
-          <ExclamationCircleOutlined
-            style={{ fontSize: 22, color: "#faad14", marginRight: 12 }}
-          />
-          <span style={{ fontSize: 16 }}>
-            Bạn có chắc chắn muốn chuyển xe này sang trạng thái xe lái thử?
-          </span>
-        </div>
-        <p style={{ marginLeft: 34, color: "#666" }}>
-          Xe sẽ được sử dụng cho mục đích lái thử và không thể bán cho khách hàng
-          cho đến khi được chuyển về trạng thái sẵn sàng.
-        </p>
-      </Modal>
     </div>
   );
 }
