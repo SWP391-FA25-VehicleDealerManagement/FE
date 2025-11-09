@@ -65,6 +65,13 @@ const menuItems = [
       "/dealer-manager/vehicles"
     ),
     getItem(
+      "Xe lái thử",
+      "test-drive-vehicles",
+      null,
+      null,
+      "/dealer-manager/test-drive-vehicles"
+    ),
+    getItem(
       "Quản lý giá bán",
       "sale-prices",
       null,

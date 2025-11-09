@@ -190,8 +190,8 @@ export default function SalePriceList() {
 
   const handleDelete = async () => {
     try {
-      const response = await deleteSalePrice(selectedSalePrice.salePriceId);
-      if (response && response.status === 204) {
+      const response = await deleteSalePrice(selectedSalePrice.salepriceId);
+      if (response && response.status === 200) {
         toast.success("Xóa giá bán thành công", {
           position: "top-right",
           autoClose: 3000,
@@ -505,7 +505,11 @@ export default function SalePriceList() {
       >
         <p>
           Bạn có chắc chắn muốn xóa giá bán cho{" "}
-          <strong>{selectedSalePrice?.variantName}</strong> không?
+          <strong>
+            {selectedSalePrice?.variant?.model?.name || "N/A"} -{" "}
+            {selectedSalePrice?.variant?.name || ""}
+          </strong>{" "}
+          không?
         </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
