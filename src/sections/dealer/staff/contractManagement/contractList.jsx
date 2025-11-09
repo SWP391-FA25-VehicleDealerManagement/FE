@@ -283,11 +283,13 @@ export default function ContractList() {
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                options={orderList.map((order) => ({
-                  value: order.orderDetailId,
-                  label: `Đơn #${order.orderId} - Khách hàng #${order.customerId}`,
-                  order: order,
-                }))}
+                options={orderList
+                  .filter((order) => order.customerId != null)
+                  .map((order) => ({
+                    value: order.orderDetailId,
+                    label: `Đơn #${order.orderId} - Khách hàng #${order.customerId}`,
+                    order: order,
+                  }))}
                 optionRender={(option) => {
                   const order = option.data.order;
                   const paymentMethodMap = {
@@ -296,6 +298,18 @@ export default function ContractList() {
                     BANK_TRANSFER: "Chuyển khoản",
                     "Chuyển khoản": "Chuyển khoản",
                     "Tiền mặt": "Tiền mặt",
+                  };
+
+                  const statusMap = {
+                    COMPLETED: "Hoàn thành",
+                    PAID: "Đã thanh toán",
+                    PARTIAL: "Trả góp",
+                  };
+
+                  const statusColorMap = {
+                    COMPLETED: "green",
+                    PAID: "blue",
+                    PARTIAL: "orange",
                   };
 
                   return (
@@ -310,11 +324,9 @@ export default function ContractList() {
                           </div>
                         </div>
                         <Tag
-                          color={
-                            order.status === "COMPLETED" ? "green" : "orange"
-                          }
+                          color={statusColorMap[order.status] || "default"}
                         >
-                          {order.status}
+                          {statusMap[order.status] || order.status}
                         </Tag>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">

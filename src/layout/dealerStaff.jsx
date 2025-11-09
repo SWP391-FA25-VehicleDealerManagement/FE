@@ -45,7 +45,10 @@ const menuItems = [
       "/dealer-staff/deliveries"
     ),
   ]),
-  getItem("Danh sách xe đại lý", "vehicles-list", <CarOutlined />, null, "/dealer-staff/vehicles"),
+  getItem("Quản lý xe", "vehicles", <CarOutlined />, [
+    getItem("Danh sách xe đại lý", "vehicles-list", null, null, "/dealer-staff/vehicles"),
+    getItem("Xe lái thử", "test-drive-vehicles", null, null, "/dealer-staff/test-drive-vehicles"),
+  ]),
   getItem("Quản lý khách hàng", "customers", <UserOutlined />, [
     getItem("Khách hàng", "customers-list", null, null, "/dealer-staff/customer-list"),
     getItem(
@@ -158,7 +161,7 @@ const DealerStaff = ({ children }) => {
         <Menu
           theme="light"
           defaultSelectedKeys={defaultSelectedKeys}
-          defaultOpenKeys={["appointments", "orders", "customers", "reports"]}
+          defaultOpenKeys={["appointments", "orders", "customers", "reports", "vehicles"]}
           mode="inline"
           className="border-0 h-full"
           style={{

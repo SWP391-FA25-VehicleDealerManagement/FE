@@ -27,6 +27,7 @@ const useSalePrice = create((set) => ({
       if (response && response.status === 200) {
         set({ salePrices: response.data.data || [], isLoading: false });
       }
+      return response;
     } catch (error) {
       console.error("Error fetching sale prices:", error);
       set({ isLoading: false });
@@ -88,8 +89,8 @@ const useSalePrice = create((set) => ({
       const response = await getEffectivePrice(dealerId, variantId);
       if (response && response.status === 200) {
         set({ isLoading: false });
-        return response.data.data;
       }
+       return response;
     } catch (error) {
       console.error("Error fetching effective price:", error);
       set({ isLoading: false });
@@ -103,8 +104,8 @@ const useSalePrice = create((set) => ({
       const response = await createSalePrice(data);
       if (response && response.status === 200) {
         set({ isLoadingCreate: false });
-        return response;
       }
+      return response;
     } catch (error) {
       console.error("Error creating sale price:", error);
       set({ isLoadingCreate: false });
@@ -119,8 +120,8 @@ const useSalePrice = create((set) => ({
       const response = await updateSalePrice(id, data);
       if (response && response.status === 200) {
         set({ isLoadingUpdate: false });
-        return response;
       }
+      return response;
     } catch (error) {
       console.error("Error updating sale price:", error);
       set({ isLoadingUpdate: false });
@@ -133,10 +134,10 @@ const useSalePrice = create((set) => ({
     set({ isLoadingDelete: true });
     try {
       const response = await deleteSalePrice(id);
-      if (response && response.status === 204) {
+      if (response && response.status === 200) {
         set({ isLoadingDelete: false });
-        return response;
       }
+       return response;
     } catch (error) {
       console.error("Error deleting sale price:", error);
       set({ isLoadingDelete: false });
