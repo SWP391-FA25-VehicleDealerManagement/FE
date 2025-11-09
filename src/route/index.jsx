@@ -82,6 +82,18 @@ const CustomerDetailPage = lazy(() =>
 const SalePriceListPage = lazy(() =>
   import("../page/dealer/manager/salePriceListPage.jsx")
 );
+const CustomerContractDetailPage = lazy(() =>
+  import("../page/dealer/manager/customerContractDetailPage.jsx")
+);
+const CustomerContractListPage = lazy(() =>
+  import("../page/dealer/manager/customerContractListPage.jsx")
+);
+const EvmContractListPage = lazy(() =>
+  import("../page/dealer/manager/evmContractListPage.jsx")
+);
+const EvmContractDetailPage = lazy(() =>
+  import("../page/dealer/manager/evmContractDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -159,10 +171,15 @@ const DeliveryDetailPage = lazy(() =>
 const FeedbackListPage = lazy(() =>
   import("../page/dealer/staff/feedbackListPage.jsx")
 );
+const ContractListPage = lazy(() =>
+  import("../page/dealer/staff/contractListPage.jsx")
+);
+const ContractDetailPage = lazy(() =>
+  import("../page/dealer/staff/contractDetailPage.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
-  const location = useLocation();
 
   // Hiển thị loading trong khi đang khởi tạo auth state
   if (!isInitialized) {
@@ -180,7 +197,7 @@ const Routes = () => {
     }
 
     return children;
-  };  
+  };
 
   // Redirect authenticated users từ login page
   const AuthGuard = ({ children }) => {
@@ -320,6 +337,16 @@ const Routes = () => {
         { path: "dealer-orders", element: <DealerOrderList /> },
         { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
         { path: "sale-prices", element: <SalePriceListPage /> },
+        { path: "customer-contract", element: <CustomerContractListPage /> },
+        {
+          path: "customer-contract/:contractId",
+          element: <CustomerContractDetailPage />,
+        },
+        { path: "evm-contract", element: <EvmContractListPage /> },
+        {
+          path: "evm-contract/:contractId",
+          element: <EvmContractDetailPage />,
+        },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -361,6 +388,11 @@ const Routes = () => {
         { path: "deliveries", element: <DeliveryPage /> },
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
         { path: "reviews", element: <FeedbackListPage /> },
+        { path: "customer-contract", element: <ContractListPage /> },
+        {
+          path: "customer-contract/:contractId",
+          element: <ContractDetailPage />,
+        },
         { path: "*", element: <Error404 /> },
       ],
     },
