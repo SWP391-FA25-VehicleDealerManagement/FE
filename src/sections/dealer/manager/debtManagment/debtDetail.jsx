@@ -15,7 +15,7 @@ import {
   Input,
 } from "antd";
 import {
-  DollarOutlined,
+  ReloadOutlined,
   FileTextOutlined,
   CreditCardOutlined,
   LeftOutlined,
@@ -114,6 +114,14 @@ export default function DebtDetailPage() {
     } catch (error) {
       console.error("Error making payment:", error);
       toast.error("Thanh toán thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const handleRefresh = () => {
+    if (debtId) {
+      fetchDealerDebtById(debtId);
+      fetchDebtSchedules(debtId);
+      fetchPaymentHistory(debtId);
     }
   };
 
@@ -316,7 +324,11 @@ export default function DebtDetailPage() {
     },
   ];
 
-  if (isLoadingDebtSchedules) {
+  if (
+    isLoadingDebtSchedules ||
+    isLoadingDealerDebtById ||
+    isLoadingPaymentHistory
+  ) {
     return (
       <div className="flex justify-center items-center h-96">
         <Spin size="large" />
@@ -328,10 +340,24 @@ export default function DebtDetailPage() {
     <div>
       {/* Header của trang */}
       <Space direction="vertical" style={{ width: "100%" }} size="large">
-        <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
-          Quay lại danh sách
-        </Button>
+        <div className="flex flex-row justify-between">
+          <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
+            Quay lại danh sách
+          </Button>
 
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={
+              isLoadingDealerDebtById ||
+              isLoadingDebtSchedules ||
+              isLoadingPaymentHistory
+            }
+          >
+            Làm mới
+          </Button>
+        </div>
         <Title level={2} className="flex items-center">
           <FileTextOutlined style={{ marginRight: 8 }} />
           Chi tiết công nợ - Mã #{dealerDebtById?.debtId || debtId}

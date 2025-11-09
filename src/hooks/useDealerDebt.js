@@ -162,10 +162,10 @@ const useDealerDebt = create((set) => ({
   },
 
   isLoadingCustomerPayment: false,
-  makeCustomerPayment: async (scheduleId, amount) => {
+  makeCustomerPayment: async (scheduleId, amount,  paymentMethod, note) => {
     set({ isLoadingCustomerPayment: true });
     try {
-      const response = await makeCustomerPayment(scheduleId, amount);
+      const response = await makeCustomerPayment(scheduleId, amount,  paymentMethod, note);
       if (response && response.status === 200) {
         set({ isLoadingCustomerPayment: false });
       }

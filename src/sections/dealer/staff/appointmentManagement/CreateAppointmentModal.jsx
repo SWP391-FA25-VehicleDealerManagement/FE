@@ -13,21 +13,13 @@ import {
   Empty,
   DatePicker,
 } from "antd";
-import {
-  UserOutlined,
-  PhoneOutlined,
-  CarOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, PhoneOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
 import useTestDriveStore from "../../../../hooks/useTestDrive";
 import dayjs from "dayjs";
-
-const { Text } = Typography;
 
 export default function CreateAppointmentModal({
   isOpen,
@@ -37,18 +29,18 @@ export default function CreateAppointmentModal({
   const [form] = Form.useForm();
   const { userDetail } = useAuthen();
   const {
-    dealerCarLists,
-    fetchVehicleDealers,
-    isLoading: isLoadingVehicles,
+    testDriveVehicle,
+    isLoadingTestDriveVehicles,
+    fetchTestDriverVehicles,
   } = useVehicleStore();
   const { Customer, getCustomer, isLoadingCustomer } = useDealerOrder();
-  const { addTestDrive, isLoading: isLoadingCreateAppt } = useTestDriveStore();
+  const { addTestDrive, isLoadingCreateAppt } = useTestDriveStore();
 
   const [customerInfo, setCustomerInfo] = useState(null);
   const dealerId = userDetail?.dealer?.dealerId;
   useEffect(() => {
     if (isOpen && dealerId) {
-      fetchVehicleDealers(dealerId);
+      fetchTestDriverVehicles();
     }
     if (!Customer || Customer.length === 0) {
       getCustomer(dealerId);
@@ -92,9 +84,9 @@ export default function CreateAppointmentModal({
       toast.error("Vui lòng tìm khách hàng hợp lệ bằng SĐT.");
       return;
     }
-    
+
     const scheduledDate = values.scheduledDate.format("YYYY-MM-DDTHH:mm:ss");
-    
+
     const payload = {
       dealerId: dealerId,
       customerId: customerInfo.customerId,
@@ -114,7 +106,7 @@ export default function CreateAppointmentModal({
         });
         form.resetFields();
         setCustomerInfo(null);
-        onAppointmentCreated(); 
+        onAppointmentCreated();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Có lỗi xảy ra", {
@@ -222,11 +214,11 @@ export default function CreateAppointmentModal({
             >
               <Select
                 placeholder="Chọn xe từ kho của đại lý"
-                loading={isLoadingVehicles}
+                loading={isLoadingTestDriveVehicles}
                 showSearch
                 optionFilterProp="label"
                 notFoundContent={
-                  isLoadingVehicles ? (
+                  isLoadingTestDriveVehicles ? (
                     <Spin size="small" />
                   ) : (
                     <Empty
@@ -236,8 +228,7 @@ export default function CreateAppointmentModal({
                   )
                 }
                 // Chỉ dùng `options` prop cho hiệu năng
-                options={dealerCarLists
-                  .filter((vehicle) => vehicle.status === "IN_DEALER_STOCK")
+                options={testDriveVehicle
                   .map((vehicle) => ({
                     value: vehicle.vehicleId,
                     label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`,

@@ -7,6 +7,7 @@ import {
   createVehicle,
   updateVehicle,
   getEVMVehicles,
+  getTestDriverVehicles,
 } from "../api/vehicle";
 
 const useVehicleStore = create((set) => ({
@@ -104,6 +105,26 @@ const useVehicleStore = create((set) => ({
     } catch (error) {
       set({ isLoadingVehicleDealers: false });
       console.error("Error fetching vehicle dealers:", error);
+      throw error;
+    }
+  },
+
+  testDriveVehicle: [],
+  isLoadingTestDriveVehicles: false,
+  fetchTestDriverVehicles: async () => {
+    try {
+      set({ isLoadingTestDriveVehicles: true });
+      const response = await getTestDriverVehicles();
+      if (response && response.status === 200) {
+        set({
+          isLoadingTestDriveVehicles: false,
+          testDriveVehicle: response.data.data,
+        });
+      }
+      return response;
+    } catch (error) {
+      console.log("error at fetchTestDriverVehicles", error);
+      set({ isLoadingTestDriveVehicles: false });
       throw error;
     }
   },
