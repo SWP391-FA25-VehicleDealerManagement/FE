@@ -37,11 +37,11 @@ const adminMenuItems = [
       "/evm-staff/dealer-list"
     ),
     getItem(
-      "Hợp đồng & Mục tiêu",
+      "Hợp đồng với đại lý",
       "11",
       <FileTextOutlined />,
       null,
-      "/evm-staff/contracts-targets"
+      "/evm-staff/dealer-contract"
     ),
     getItem("Công nợ", "12", <DollarOutlined />, null, "/evm-staff/debts"),
   ]),

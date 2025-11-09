@@ -287,7 +287,7 @@ const Routes = () => {
         { path: "dealer-list", element: <DealerList /> },
         { path: "profile", element: <UserProfilePage /> },
         { path: "dealer-list/:dealerId", element: <DealerDetailPage /> },
-        { path: "contracts-targets", element: <ContractsTargetsPage /> },
+        { path: "dealer-contract", element: <ContractsTargetsPage /> },
         { path: "debts", element: <EvmDealerDebtsPage /> },
         { path: "debts/:debtId", element: <EVMDealerDebtDetailPage /> },
         { path: "vehicles", element: <VehicleList /> },
