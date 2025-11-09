@@ -94,6 +94,9 @@ const EvmContractListPage = lazy(() =>
 const EvmContractDetailPage = lazy(() =>
   import("../page/dealer/manager/evmContractDetailPage.jsx")
 );
+const SalesReportPage = lazy(() =>
+  import("../page/dealer/manager/salesReportPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -126,6 +129,9 @@ const VehicleModelDetail = lazy(() =>
 );
 const EVMDealerDebtDetailPage = lazy(() =>
   import("../page/evm/dealerDebtDetailPage.jsx")
+);
+const PromotionListPage = lazy(() =>
+  import("../page/evm/promotionListPage.jsx")
 );
 
 //User Profile
@@ -298,6 +304,7 @@ const Routes = () => {
         { path: "vehicle-models/:id", element: <VehicleModelDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
         { path: "allocate-inventory", element: <AllocateInventoryPage /> },
+        { path: "promotion-dealer", element: <PromotionListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -337,6 +344,8 @@ const Routes = () => {
         { path: "dealer-orders", element: <DealerOrderList /> },
         { path: "dealer-orders/:orderId", element: <DealerOrderDetail /> },
         { path: "sale-prices", element: <SalePriceListPage /> },
+        { path: "sale-prices/:salePriceId", element: <SalePriceDetailPage /> },
+        { path: "sales-report", element: <SalesReportPage /> },
         { path: "customer-contract", element: <CustomerContractListPage /> },
         {
           path: "customer-contract/:contractId",
