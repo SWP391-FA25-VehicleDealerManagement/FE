@@ -9,19 +9,20 @@ import {
   Input,
   Tag,
   Space,
+  Tabs,
 } from "antd";
 import {
     CarOutlined,
+  ApartmentOutlined,
   CheckCircleOutlined,
   ShoppingCartOutlined,
   SearchOutlined,
+  ThunderboltOutlined,
+  PercentageOutlined,
 } from "@ant-design/icons";
 import useReport from "../../../hooks/useReport";
 
 const { Title, Text } = Typography;
-
-const fmt = (n) =>
-  Number.isFinite(Number(n)) ? Number(n).toLocaleString("vi-VN") : "0";
 
 export default function InventoryReportPage() {
   const {
@@ -31,19 +32,31 @@ export default function InventoryReportPage() {
     invTotalVehicles,
     invTotalAvailable,
     invTotalSold,
+    turnoverReport,
+    fetchTurnoverReport,
+    invTurnoverTotalSold,
+    invTurnoverAvgRate,
   } = useReport();
 
+  const [activeKey, setActiveKey] = useState("inventory");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchInventoryReport();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchInventoryReport]);
 
-  const filtered = useMemo(() => {
+  const onTabChange = (k) => {
+    setActiveKey(k);
+    if (k === "turnover" && (!turnoverReport?.length)) {
+      fetchTurnoverReport();
+    }
+  };
+
+  // === FILTER ===
+  const filtInventory = useMemo(() => {
     if (!search) return inventoryReport;
     const q = search.toLowerCase();
-    return (inventoryReport || []).filter(
+    return inventoryReport.filter(
       (d) =>
         d?.dealerName?.toLowerCase().includes(q) ||
         d?.address?.toLowerCase().includes(q) ||
@@ -51,21 +64,19 @@ export default function InventoryReportPage() {
     );
   }, [inventoryReport, search]);
 
-  // ---- TỔNG HỢP SỐ LƯỢNG (PHẢI RA SỐ) ----
-  const totalVehicles = useMemo(
-    () => (typeof invTotalVehicles === "function" ? invTotalVehicles() : 0),
-    [inventoryReport, invTotalVehicles]
-  );
-  const totalAvailable = useMemo(
-    () => (typeof invTotalAvailable === "function" ? invTotalAvailable() : 0),
-    [inventoryReport, invTotalAvailable]
-  );
-  const totalSold = useMemo(
-    () => (typeof invTotalSold === "function" ? invTotalSold() : 0),
-    [inventoryReport, invTotalSold]
-  );
+  const filtTurnover = useMemo(() => {
+    if (!search) return turnoverReport;
+    const q = search.toLowerCase();
+    return turnoverReport.filter(
+      (d) =>
+        d?.dealerName?.toLowerCase().includes(q) ||
+        d?.address?.toLowerCase().includes(q) ||
+        d?.phone?.toLowerCase().includes(q)
+    );
+  }, [turnoverReport, search]);
 
-  const columns = [
+  // === COLUMNS ===
+  const columnsInventory = [
     {
       title: "Mã đại lý",
       dataIndex: "dealerId",
@@ -89,27 +100,22 @@ export default function InventoryReportPage() {
       dataIndex: "phone",
       key: "phone",
       width: 150,
-      sorter: (a, b) => (a.phone || "").localeCompare(b.phone || ""),
     },
     {
       title: "Tổng xe",
       dataIndex: "totalVehicles",
       key: "totalVehicles",
-      width: 120,
       align: "right",
-      sorter: (a, b) => (a.totalVehicles || 0) - (b.totalVehicles || 0),
-      render: (v) => <Text strong>{fmt(v)}</Text>,
+      render: (v) => Number(v || 0).toLocaleString("vi-VN"),
     },
     {
       title: "Sẵn sàng",
       dataIndex: "availableVehicles",
       key: "availableVehicles",
-      width: 130,
       align: "right",
-      sorter: (a, b) => (a.availableVehicles || 0) - (b.availableVehicles || 0),
       render: (v) => (
         <Tag color="green" style={{ fontWeight: 600 }}>
-          {fmt(v)}
+          {Number(v || 0).toLocaleString("vi-VN")}
         </Tag>
       ),
     },
@@ -117,16 +123,113 @@ export default function InventoryReportPage() {
       title: "Đã bán",
       dataIndex: "soldVehicles",
       key: "soldVehicles",
-      width: 120,
       align: "right",
-      sorter: (a, b) => (a.soldVehicles || 0) - (b.soldVehicles || 0),
       render: (v) => (
         <Tag color="volcano" style={{ fontWeight: 600 }}>
-          {fmt(v)}
+          {Number(v || 0).toLocaleString("vi-VN")}
         </Tag>
       ),
     },
   ];
+
+  const columnsTurnover = [
+    {
+      title: "Mã đại lý",
+      dataIndex: "dealerId",
+      key: "dealerId",
+      width: 110,
+    },
+    {
+      title: "Đại lý",
+      key: "dealerName",
+      render: (_, r) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{r.dealerName}</div>
+          <Text type="secondary">{r.address}</Text>
+        </div>
+      ),
+    },
+    { title: "Điện thoại", dataIndex: "phone", key: "phone", width: 150 },
+    {
+      title: "Đã bán (kỳ đo)",
+      dataIndex: "totalSold",
+      key: "totalSold",
+      align: "right",
+      render: (v) => Number(v || 0).toLocaleString("vi-VN"),
+    },
+    {
+      title: "Turnover rate",
+      dataIndex: "turnoverRate",
+      key: "turnoverRate",
+      align: "right",
+      render: (v) => (
+        <Tag color="blue" style={{ fontWeight: 600 }}>
+          {(Number(v || 0) * 100).toFixed(2)}%
+        </Tag>
+      ),
+    },
+  ];
+
+  // === KPI Cards ===
+  const KpisInventory = (
+    <Row gutter={16} className="mb-6">
+      <Col xs={24} md={8}>
+        <Card>
+          <Statistic
+            title="Tổng số xe"
+            value={invTotalVehicles()}
+            prefix={<CarOutlined />}
+            formatter={(n) => Number(n).toLocaleString("vi-VN")}
+          />
+        </Card>
+      </Col>
+      <Col xs={24} md={8}>
+        <Card>
+          <Statistic
+            title="Xe sẵn sàng"
+            value={invTotalAvailable()}
+            prefix={<CheckCircleOutlined />}
+            formatter={(n) => Number(n).toLocaleString("vi-VN")}
+          />
+        </Card>
+      </Col>
+      <Col xs={24} md={8}>
+        <Card>
+          <Statistic
+            title="Xe đã bán"
+            value={invTotalSold()}
+            prefix={<ShoppingCartOutlined />}
+            formatter={(n) => Number(n).toLocaleString("vi-VN")}
+          />
+        </Card>
+      </Col>
+    </Row>
+  );
+
+  const KpisTurnover = (
+    <Row gutter={16} className="mb-6">
+      <Col xs={24} md={12}>
+        <Card>
+          <Statistic
+            title="Tổng xe đã bán"
+            value={invTurnoverTotalSold()}
+            prefix={<CarOutlined />}
+            formatter={(n) => Number(n).toLocaleString("vi-VN")}
+          />
+        </Card>
+      </Col>
+      <Col xs={24} md={12}>
+        <Card>
+          <Statistic
+            title="Turnover rate TB"
+            value={invTurnoverAvgRate() * 100}
+            prefix={<PercentageOutlined />}
+            formatter={(n) => `${Number(n).toFixed(2)}`}
+          />
+        </Card>
+      </Col>
+    </Row>
+  );
 
   return (
     <div>
@@ -138,7 +241,6 @@ export default function InventoryReportPage() {
           <Text type="secondary">Tổng hợp theo từng đại lý</Text>
         </div>
 
-        {/* Search ở góc phải cho cân bằng */}
         <Input
           allowClear
           prefix={<SearchOutlined />}
@@ -149,66 +251,56 @@ export default function InventoryReportPage() {
         />
       </div>
 
-      {/* KPIs */}
-      <Row gutter={16} className="mb-6">
-        <Col xs={24} md={8}>
-          <Card>
-            <Statistic
-              title="Tổng số xe"
-              value={totalVehicles}
-              prefix={<CarOutlined />}
-              formatter={(v) => (
-                <Text strong style={{ fontSize: 22 }}>
-                  {fmt(v)}
-                </Text>
-              )}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card>
-            <Statistic
-              title="Xe sẵn sàng"
-              value={totalAvailable}
-              prefix={<CheckCircleOutlined />}
-              formatter={(v) => (
-                <Text strong style={{ fontSize: 22 }}>
-                  {fmt(v)}
-                </Text>
-              )}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card>
-            <Statistic
-              title="Xe đã bán"
-              value={totalSold}
-              prefix={<ShoppingCartOutlined />}
-              formatter={(v) => (
-                <Text strong style={{ fontSize: 22 }}>
-                  {fmt(v)}
-                </Text>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Table */}
-      <Card>
-        <Table
-          loading={isLoading}
-          columns={columns}
-          dataSource={filtered}
-          rowKey={(r) => r.dealerId}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (t, r) => `${r[0]}-${r[1]} của ${t} mục`,
-          }}
-        />
-      </Card>
+      <Tabs
+        activeKey={activeKey}
+        onChange={onTabChange}
+        items={[
+          {
+            key: "inventory",
+            label: "Tồn kho",
+            children: (
+              <>
+                {KpisInventory}
+                <Card>
+                  <Table
+                    loading={isLoading && activeKey === "inventory"}
+                    columns={columnsInventory}
+                    dataSource={filtInventory}
+                    rowKey={(r) => r.dealerId}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showTotal: (t, r) => `${r[0]}-${r[1]} của ${t} mục`,
+                    }}
+                  />
+                </Card>
+              </>
+            ),
+          },
+          {
+            key: "turnover",
+            label: "Tốc độ tiêu thụ",
+            children: (
+              <>
+                {KpisTurnover}
+                <Card>
+                  <Table
+                    loading={isLoading && activeKey === "turnover"}
+                    columns={columnsTurnover}
+                    dataSource={filtTurnover}
+                    rowKey={(r) => r.dealerId}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showTotal: (t, r) => `${r[0]}-${r[1]} của ${t} mục`,
+                    }}
+                  />
+                </Card>
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

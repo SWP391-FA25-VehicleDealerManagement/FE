@@ -3,7 +3,8 @@ import { persist } from "zustand/middleware";
 import {
   getStaffSalesByDealer,
   getDealersSummary,
-  getInventoryReport,        // 👈 thêm import API tồn kho
+  getInventoryReport,
+  getTurnoverReport,
 } from "../api/report";
 
 const useReport = create(
@@ -12,15 +13,15 @@ const useReport = create(
       isLoading: false,
       error: null,
 
-      /** Báo cáo theo nhân viên của 1 đại lý */
+      /** cũ */
       staffSales: [],
-      /** 🔥 MỚI: Báo cáo tổng hợp theo đại lý (toàn hệ thống) */
       dealersSummary: [],
-
-      /** 🔥 MỚI: Báo cáo tồn kho theo đại lý (toàn hệ thống) */
       inventoryReport: [],
 
-      /** Gọi API: nhân viên theo dealer */
+      /** NEW: turnover report */
+      turnoverReport: [],
+
+      // ===== EXISTING ACTIONS (giữ nguyên) =====
       fetchStaffSales: async (dealerId) => {
         try {
           set({ isLoading: true, error: null });
@@ -42,7 +43,6 @@ const useReport = create(
         }
       },
 
-      /** 🔥 Gọi API: tổng hợp theo đại lý */
       fetchDealersSummary: async () => {
         try {
           set({ isLoading: true, error: null });
@@ -67,7 +67,7 @@ const useReport = create(
         }
       },
 
-      /** 🆕 Gọi API: báo cáo tồn kho theo đại lý */
+      // bạn đã có fetchInventoryReport trước đó – giữ nguyên
       fetchInventoryReport: async () => {
         try {
           set({ isLoading: true, error: null });
@@ -85,19 +85,40 @@ const useReport = create(
           console.error("fetchInventoryReport error:", err);
           set({
             isLoading: false,
-            error: err?.response?.data?.message || "Lỗi tải báo cáo tồn kho",
+            error: err?.response?.data?.message || "Lỗi tải tồn kho",
           });
           throw err;
         }
       },
 
-      // Helpers: tổng hợp staffSales
+      /** ===== NEW: turnover report ===== */
+      fetchTurnoverReport: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          const res = await getTurnoverReport();
+          const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+          const normalized = list.map((i) => ({
+            ...i,
+            dealerId: Number(i?.dealerId) || i?.dealerId,
+            totalSold: Number(i?.totalSold) || 0,
+            turnoverRate: Number(i?.turnoverRate) || 0, // 0.6666...
+          }));
+          set({ turnoverReport: normalized, isLoading: false });
+        } catch (err) {
+          console.error("fetchTurnoverReport error:", err);
+          set({
+            isLoading: false,
+            error: err?.response?.data?.message || "Lỗi tải tốc độ tiêu thụ",
+          });
+          throw err;
+        }
+      },
+
+      // ===== Helpers cũ =====
       totalOrders: () =>
         get().staffSales.reduce((s, i) => s + (Number(i.totalOrders) || 0), 0),
       totalRevenue: () =>
         get().staffSales.reduce((s, i) => s + (Number(i.totalRevenue) || 0), 0),
-
-      // 🔥 Helpers: tổng hợp dealersSummary
       summaryTotalOrders: () =>
         get().dealersSummary.reduce(
           (s, i) => s + (Number(i.totalOrders) || 0),
@@ -110,7 +131,22 @@ const useReport = create(
         ),
       summaryDealerCount: () => get().dealersSummary.length,
 
-      // 🆕 Helpers: tổng hợp inventoryReport
+      // ===== NEW helpers cho turnover =====
+      invTurnoverTotalSold: () =>
+        get().turnoverReport.reduce(
+          (s, i) => s + (Number(i.totalSold) || 0),
+          0
+        ),
+      invTurnoverAvgRate: () => {
+        const arr = get().turnoverReport;
+        if (!arr.length) return 0;
+        const sum = arr.reduce(
+          (s, i) => s + (Number(i.turnoverRate) || 0),
+          0
+        );
+        return sum / arr.length; // dạng 0.66
+      },
+      // helpers cho inventory (đã có từ trước)
       invTotalVehicles: () =>
         get().inventoryReport.reduce(
           (s, i) => s + (Number(i.totalVehicles) || 0),
@@ -129,14 +165,15 @@ const useReport = create(
     }),
     {
       name: "report-store",
-      // Persist những mảng dữ liệu lớn để không gọi lại khi chuyển trang
       partialize: (s) => ({
         staffSales: s.staffSales,
         dealersSummary: s.dealersSummary,
-        inventoryReport: s.inventoryReport, // 👈 lưu thêm tồn kho
+        inventoryReport: s.inventoryReport,
+        turnoverReport: s.turnoverReport,
       }),
     }
   )
 );
 
 export default useReport;
+

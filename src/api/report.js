@@ -12,3 +12,7 @@ export const getDealersSummary = () => {
 export const getInventoryReport = () => {
   return axiosClient.get("/api/reports/inventory");
 };
+
+export const getTurnoverReport = () => {
+  return axiosClient.get("/api/reports/turnover");
+};
