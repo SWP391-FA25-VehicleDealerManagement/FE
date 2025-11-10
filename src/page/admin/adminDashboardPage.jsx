@@ -1,5 +1,5 @@
 import React from "react";
-import AdminDashboard from "../../sections/admin/dashboard/admindashboard.jsx";
+import AdminDashboardNew from "../../sections/admin/dashboard/AdminDashboardNew";
 import { Helmet } from "react-helmet";
 export default function adminDashboardPage() {
   return (
@@ -7,7 +7,7 @@ export default function adminDashboardPage() {
       <Helmet>
         <title>Dashboard</title>
       </Helmet>
-      <AdminDashboard />
+      <AdminDashboardNew />
     </>
   );
 }
