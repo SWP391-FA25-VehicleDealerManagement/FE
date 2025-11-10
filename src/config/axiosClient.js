@@ -2,7 +2,10 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const axiosClient = axios.create({
-  baseURL: "http://54.179.165.189:8080",
+  // ✅ Dev: gọi trực tiếp HTTP | Production: qua Vercel proxy để tránh Mixed Content
+  baseURL: import.meta.env.DEV 
+    ? "http://localhost:8080" 
+    : "/api",
 });
 
 // Request interceptor
