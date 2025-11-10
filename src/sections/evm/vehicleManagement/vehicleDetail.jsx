@@ -35,9 +35,6 @@ import {
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useVehicleStore from "../../../hooks/useVehicle";
-import useDealerStore from "../../../hooks/useDealer";
-import useVariantStore from "../../../hooks/useVariant";
-import { getFullImageUrl } from "../../../config/image";
 import axiosClient from "../../../config/axiosClient";
 
 const { Title, Text } = Typography;
@@ -151,8 +148,6 @@ export default function VehicleDetail() {
       </div>
     );
   }
-
-  console.log("check image", getFullImageUrl(vehicleDetail.variantImage));
 
   return (
     <div className="vehicle-detail-container">

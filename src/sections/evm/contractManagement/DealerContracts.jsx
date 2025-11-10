@@ -46,20 +46,18 @@ export default function ContractsTargets() {
   const [activeTab, setActiveTab] = useState("contracts");
   const [isLoading, setIsLoading] = useState(false);
   const [contracts, setContracts] = useState([]);
-  const [targets, setTargets] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [isContractDetailOpen, setIsContractDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // add or edit
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [form] = Form.useForm();
-  const [targetForm] = Form.useForm();
 
   // Mock data - thay bằng API call thực tế
   useEffect(() => {
     fetchContracts();
-    fetchTargets();
   }, []);
 
   const fetchContracts = async () => {
@@ -113,57 +111,6 @@ export default function ContractsTargets() {
     }
   };
 
-  const fetchTargets = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      const mockTargets = [
-        {
-          targetId: 1,
-          dealerId: 1,
-          dealerName: "Đại lý Toyota Hà Nội",
-          period: "Q1 2025",
-          targetRevenue: 2000000000,
-          actualRevenue: 1500000000,
-          targetUnits: 100,
-          actualUnits: 75,
-          achievement: 75,
-          status: "in_progress",
-        },
-        {
-          targetId: 2,
-          dealerId: 2,
-          dealerName: "Đại lý Honda TP.HCM",
-          period: "Q1 2025",
-          targetRevenue: 3000000000,
-          actualRevenue: 3200000000,
-          targetUnits: 150,
-          actualUnits: 160,
-          achievement: 106.67,
-          status: "achieved",
-        },
-        {
-          targetId: 3,
-          dealerId: 3,
-          dealerName: "Đại lý Ford Đà Nẵng",
-          period: "Q4 2024",
-          targetRevenue: 1500000000,
-          actualRevenue: 1200000000,
-          targetUnits: 80,
-          actualUnits: 65,
-          achievement: 80,
-          status: "not_achieved",
-        },
-      ];
-      setTargets(mockTargets);
-    } catch (error) {
-      console.error("Error fetching targets:", error);
-      toast.error("Không thể tải danh sách mục tiêu");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const showAddContractModal = () => {
     setModalMode("add");
     form.resetFields();
@@ -203,60 +150,16 @@ export default function ContractsTargets() {
     }
   };
 
-  const showAddTargetModal = () => {
-    setModalMode("add");
-    targetForm.resetFields();
-    setIsTargetModalOpen(true);
-  };
 
-  const showEditTargetModal = (record) => {
-    setModalMode("edit");
-    setSelectedRecord(record);
-    targetForm.setFieldsValue({
-      dealerId: record.dealerId,
-      period: record.period,
-      targetRevenue: record.targetRevenue,
-      targetUnits: record.targetUnits,
-    });
-    setIsTargetModalOpen(true);
-  };
-
-  const handleTargetSubmit = async () => {
-    try {
-      const values = await targetForm.validateFields();
-      console.log("Target values:", values);
-      
-      // TODO: Implement API call
-      toast.success(
-        modalMode === "add"
-          ? "Thêm mục tiêu thành công"
-          : "Cập nhật mục tiêu thành công"
-      );
-      setIsTargetModalOpen(false);
-      targetForm.resetFields();
-      fetchTargets();
-    } catch (error) {
-      console.error("Error submitting target:", error);
-    }
-  };
 
   const handleDeleteContract = (record) => {
-    Modal.confirm({
-      title: "Xác nhận xóa hợp đồng",
-      content: `Bạn có chắc chắn muốn xóa hợp đồng ${record.contractNumber}?`,
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          // TODO: Implement API call
-          toast.success("Xóa hợp đồng thành công");
-          fetchContracts();
-        } catch (error) {
-          toast.error("Xóa hợp đồng thất bại");
-        }
-      },
-    });
+    setSelectedRecord(record);
+    setIsDeleteModalOpen(true);
+    try{
+
+    }catch(error){
+      console.error("Error deleting contract:", error);
+    }
   };
 
   const contractColumns = [
@@ -363,36 +266,15 @@ export default function ContractsTargets() {
   ];
 
   const showContractDetail = (record) => {
-    Modal.info({
-      title: "Chi tiết hợp đồng",
-      width: 700,
-      content: (
-        <Descriptions bordered column={1} style={{ marginTop: 16 }}>
-          <Descriptions.Item label="Số hợp đồng">{record.contractNumber}</Descriptions.Item>
-          <Descriptions.Item label="Đại lý">{record.dealerName}</Descriptions.Item>
-          <Descriptions.Item label="Ngày bắt đầu">
-            {dayjs(record.startDate).format("DD/MM/YYYY")}
-          </Descriptions.Item>
-          <Descriptions.Item label="Ngày kết thúc">
-            {dayjs(record.endDate).format("DD/MM/YYYY")}
-          </Descriptions.Item>
-          <Descriptions.Item label="Giá trị hợp đồng">
-            {record.contractValue.toLocaleString("vi-VN")} đ
-          </Descriptions.Item>
-          <Descriptions.Item label="Điều khoản thanh toán">
-            {record.paymentTerms}
-          </Descriptions.Item>
-          <Descriptions.Item label="Ngày tạo">
-            {dayjs(record.createdDate).format("DD/MM/YYYY")}
-          </Descriptions.Item>
-          <Descriptions.Item label="Trạng thái">
-            <Tag color={record.status === "active" ? "success" : "default"}>
-              {record.status === "active" ? "Đang hoạt động" : "Hết hạn"}
-            </Tag>
-          </Descriptions.Item>
-        </Descriptions>
-      ),
-    });
+    setSelectedRecord(record);
+    setIsContractDetailOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    // TODO: Implement delete API call
+    toast.success("Xóa hợp đồng thành công");
+    setIsDeleteModalOpen(false);
+    fetchContracts();
   };
 
   // Statistics
@@ -605,65 +487,73 @@ export default function ContractsTargets() {
         </Form>
       </Modal>
 
-      {/* Target Modal */}
+
+      {/* Contract Detail Modal */}
       <Modal
-        title={modalMode === "add" ? "Thêm mục tiêu mới" : "Chỉnh sửa mục tiêu"}
-        open={isTargetModalOpen}
-        onOk={handleTargetSubmit}
-        onCancel={() => {
-          setIsTargetModalOpen(false);
-          targetForm.resetFields();
-        }}
-        width={600}
-        okText={modalMode === "add" ? "Thêm" : "Cập nhật"}
-        cancelText="Hủy"
+        title="Chi tiết hợp đồng"
+        open={isContractDetailOpen}
+        onCancel={() => setIsContractDetailOpen(false)}
+        width={700}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setIsContractDetailOpen(false)}>
+            Đóng
+          </Button>,
+        ]}
       >
-        <Form form={targetForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item
-            name="dealerId"
-            label="Đại lý"
-            rules={[{ required: true, message: "Vui lòng chọn đại lý" }]}
-          >
-            <Select placeholder="Chọn đại lý">
-              <Option value={1}>Đại lý Toyota Hà Nội</Option>
-              <Option value={2}>Đại lý Honda TP.HCM</Option>
-              <Option value={3}>Đại lý Ford Đà Nẵng</Option>
-            </Select>
-          </Form.Item>
+        {selectedRecord && (
+          <Descriptions bordered column={1} style={{ marginTop: 16 }}>
+            <Descriptions.Item label="Số hợp đồng">
+              {selectedRecord.contractNumber}
+            </Descriptions.Item>
+            <Descriptions.Item label="Đại lý">
+              {selectedRecord.dealerName}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày bắt đầu">
+              {dayjs(selectedRecord.startDate).format("DD/MM/YYYY")}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày kết thúc">
+              {dayjs(selectedRecord.endDate).format("DD/MM/YYYY")}
+            </Descriptions.Item>
+            <Descriptions.Item label="Giá trị hợp đồng">
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(selectedRecord.contractValue)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Điều khoản thanh toán">
+              {selectedRecord.paymentTerms}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {dayjs(selectedRecord.createdDate).format("DD/MM/YYYY")}
+            </Descriptions.Item>
+            <Descriptions.Item label="Trạng thái">
+              <Tag color={selectedRecord.status === "active" ? "success" : "default"}>
+                {selectedRecord.status === "active" ? "Đang hoạt động" : "Hết hạn"}
+              </Tag>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
 
-          <Form.Item
-            name="period"
-            label="Kỳ"
-            rules={[{ required: true, message: "Vui lòng nhập kỳ" }]}
-          >
-            <Input placeholder="VD: Q1 2025, Tháng 01/2025" />
-          </Form.Item>
-
-          <Form.Item
-            name="targetRevenue"
-            label="Mục tiêu doanh thu (VNĐ)"
-            rules={[{ required: true, message: "Vui lòng nhập mục tiêu doanh thu" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-              placeholder="2000000000"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="targetUnits"
-            label="Mục tiêu số xe bán"
-            rules={[{ required: true, message: "Vui lòng nhập mục tiêu số xe" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              min={1}
-              placeholder="100"
-            />
-          </Form.Item>
-        </Form>
+      {/* Delete Modal Contract */}
+      <Modal
+        title="Xóa hợp đồng"
+        open={isDeleteModalOpen}
+        onOk={handleDeleteConfirm}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        okText="Xóa"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}
+      >
+        {selectedRecord && (
+          <div>
+            <p>Bạn có chắc chắn muốn xóa hợp đồng này?</p>
+            <div className="mt-4 p-3 bg-gray-50 rounded">
+              <p className="font-semibold">{selectedRecord.contractNumber}</p>
+              <p className="text-sm text-gray-600">{selectedRecord.dealerName}</p>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
