@@ -36,7 +36,7 @@ export default function RequestVehicle() {
   const navigate = useNavigate();
   const { evmVehiclesList, isLoadingEVMVehicles, fetchEVMVehicles } = useVehicleStore();
   const { userDetail } = useAuthen();
-  const { createRequestVehicle } = useDealerRequest();
+  const { createRequestVehicle, isLoadingCreateRequest } = useDealerRequest();
   const [searchText, setSearchText] = useState("");
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -510,6 +510,7 @@ export default function RequestVehicle() {
         open={isOrderModalOpen}
         onOk={handleOrderSubmit}
         onCancel={handleOrderCancel}
+        confirmLoading={isLoadingCreateRequest}
         okText="Đặt xe"
         cancelText="Hủy"
         width={600}
