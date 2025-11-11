@@ -71,43 +71,47 @@ export default function VehicleList() {
 
     const fetchAllImages = async () => {
       if (evmVehiclesList && evmVehiclesList.length > 0) {
-        const newImageUrls = {};
+        // Lọc ra những images chưa được fetch
+        const imagesToFetch = evmVehiclesList.filter(
+          (vehicle) => vehicle.imageUrl && !imageUrls[vehicle.imageUrl]
+        );
+
+        if (imagesToFetch.length === 0) return;
 
         // Tạo mảng các promise để tải ảnh song song
-        const fetchPromises = evmVehiclesList.map(async (vehicle) => {
-          if (vehicle.imageUrl) {
-            try {
-              const response = await axiosClient.get(vehicle.imageUrl, {
-                responseType: "blob",
-              });
-              const objectUrl = URL.createObjectURL(response.data);
-              objectUrlsToRevoke.push(objectUrl);
-              return {
-                path: vehicle.imageUrl,
-                url: objectUrl,
-              };
-            } catch (error) {
-              console.error("Không thể tải ảnh:", vehicle.imageUrl, error);
-              return {
-                path: vehicle.imageUrl,
-                url: null, // Đánh dấu là lỗi
-              };
-            }
+        const fetchPromises = imagesToFetch.map(async (vehicle) => {
+          try {
+            const response = await axiosClient.get(vehicle.imageUrl, {
+              responseType: "blob",
+            });
+            const objectUrl = URL.createObjectURL(response.data);
+            objectUrlsToRevoke.push(objectUrl);
+            return {
+              path: vehicle.imageUrl,
+              url: objectUrl,
+            };
+          } catch (error) {
+            console.error("Không thể tải ảnh:", vehicle.imageUrl, error);
+            return {
+              path: vehicle.imageUrl,
+              url: null,
+            };
           }
-          return null;
         });
 
         // Chờ tất cả ảnh được tải về
         const results = await Promise.all(fetchPromises);
 
-        // Cập nhật state
-        results.forEach((result) => {
-          if (result) {
-            newImageUrls[result.path] = result.url;
-          }
+        // Merge với imageUrls hiện tại thay vì replace hoàn toàn
+        setImageUrls((prev) => {
+          const newImageUrls = { ...prev };
+          results.forEach((result) => {
+            if (result) {
+              newImageUrls[result.path] = result.url;
+            }
+          });
+          return newImageUrls;
         });
-
-        setImageUrls(newImageUrls);
       }
     };
 
@@ -117,7 +121,7 @@ export default function VehicleList() {
     return () => {
       objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [evmVehiclesList]);
+  }, [evmVehiclesList.length]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();

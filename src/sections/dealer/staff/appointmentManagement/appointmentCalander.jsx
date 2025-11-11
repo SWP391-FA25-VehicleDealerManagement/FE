@@ -45,11 +45,11 @@ const getStatusProps = (status) => {
   const upperStatus = status?.toUpperCase();
   switch (upperStatus) {
     case "SCHEDULED":
-      return { color: "blue", text: "Đã lên lịch" };
+      return { color: "gray", text: "Đã lên lịch" };
     case "CONFIRMED":
-      return { color: "green", text: "Đã xác nhận" };
+      return { color: "blue", text: "Đã xác nhận" };
     case "COMPLETED":
-      return { color: "gray", text: "Đã hoàn thành" };
+      return { color: "green", text: "Đã hoàn thành" };
     case "CANCELLED":
       return { color: "red", text: "Đã hủy" };
     case "RESCHEDULED":
@@ -68,7 +68,7 @@ const generateTimeSlots = () => {
 };
 
 export default function WeeklyCalendar() {
-  const [processedAppointments, setProcessedAppointments] = useState([]);
+
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [weekDays, setWeekDays] = useState([]);
   const [timeSlots] = useState(generateTimeSlots());
@@ -92,13 +92,11 @@ export default function WeeklyCalendar() {
     }
   }, [dealerId]);
 
-  useEffect(() => {
-    if (!testDrives) {
-      setProcessedAppointments([]);
-      return;
-    }
+  // Tối ưu: Sử dụng useMemo thay vì useEffect + useState
+  const processedAppointments = React.useMemo(() => {
+    if (!testDrives) return [];
 
-    const processedData = testDrives.map((drive) => {
+    return testDrives.map((drive) => {
       const endDate = dayjs(drive.scheduledDate)
         .add(DEFAULT_DURATION_MINUTES, "minute")
         .toISOString();
@@ -108,9 +106,6 @@ export default function WeeklyCalendar() {
         endDate: endDate,
       };
     });
-
-    setProcessedAppointments(processedData);
-    console.log("check data", processedAppointments);
   }, [testDrives]);
 
   useEffect(() => {
