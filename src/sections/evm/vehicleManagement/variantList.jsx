@@ -238,6 +238,14 @@ export default function VariantList() {
       sorter: (a, b) => a.modelName.localeCompare(b.modelName),
     },
     {
+      title: "Giá niêm yết (VND)",
+      dataIndex: "msrp",
+      key: "msrp",
+      sorter: (a, b) => a.msrp - b.msrp,
+      render: (value) =>
+        value.toLocaleString("vi-VN"),
+    },
+    {
       title: "Thao tác",
       key: "action",
       width: 200,
