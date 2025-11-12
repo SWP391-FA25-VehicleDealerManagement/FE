@@ -1,23 +1,79 @@
-import React from "react";
-import { Card } from "antd";
+import React, { useState, useMemo } from "react";
+import { Card, Select } from "antd";
 import { LineChartOutlined } from "@ant-design/icons";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
+import dayjs from "dayjs";
 
-const OrderCountChart = ({ data }) => {
-  // Transform data for Recharts
-  const chartData = data.categories.map((category, index) => ({
-    name: category,
-    orders: data.values[index],
-  }));
+const OrderCountChart = ({ orders }) => {
+  const [timePeriod, setTimePeriod] = useState("month");
+
+  // Process chart data based on time period
+  const chartData = useMemo(() => {
+    if (!orders) return [];
+
+    const categories = [];
+    const values = [];
+
+    if (timePeriod === "week") {
+      // Last 12 weeks
+      for (let i = 11; i >= 0; i--) {
+        const weekStart = dayjs().subtract(i, "week").startOf("week");
+        const weekEnd = dayjs().subtract(i, "week").endOf("week");
+
+        const weekOrders = orders.filter((order) => {
+          const orderDate = dayjs(order.createdDate);
+          return orderDate.isAfter(weekStart) && orderDate.isBefore(weekEnd);
+        });
+
+        categories.push(
+          `${weekStart.format("DD/MM")} - ${weekEnd.format("DD/MM")}`
+        );
+        values.push(weekOrders.length);
+      }
+    } else if (timePeriod === "month") {
+      // Last 12 months
+      for (let i = 11; i >= 0; i--) {
+        const month = dayjs().subtract(i, "month");
+
+        const monthOrders = orders.filter((order) => {
+          const orderDate = dayjs(order.createdDate);
+          return (
+            orderDate.year() === month.year() &&
+            orderDate.month() === month.month()
+          );
+        });
+
+        categories.push(month.format("MM/YYYY"));
+        values.push(monthOrders.length);
+      }
+    } else if (timePeriod === "year") {
+      // Last 5 years
+      for (let i = 4; i >= 0; i--) {
+        const year = dayjs().subtract(i, "year");
+
+        const yearOrders = orders.filter((order) => {
+          const orderDate = dayjs(order.createdDate);
+          return orderDate.year() === year.year();
+        });
+
+        categories.push(year.format("YYYY"));
+        values.push(yearOrders.length);
+      }
+    }
+
+    return categories.map((category, index) => ({
+      name: category,
+      orders: values[index],
+    }));
+  }, [orders, timePeriod]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
@@ -37,38 +93,58 @@ const OrderCountChart = ({ data }) => {
   return (
     <Card
       title={
-        <div className="flex items-center">
-          <LineChartOutlined className="mr-2 text-purple-600" />
-          <span>Biểu đồ số lượng đơn hàng</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <LineChartOutlined className="mr-2 text-purple-600" />
+            <span>Biểu đồ số lượng đơn hàng</span>
+          </div>
+          <Select
+            value={timePeriod}
+            onChange={setTimePeriod}
+            style={{ width: 130 }}
+            size="small"
+            options={[
+              { label: "Theo tuần", value: "week" },
+              { label: "Theo tháng", value: "month" },
+              { label: "Theo năm", value: "year" },
+            ]}
+          />
         </div>
       }
       className="shadow-sm mb-6"
     >
       <ResponsiveContainer width="100%" height={350}>
-        <BarChart
+        <AreaChart
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
         >
+          <defs>
+            <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#722ed1" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#722ed1" stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis
             dataKey="name"
-            stroke="#8884d8"
+            stroke="#722ed1"
             style={{ fontSize: "12px" }}
           />
           <YAxis
-            stroke="#8884d8"
+            stroke="#722ed1"
             style={{ fontSize: "12px" }}
             allowDecimals={false}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar
+          <Area
+            type="monotone"
             dataKey="orders"
-            fill="#722ed1"
-            name="Số đơn hàng"
-            radius={[8, 8, 0, 0]}
+            stroke="#722ed1"
+            strokeWidth={2}
+            fillOpacity={1}
+            fill="url(#colorOrders)"
           />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
     </Card>
   );

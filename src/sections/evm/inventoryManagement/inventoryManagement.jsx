@@ -12,41 +12,28 @@ import {
   Row,
   Col,
   Statistic,
-  Progress,
   Tabs,
-  Modal,
-  Form,
-  InputNumber,
-  DatePicker,
-  Divider,
+  Empty,
 } from "antd";
 import {
   SearchOutlined,
   CarOutlined,
-  BarChartOutlined,
   InboxOutlined,
-  ImportOutlined,
-  ExportOutlined,
   ReloadOutlined,
-  PlusOutlined,
-  AreaChartOutlined,
   ShopOutlined,
-  DeleteOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useInventoryStore from "../../../hooks/useInventory";
 import useDealerStore from "../../../hooks/useDealer";
 
-const { Title, Text } = Typography;
-const { Option } = Select;
+const { Title } = Typography;
 const { TabPane } = Tabs;
 
 export default function InventoryManagement() {
-  const {
-    inventory,
-    isLoading,
-    fetchInventory,
-  } = useInventoryStore();
+  const { inventory, isLoading, fetchInventory } = useInventoryStore();
   const { dealers, fetchDealers } = useDealerStore();
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("1");
@@ -84,6 +71,74 @@ export default function InventoryManagement() {
     setSearchText("");
   };
 
+  // Calculate inventory statistics
+  const inventoryStats = useMemo(() => {
+    if (!inventory || inventory.length === 0) {
+      return {
+        total: 0,
+        totalQuantity: 0,
+        modelCount: 0,
+        variantCount: 0,
+        lowStockItems: [],
+      };
+    }
+
+    const stats = {
+      total: inventory.length,
+      totalQuantity: 0,
+      modelCount: new Set(),
+      variantCount: inventory.length,
+      lowStockItems: [],
+    };
+
+    inventory.forEach((item) => {
+      stats.totalQuantity += item.quantity || 0;
+
+      if (item.modelName) {
+        stats.modelCount.add(item.modelName);
+      }
+
+      // Low stock warning: quantity <= 5
+      if (item.quantity <= 5) {
+        stats.lowStockItems.push(item);
+      }
+    });
+
+    stats.modelCount = stats.modelCount.size;
+
+    return stats;
+  }, [inventory]);
+
+  // Group inventory by model
+  const groupedInventory = useMemo(() => {
+    if (!inventory || inventory.length === 0) return [];
+
+    const grouped = {};
+
+    inventory.forEach((item) => {
+      const modelName = item.modelName || "Không xác định";
+
+      if (!grouped[modelName]) {
+        grouped[modelName] = {
+          modelName,
+          totalQuantity: 0,
+          variants: [],
+        };
+      }
+
+      grouped[modelName].totalQuantity += item.quantity || 0;
+      grouped[modelName].variants.push({
+        variantId: item.variantId,
+        variantName: item.variantName,
+        color: item.color,
+        quantity: item.quantity,
+      });
+    });
+
+    return Object.values(grouped).sort(
+      (a, b) => b.totalQuantity - a.totalQuantity
+    );
+  }, [inventory]);
 
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
@@ -137,44 +192,93 @@ export default function InventoryManagement() {
   const inventoryColumns = [
     {
       title: "STT",
-      dataIndex: "index",
       key: "index",
-      width: "5%",
+      width: 60,
+      align: "center",
       render: (_, __, index) =>
         (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
-      title: "Mẫu xe",
+      title: "Tên model",
       dataIndex: "modelName",
       key: "modelName",
       ...getColumnSearchProps("modelName"),
-      width: "20%",
+      render: (text) => <span className="font-semibold">{text}</span>,
     },
     {
-      title: "Phiên bản",
-      dataIndex: "variantName",
-      key: "variantName",
-      ...getColumnSearchProps("variantName"),
-      width: "20%",
+      title: "Số lượng biến thể",
+      key: "variantCount",
+      align: "center",
+      render: (_, record) => record.variants.length,
     },
     {
-      title: "Màu sắc",
-      dataIndex: "color",
-      key: "color",
-      ...getColumnSearchProps("color"),
-      width: "20%",
-    },
-    {
-      title: "Số lượng",
-      dataIndex: "quantity",
-      key: "quantity",
-      sorter: (a, b) => a.quantity - b.quantity,
-      width: "15%",
+      title: "Tổng số lượng",
+      dataIndex: "totalQuantity",
+      key: "totalQuantity",
+      align: "right",
+      sorter: (a, b) => a.totalQuantity - b.totalQuantity,
       render: (quantity) => (
-        <Text type={quantity < 5 ? "warning" : ""}>{quantity}</Text>
+        <span className="font-semibold text-blue-600">{quantity}</span>
       ),
     },
+    {
+      title: "Trạng thái",
+      key: "status",
+      align: "center",
+      render: (_, record) => {
+        if (record.totalQuantity === 0) {
+          return <Tag color="red">Hết hàng</Tag>;
+        } else if (record.totalQuantity <= 5) {
+          return <Tag color="orange">Sắp hết</Tag>;
+        } else if (record.totalQuantity <= 10) {
+          return <Tag color="warning">Ít hàng</Tag>;
+        } else {
+          return <Tag color="green">Còn hàng</Tag>;
+        }
+      },
+    },
   ];
+
+  const expandedRowRender = (record) => {
+    const variantColumns = [
+      {
+        title: "Tên biến thể",
+        dataIndex: "variantName",
+        key: "variantName",
+      },
+      {
+        title: "Màu sắc",
+        dataIndex: "color",
+        key: "color",
+        render: (color) => <Tag color="blue">{color || "Không xác định"}</Tag>,
+      },
+      {
+        title: "Số lượng",
+        dataIndex: "quantity",
+        key: "quantity",
+        align: "right",
+        render: (quantity) => {
+          let textColor = "text-green-600";
+          if (quantity === 0) {
+            textColor = "text-red-600";
+          } else if (quantity <= 5) {
+            textColor = "text-orange-600";
+          }
+          return <span className={`font-medium ${textColor}`}>{quantity}</span>;
+        },
+      },
+    ];
+
+    return (
+      <Table
+        columns={variantColumns}
+        dataSource={record.variants}
+        pagination={false}
+        size="small"
+        rowKey="variantId"
+      />
+    );
+  };
 
   const warehouseColumns = [
     {
@@ -209,97 +313,171 @@ export default function InventoryManagement() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
-          <InboxOutlined style={{ marginRight: 8 }} /> Quản lý kho hàng
+          <FileTextOutlined style={{ marginRight: 8 }} /> Quản lý kho hàng
         </Title>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={fetchData}>
+          <Button icon={<ReloadOutlined />} onClick={fetchData} type="primary">
             Làm mới
           </Button>
         </Space>
       </div>
 
-      {useMemo(() => {
-        const totalVehicles = inventory.reduce(
-          (sum, item) => sum + (item.quantity || 0),
-          0
-        );
-        const totalDealers = dealers.length;
-
-        return (
-          <Row gutter={16} className="mb-6">
-            <Col span={12}>
-              <Card hoverable>
+      <Tabs activeKey={activeTab} onChange={setActiveTab}>
+        <TabPane
+          tab={
+            <span>
+              <CarOutlined /> Báo cáo tồn kho
+            </span>
+          }
+          key="1"
+        >
+          <Row gutter={[16, 16]} className="mb-6">
+            <Col xs={24} sm={12} lg={6}>
+              <Card className="text-center bg-blue-50" hoverable={true}>
                 <Statistic
-                  title="Tổng số lượng xe trong kho"
-                  value={totalVehicles}
-                  prefix={<CarOutlined />}
+                  title="Tổng số lượng xe"
+                  value={inventoryStats.totalQuantity}
+                  prefix={<InboxOutlined />}
+                  valueStyle={{ color: "#1890ff", fontSize: "28px" }}
                 />
               </Card>
             </Col>
-            <Col span={12}>
-              <Card hoverable>
+
+            <Col xs={24} sm={12} lg={6}>
+              <Card className="text-center bg-green-50" hoverable={true}>
                 <Statistic
-                  title="Tổng số đại lý"
-                  value={totalDealers}
-                  valueStyle={{ color: "#1890ff" }}
-                  prefix={<ShopOutlined />}
+                  title="Số dòng xe"
+                  value={inventoryStats.modelCount}
+                  prefix={<CheckCircleOutlined />}
+                  valueStyle={{ color: "#52c41a", fontSize: "28px" }}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={12} lg={6}>
+              <Card className="text-center bg-purple-50" hoverable={true}>
+                <Statistic
+                  title="Số biến thể"
+                  value={inventoryStats.variantCount}
+                  prefix={<CheckCircleOutlined />}
+                  valueStyle={{ color: "#722ed1", fontSize: "28px" }}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={12} lg={6}>
+              <Card className="text-center bg-orange-50" hoverable={true}>
+                <Statistic
+                  title="Cảnh báo tồn kho"
+                  value={inventoryStats.lowStockItems.length}
+                  prefix={<ExclamationCircleOutlined />}
+                  valueStyle={{ color: "#fa8c16", fontSize: "28px" }}
                 />
               </Card>
             </Col>
           </Row>
-        );
-      }, [inventory, dealers])}
 
-      <Card>
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane
-            tab={
-              <span>
-                <CarOutlined /> Danh sách tồn kho
-              </span>
-            }
-            key="1"
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center p-10">
-                <Spin size="large" />
+          {inventoryStats.lowStockItems.length > 0 && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <div className="flex items-center text-yellow-800">
+                <ExclamationCircleOutlined className="mr-2 text-lg" />
+                <span className="font-medium">
+                  Cảnh báo: {inventoryStats.lowStockItems.length} mặt hàng có số
+                  lượng tồn kho thấp (≤ 5 xe). Cần nhập thêm hàng!
+                </span>
               </div>
-            ) : (
-              <Table
-                columns={inventoryColumns}
-                dataSource={inventory}
-                pagination={pagination}
-                onChange={(pagination) => setPagination(pagination)}
-                rowKey="index"
-              />
-            )}
-          </TabPane>
+            </div>
+          )}
 
-          <TabPane
-            tab={
-              <span>
-                <ShopOutlined /> Danh sách đại lý
-              </span>
-            }
-            key="2"
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center p-10">
-                <Spin size="large" />
-              </div>
-            ) : (
-              <Table
-                columns={warehouseColumns}
-                dataSource={dealers}
-                pagination={pagination}
-                onChange={(pagination) => setPagination(pagination)}
-                rowKey="dealerId"
-                scroll={{ x: 1000 }}
-              />
-            )}
-          </TabPane>
-        </Tabs>
-      </Card>
+          {isLoading ? (
+            <div className="flex justify-center items-center p-10">
+              <Spin size="large" />
+            </div>
+          ) : (
+            <Table
+              columns={inventoryColumns}
+              dataSource={groupedInventory}
+              rowKey="modelName"
+              expandable={{
+                expandedRowRender,
+                defaultExpandAllRows: false,
+              }}
+              pagination={{
+                ...pagination,
+                showTotal: (total) => `Tổng ${total} dòng xe`,
+              }}
+              onChange={(pagination) => setPagination(pagination)}
+              scroll={{ x: 1000 }}
+              locale={{
+                emptyText: (
+                  <Empty
+                    description="Không có dữ liệu tồn kho"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ),
+              }}
+            />
+          )}
+        </TabPane>
+
+        <TabPane
+          tab={
+            <span>
+              <ShopOutlined /> Danh sách đại lý ({dealers.length})
+            </span>
+          }
+          key="2"
+        >
+          <Row gutter={[16, 16]} className="mb-6">
+            <Col xs={24} sm={12}>
+              <Card className="text-center bg-gradient-to-br from-blue-50 to-blue-100" hoverable={true}>
+                <Statistic
+                  title="Tổng số đại lý"
+                  value={dealers.length}
+                  prefix={<ShopOutlined />}
+                  valueStyle={{ color: "#1890ff", fontSize: "32px" }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Card className="text-center bg-gradient-to-br from-green-50 to-green-100" hoverable={true}>
+                <Statistic
+                  title="Đại lý hoạt động"
+                  value={dealers.filter((d) => d.status === "ACTIVE").length}
+                  prefix={<CheckCircleOutlined />}
+                  valueStyle={{ color: "#52c41a", fontSize: "32px" }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {isLoading ? (
+            <div className="flex justify-center items-center p-10">
+              <Spin size="large" />
+            </div>
+          ) : (
+            <Table
+              columns={warehouseColumns}
+              dataSource={dealers}
+              pagination={{
+                ...pagination,
+                showTotal: (total) => `Tổng ${total} đại lý`,
+              }}
+              onChange={(pagination) => setPagination(pagination)}
+              rowKey="dealerId"
+              scroll={{ x: 1000 }}
+              locale={{
+                emptyText: (
+                  <Empty
+                    description="Không có dữ liệu đại lý"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ),
+              }}
+            />
+          )}
+        </TabPane>
+      </Tabs>
     </div>
   );
 }

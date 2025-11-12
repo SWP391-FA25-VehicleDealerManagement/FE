@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Table,
   Input,
@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Statistic,
+  Empty,
 } from "antd";
 import {
   SearchOutlined,
@@ -18,6 +19,8 @@ import {
   InboxOutlined,
   ReloadOutlined,
   TagsOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import useDealerInventory from "../../../../hooks/useDealerInventory";
@@ -57,6 +60,76 @@ export default function InventoryList() {
       );
     }
   };
+
+  // Calculate inventory statistics
+  const inventoryStats = useMemo(() => {
+    if (!inventory || inventory.length === 0) {
+      return {
+        total: 0,
+        totalQuantity: 0,
+        modelCount: 0,
+        variantCount: 0,
+        lowStockItems: [],
+      };
+    }
+
+    const stats = {
+      total: inventory.length,
+      totalQuantity: 0,
+      modelCount: new Set(),
+      variantCount: inventory.length,
+      lowStockItems: [],
+    };
+
+    inventory.forEach((item) => {
+      stats.totalQuantity += item.quantity || 0;
+
+      if (item.modelName) {
+        stats.modelCount.add(item.modelName);
+      }
+
+      // Low stock warning: quantity <= 5
+      if (item.quantity <= 5) {
+        stats.lowStockItems.push(item);
+      }
+    });
+
+    stats.modelCount = stats.modelCount.size;
+
+    return stats;
+  }, [inventory]);
+
+  // Group inventory by model
+  const groupedInventory = useMemo(() => {
+    if (!inventory || inventory.length === 0) return [];
+
+    const grouped = {};
+
+    inventory.forEach((item) => {
+      const modelName = item.modelName || "Không xác định";
+
+      if (!grouped[modelName]) {
+        grouped[modelName] = {
+          modelName,
+          totalQuantity: 0,
+          variants: [],
+        };
+      }
+
+      grouped[modelName].totalQuantity += item.quantity || 0;
+      grouped[modelName].variants.push({
+        variantId: item.variantId,
+        variantName: item.variantName,
+        color: item.color,
+        quantity: item.quantity,
+        stockId: item.stockId,
+      });
+    });
+
+    return Object.values(grouped).sort(
+      (a, b) => b.totalQuantity - a.totalQuantity
+    );
+  }, [inventory]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -120,100 +193,201 @@ export default function InventoryList() {
   const inventoryColumns = [
     {
       title: "STT",
-      dataIndex: "index",
       key: "index",
-      width: "5%",
+      width: 60,
+      align: "center",
       render: (_, __, index) =>
         (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
-      title: "Mẫu xe",
+      title: "Tên model",
       dataIndex: "modelName",
       key: "modelName",
       ...getColumnSearchProps("modelName"),
-      width: "20%",
+      render: (text) => <span className="font-semibold">{text}</span>,
     },
     {
-      title: "Phiên bản",
-      dataIndex: "variantName",
-      key: "variantName",
-      ...getColumnSearchProps("variantName"),
-      width: "20%",
+      title: "Số lượng biến thể",
+      key: "variantCount",
+      align: "center",
+      render: (_, record) => record.variants.length,
     },
     {
-      title: "Số lượng",
-      dataIndex: "quantity",
-      key: "quantity",
-      sorter: (a, b) => a.quantity - b.quantity,
-      width: "20%",
+      title: "Tổng số lượng",
+      dataIndex: "totalQuantity",
+      key: "totalQuantity",
+      align: "right",
+      sorter: (a, b) => a.totalQuantity - b.totalQuantity,
       render: (quantity) => (
-        <Text type={quantity < 2 ? "danger" : ""}>
-          {quantity} - Phương tiện sắp hết
-        </Text>
+        <span className="font-semibold text-blue-600">{quantity}</span>
       ),
+    },
+    {
+      title: "Trạng thái",
+      key: "status",
+      align: "center",
+      render: (_, record) => {
+        if (record.totalQuantity === 0) {
+          return <Tag color="red">Hết hàng</Tag>;
+        } else if (record.totalQuantity <= 5) {
+          return <Tag color="orange">Sắp hết</Tag>;
+        } else if (record.totalQuantity <= 10) {
+          return <Tag color="warning">Ít hàng</Tag>;
+        } else {
+          return <Tag color="green">Còn hàng</Tag>;
+        }
+      },
     },
   ];
 
-  const totalQuantity = inventory.reduce(
-    (sum, item) => sum + (item.quantity || 0),
-    0
-  );
-  const totalStockItems = inventory.length; // Tổng số loại xe (SKUs)
-  const totalUniqueModels = new Set(inventory.map((item) => item.modelName))
-    .size;
+  const expandedRowRender = (record) => {
+    const variantColumns = [
+      {
+        title: "Tên biến thể",
+        dataIndex: "variantName",
+        key: "variantName",
+      },
+      {
+        title: "Màu sắc",
+        dataIndex: "color",
+        key: "color",
+        render: (color) => <Tag color="blue">{color || "Không xác định"}</Tag>,
+      },
+      {
+        title: "Số lượng",
+        dataIndex: "quantity",
+        key: "quantity",
+        align: "right",
+        render: (quantity) => {
+          let color = "green";
+          let textColor = "text-green-600";
+          if (quantity === 0) {
+            color = "red";
+            textColor = "text-red-600";
+          } else if (quantity <= 5) {
+            color = "orange";
+            textColor = "text-orange-600";
+          }
+          return <span className={`font-medium ${textColor}`}>{quantity}</span>;
+        },
+      },
+    ];
+
+    return (
+      <Table
+        columns={variantColumns}
+        dataSource={record.variants}
+        pagination={false}
+        size="small"
+        rowKey="stockId"
+      />
+    );
+  };
+
+  const totalQuantity = inventoryStats.totalQuantity;
+  const totalStockItems = inventoryStats.variantCount;
+  const totalUniqueModels = inventoryStats.modelCount;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <Title level={2} className="flex items-center">
-          <InboxOutlined style={{ marginRight: 8 }} /> Kho hàng đại lý
+          <InboxOutlined style={{ marginRight: 8 }} /> Báo cáo tồn kho
         </Title>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={fetchData}>
+          <Button icon={<ReloadOutlined />} onClick={fetchData} type="primary">
             Làm mới
           </Button>
         </Space>
       </div>
 
-      <Row gutter={16} className="mb-6">
-        <Col span={12} className="mb-4 md:mb-0">
-          <Card hoverable>
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="text-center bg-blue-50" hoverable={true}>
             <Statistic
               title="Tổng số lượng xe"
               value={totalQuantity}
-              prefix={<CarOutlined />}
-              valueStyle={{ color: "#3f8600" }}
+              prefix={<InboxOutlined />}
+              valueStyle={{ color: "#1890ff", fontSize: "28px" }}
             />
           </Card>
         </Col>
-        <Col span={12}>
-          <Card hoverable>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="text-center bg-green-50" hoverable={true}>
             <Statistic
-              title="Số mẫu xe"
+              title="Số dòng xe"
               value={totalUniqueModels}
-              prefix={<TagsOutlined />} 
-              valueStyle={{ color: "#d46b08" }}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: "#52c41a", fontSize: "28px" }}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="text-center bg-purple-50" hoverable={true}>
+            <Statistic
+              title="Số biến thể"
+              value={totalStockItems}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: "#722ed1", fontSize: "28px" }}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="text-center bg-orange-50" hoverable={true}>
+            <Statistic
+              title="Cảnh báo tồn kho"
+              value={inventoryStats.lowStockItems.length}
+              prefix={<ExclamationCircleOutlined />}
+              valueStyle={{ color: "#fa8c16", fontSize: "28px" }}
             />
           </Card>
         </Col>
       </Row>
 
-      <Card>
-        {isLoading ? (
-          <div className="flex justify-center items-center p-10">
-            <Spin size="large" />
+      {inventoryStats.lowStockItems.length > 0 && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+          <div className="flex items-center text-yellow-800">
+            <ExclamationCircleOutlined className="mr-2 text-lg" />
+            <span className="font-medium">
+              Cảnh báo: {inventoryStats.lowStockItems.length} mặt hàng có số
+              lượng tồn kho thấp (≤ 5 xe). Cần nhập thêm hàng!
+            </span>
           </div>
-        ) : (
-          <Table
-            columns={inventoryColumns}
-            dataSource={inventory}
-            pagination={pagination}
-            onChange={(pagination) => setPagination(pagination)}
-            rowKey="stockId"
-            scroll={{ x: 1000 }}
-          />
-        )}
-      </Card>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex justify-center items-center p-10">
+          <Spin size="large" />
+        </div>
+      ) : (
+        <Table
+          columns={inventoryColumns}
+          dataSource={groupedInventory}
+          rowKey="modelName"
+          expandable={{
+            expandedRowRender,
+            defaultExpandAllRows: false,
+          }}
+          pagination={{
+            ...pagination,
+            showTotal: (total) => `Tổng ${total} dòng xe`,
+          }}
+          onChange={(pagination) => setPagination(pagination)}
+          scroll={{ x: 1000 }}
+          locale={{
+            emptyText: (
+              <Empty
+                description="Không có dữ liệu tồn kho"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ),
+          }}
+        />
+      )}
     </div>
   );
 }

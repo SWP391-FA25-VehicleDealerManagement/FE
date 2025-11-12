@@ -8,6 +8,10 @@ import {
   getDealerRevenueData,
   getDealerDebtData,
   getStaffData,
+  getDealerInventory,
+  getDealerFeedbacks,
+  getDealerTestDrives,
+  getDealerContracts,
 } from "../api/dashboard";
 
 const useDashboard = create((set, get) => ({
@@ -20,6 +24,10 @@ const useDashboard = create((set, get) => ({
   dealerEvmDebtData: null,
   dealerDebtData: null,
   revenueData: null,
+  inventoryData: null,
+  feedbackData: null,
+  testDriveData: null,
+  contractData: null,
   isLoading: false,
   error: null,
 
@@ -167,6 +175,78 @@ const useDashboard = create((set, get) => ({
     }
   },
 
+  // Fetch inventory data
+  fetchInventoryData: async (dealerId) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await getDealerInventory(dealerId);
+      if (response?.data?.success) {
+        set({ inventoryData: response.data.data, isLoading: false });
+        return response.data.data;
+      }
+      set({ isLoading: false });
+      return null;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      console.error("Error fetching inventory data:", error);
+      return null;
+    }
+  },
+
+  // Fetch feedback data
+  fetchFeedbackData: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await getDealerFeedbacks();
+      if (response?.data?.success) {
+        set({ feedbackData: response.data.data, isLoading: false });
+        return response.data.data;
+      }
+      set({ isLoading: false });
+      return null;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      console.error("Error fetching feedback data:", error);
+      return null;
+    }
+  },
+
+  // Fetch test drive data
+  fetchTestDriveData: async (dealerId) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await getDealerTestDrives(dealerId);
+      if (response?.data?.success) {
+        set({ testDriveData: response.data.data, isLoading: false });
+        return response.data.data;
+      }
+      set({ isLoading: false });
+      return null;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      console.error("Error fetching test drive data:", error);
+      return null;
+    }
+  },
+
+  // Fetch contract data
+  fetchContractData: async (dealerId) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await getDealerContracts(dealerId);
+      if (response?.data?.success) {
+        set({ contractData: response.data.data, isLoading: false });
+        return response.data.data;
+      }
+      set({ isLoading: false });
+      return null;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      console.error("Error fetching contract data:", error);
+      return null;
+    }
+  },
+
   // Fetch all dashboard data
   fetchAllDashboardData: async (dealerId, year, month) => {
     try {
@@ -182,6 +262,10 @@ const useDashboard = create((set, get) => ({
         state.fetchDealerEvmDebtData(dealerId),
         state.fetchDealerDebtData(dealerId),
         state.fetchRevenueData(dealerId, year, month),
+        state.fetchInventoryData(dealerId),
+        state.fetchFeedbackData(),
+        state.fetchTestDriveData(dealerId),
+        state.fetchContractData(dealerId),
       ]);
 
       set({ isLoading: false });
@@ -202,6 +286,10 @@ const useDashboard = create((set, get) => ({
       dealerEvmDebtData: null,
       dealerDebtData: null,
       revenueData: null,
+      inventoryData: null,
+      feedbackData: null,
+      testDriveData: null,
+      contractData: null,
       isLoading: false,
       error: null,
     });

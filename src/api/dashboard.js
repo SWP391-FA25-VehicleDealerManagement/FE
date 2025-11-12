@@ -36,6 +36,26 @@ const getStaffData = async (dealerId) => {
   return axiosClient.get(`/api/users/dealer/${dealerId}/staff`);
 }
 
+// Inventory data (existing API)
+const getDealerInventory = async (dealerId) => {
+  return axiosClient.get(`/api/vehicles/dealer/${dealerId}/stock`);
+};
+
+// Feedback data (existing API)
+const getDealerFeedbacks = async () => {
+  return axiosClient.get("/api/feedbacks");
+};
+
+// Test drives data (existing API)
+const getDealerTestDrives = async (dealerId) => {
+  return axiosClient.get(`/api/testdrives/get-test-drives-by-dealer/${dealerId}`);
+};
+
+// Contracts data (existing API)
+const getDealerContracts = async (dealerId) => {
+  return axiosClient.get(`/api/contracts/dealer/${dealerId}`);
+};
+
 export {
   getStaffSalesData,
   getDealerCustomerData,
@@ -45,4 +65,8 @@ export {
   getDealerRevenueData,
   getDealerDebtData,
   getStaffData,
+  getDealerInventory,
+  getDealerFeedbacks,
+  getDealerTestDrives,
+  getDealerContracts,
 };
