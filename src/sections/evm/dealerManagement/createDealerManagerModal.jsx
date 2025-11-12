@@ -16,8 +16,9 @@ export default function CreateDealerManagerModal({
     setIsLoading(true);
     try {
       const managerData = {
-        ...values,
         dealerId: dealerId,
+        username: values.username,
+        password: values.password,
       };
       console.log("Manager Data:", managerData);
 

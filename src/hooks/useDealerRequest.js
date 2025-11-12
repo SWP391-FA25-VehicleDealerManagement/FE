@@ -66,22 +66,20 @@ const useDealerRequest = create((set) => ({
   },
 
   // Create new request
+  isLoadingCreateRequest: false,
   createRequestVehicle: async (data) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ isLoadingCreateRequest: true, error: null });
       const response = await createDealerRequest(data);
-
-      if (response && response.data) {
-        set({ isLoading: false });
-        return response;
+      if (response && response.status === 200) {
+        set({ isLoadingCreateRequest: false });
       }
-      set({ isLoading: false });
-      return null;
+      return response;
     } catch (error) {
       console.error("Error creating dealer request:", error);
       set({
-        error: error.message || "Failed to create request",
-        isLoading: false,
+        error: error.response?.data?.message || "Failed to create request",
+        isLoadingCreateRequest: false,
       });
       throw error;
     }

@@ -575,7 +575,7 @@ export default function VehicleAllocation() {
       render: (_, record) => (
         <Space size="small">
           <Button
-            type="link"
+            type="primary"
             icon={<EyeOutlined />}
             onClick={() => handleViewDetail(record)}
           >
@@ -744,7 +744,7 @@ export default function VehicleAllocation() {
       fixed: "right",
       render: (_, record) => (
         <Button
-          type="link"
+          type="primary"
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
         >

@@ -55,7 +55,6 @@ export default function RequestList() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [dateRange, setDateRange] = useState(null);
-  const [filteredData, setFilteredData] = useState([]);
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [confirmForm] = Form.useForm();
@@ -74,33 +73,8 @@ export default function RequestList() {
     loadData();
   }, []);
 
-  // Filter data when filters change
-  useEffect(() => {
-    filterData();
-  }, [requestLists, searchText, statusFilter, dateRange]);
-
-  const loadData = async () => {
-    const dealerId = userDetail?.dealer?.dealerId;
-
-    if (!dealerId) {
-      toast.error("Không tìm thấy thông tin đại lý", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
-
-    try {
-      await fetchRequestsByDealer(dealerId);
-    } catch (error) {
-      toast.error("Không thể tải danh sách yêu cầu", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-    }
-  };
-
-  const filterData = () => {
+  // Tối ưu filterData với useMemo thay vì useEffect
+  const filteredData = React.useMemo(() => {
     let filtered = [...requestLists];
 
     // Filter by search text
@@ -128,8 +102,29 @@ export default function RequestList() {
       });
     }
 
-    setFilteredData(filtered);
-  };
+    return filtered;
+  }, [requestLists, searchText, statusFilter, dateRange]);
+
+  const loadData = React.useCallback(async () => {
+    const dealerId = userDetail?.dealer?.dealerId;
+
+    if (!dealerId) {
+      toast.error("Không tìm thấy thông tin đại lý", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      await fetchRequestsByDealer(dealerId);
+    } catch (error) {
+      toast.error("Không thể tải danh sách yêu cầu", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  }, [userDetail?.dealer?.dealerId, fetchRequestsByDealer]);
 
   const handleViewDetail = (requestId) => {
     navigate(`/dealer-manager/request-list/${requestId}`);
@@ -200,13 +195,13 @@ export default function RequestList() {
     }
   };
 
-  // Calculate statistics
-  const stats = {
+  // Tối ưu Calculate statistics với useMemo
+  const stats = React.useMemo(() => ({
     total: requestLists.length,
     pending: requestLists.filter((r) => r.status === "PENDING").length,
     approved: requestLists.filter((r) => r.status === "APPROVED").length,
     rejected: requestLists.filter((r) => r.status === "REJECTED").length,
-  };
+  }), [requestLists]);
 
   const getStatusTag = (status) => {
     const statusConfig = {

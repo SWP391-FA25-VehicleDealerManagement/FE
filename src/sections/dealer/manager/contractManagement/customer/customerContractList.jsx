@@ -201,7 +201,7 @@ export default function CustomerContractList() {
     {
       title: "Thao tác",
       key: "action",
-      width: 150,
+      width: "15%",
       fixed: "right",
       render: (_, record) => (
         <Space>
@@ -234,7 +234,7 @@ export default function CustomerContractList() {
             <FileTextOutlined className="mr-2" />
             Quản lý hợp đồng khách hàng
           </Title>
-          <p className="text-gray-500">
+          <p className="text-gray-500 mb-4">
             Danh sách hợp đồng mua bán xe với khách hàng
           </p>
           {pendingCount > 0 && (
@@ -292,7 +292,7 @@ export default function CustomerContractList() {
           showSizeChanger: true,
           showTotal: (total) => `Tổng ${total} hợp đồng`,
         }}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1600 }}
         rowClassName={(record) =>
           record.status === "DRAFT" ? "bg-orange-50" : ""
         }
