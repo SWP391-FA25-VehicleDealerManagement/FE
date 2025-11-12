@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Modal, Form, Input, Button } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
@@ -11,7 +11,7 @@ export default function CancelOrderModal({ isOpen, onClose, order, onCancelled }
   const { CancelCustomerOrderById, isLoadingCancelOrder } = useDealerOrder();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = useCallback(async (values) => {
     if (!order) return;
 
     try {
@@ -42,12 +42,12 @@ export default function CancelOrderModal({ isOpen, onClose, order, onCancelled }
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [order, CancelCustomerOrderById, form, onCancelled, onClose]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     form.resetFields();
     onClose();
-  };
+  }, [form, onClose]);
 
   return (
     <Modal

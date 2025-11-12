@@ -35,7 +35,6 @@ export default function OrderList() {
   const { payment, getPayment } = usePaymentStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const [mergedOrders, setMergedOrders] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -55,53 +54,38 @@ export default function OrderList() {
     loadData();
   }, [getCustomerOrders, getCustomer, getPayment, dealerId]);
 
-  const filteredOrders = useMemo(() => {
-    return CustomerOrder.filter(
+  // Tối ưu: Kết hợp filter và merge trong 1 useMemo
+  const mergedOrders = useMemo(() => {
+    const filteredOrders = CustomerOrder.filter(
       (order) => order.customerId !== null && order.customerId !== undefined
     );
-  }, [CustomerOrder]);
 
-  useEffect(() => {
-    if (
-      filteredOrders &&
-      filteredOrders.length >= 0 &&
-      Customer &&
-      Customer.length > 0 &&
-      payment &&
-      payment.length >= 0
-    ) {
-      const customerMap = new Map(
-        Customer.map((customer) => [customer.customerId, customer])
-      );
+    if (filteredOrders.length === 0 || !Customer || !payment) return [];
 
-      const paymentMap = new Map();
-      payment.forEach((p) => {
+    // Tạo customer map
+    const customerMap = new Map(
+      Customer.map((customer) => [customer.customerId, customer])
+    );
+
+    // Tạo payment map
+    const paymentMap = new Map();
+    payment.forEach((p) => {
+      if (p.amount && p.amount > 0) {
         const currentTotal = paymentMap.get(p.orderId) || 0;
+        paymentMap.set(p.orderId, currentTotal + p.amount);
+      }
+    });
 
-        // ✅ Tính tổng TẤT CẢ payments có amount > 0 (bỏ qua check status)
-        // Vì nếu order status = PAID thì payment đã được xử lý thành công
-        if (p.amount && p.amount > 0) {
-          const newTotal = currentTotal + p.amount;
-          paymentMap.set(p.orderId, newTotal);
-        }
-      });
-
-      const combinedData = filteredOrders.map((order) => {
-        const customer = customerMap.get(order.customerId);
-        const totalPaid = paymentMap.get(order.orderId) || 0;
-
-        return {
-          ...order,
-          customerName: customer ? customer.customerName : "N/A",
-          totalPaid: totalPaid,
-        };
-      });
-
-      setMergedOrders(combinedData);
-    } else {
-      setMergedOrders([]);
-    }
-  }, [filteredOrders, Customer, payment]);
+    // Merge data
+    return filteredOrders.map((order) => {
+      const customer = customerMap.get(order.customerId);
+      return {
+        ...order,
+        customerName: customer?.customerName || "N/A",
+        totalPaid: paymentMap.get(order.orderId) || 0,
+      };
+    });
+  }, [CustomerOrder, Customer, payment]);
 
   const handleViewDetail = (orderId) => {
     navigate(`/dealer-staff/orders/${orderId}`);

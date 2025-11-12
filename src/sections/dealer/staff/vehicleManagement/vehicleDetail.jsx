@@ -33,7 +33,6 @@ export default function VehicleDetail() {
   const { vehicleId } = useParams();
   const navigate = useNavigate();
   const { fetchVehicleById, isLoading, vehicleDetail } = useVehicleStore();
-  const [vehicle, setVehicle] = useState(null);
   const [vehicleImageUrl, setVehicleImageUrl] = useState(null);
 
   useEffect(() => {

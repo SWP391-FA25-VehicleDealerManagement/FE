@@ -1,5 +1,5 @@
 // components/order/CreateQuoteModal.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Modal,
   Form,
@@ -49,7 +49,7 @@ export default function CreateQuoteModal({ isOpen, onClose }) {
     }
   }, [isOpen, dealerId, fetchVehicleDealers, getCustomer, Customer]); //
 
-  const handlePhoneChange = (e) => {
+  const handlePhoneChange = useCallback((e) => {
     const phone = e.target.value;
     form.setFields([{ name: "customerPhone", errors: [] }]);
     setCustomerInfo(null);
@@ -77,9 +77,9 @@ export default function CreateQuoteModal({ isOpen, onClose }) {
         ]);
       }
     }
-  };
+  }, [Customer, isLoadingCustomer, form]);
 
-  const handleViewQuote = async (values) => {
+  const handleViewQuote = useCallback(async (values) => {
     if (!customerInfo) {
       form.setFields([
         {
@@ -146,7 +146,12 @@ export default function CreateQuoteModal({ isOpen, onClose }) {
     form.resetFields(); 
     setCustomerInfo(null); 
     onClose(); 
-  };
+  }, [customerInfo, dealerCarLists, dealerId, userDetail, navigate, form, onClose]);
+
+  const availableVehicles = useMemo(
+    () => dealerCarLists.filter((vehicle) => vehicle.status === "IN_DEALER_STOCK"),
+    [dealerCarLists]
+  );
 
   return (
     <Modal
@@ -235,12 +240,10 @@ export default function CreateQuoteModal({ isOpen, onClose }) {
                 />
               )
             }
-            options={dealerCarLists
-              .filter((vehicle) => vehicle.status === "IN_DEALER_STOCK")
-              .map((vehicle) => ({
-                value: vehicle.vehicleId,
-                label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`,
-              }))}
+            options={availableVehicles.map((vehicle) => ({
+              value: vehicle.vehicleId,
+              label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`,
+            }))}
           />
         </Form.Item>
       </Form>

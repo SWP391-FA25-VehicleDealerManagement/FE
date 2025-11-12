@@ -51,41 +51,45 @@ export default function VehicleList() {
 
     const fetchAllImages = async () => {
       if (dealerCarLists && dealerCarLists.length > 0) {
-        const newImageUrls = {};
+        // Lọc ra những images chưa được fetch
+        const imagesToFetch = dealerCarLists.filter(
+          (vehicle) => vehicle.variantImage && !imageUrls[vehicle.variantImage]
+        );
 
-        const fetchPromises = dealerCarLists.map(async (vehicle) => {
-          // *** SỬA ĐỔI 1: Đổi 'vehicle.imageUrl' thành 'vehicle.variantImage' ***
-          if (vehicle.variantImage) {
-            try {
-              const response = await axiosClient.get(vehicle.variantImage, {
-                responseType: "blob",
-              });
-              const objectUrl = URL.createObjectURL(response.data);
-              objectUrlsToRevoke.push(objectUrl);
-              return {
-                path: vehicle.variantImage,
-                url: objectUrl,
-              };
-            } catch (error) {
-              console.error("Không thể tải ảnh:", vehicle.variantImage, error);
-              return {
-                path: vehicle.variantImage,
-                url: null,
-              };
-            }
+        if (imagesToFetch.length === 0) return;
+
+        const fetchPromises = imagesToFetch.map(async (vehicle) => {
+          try {
+            const response = await axiosClient.get(vehicle.variantImage, {
+              responseType: "blob",
+            });
+            const objectUrl = URL.createObjectURL(response.data);
+            objectUrlsToRevoke.push(objectUrl);
+            return {
+              path: vehicle.variantImage,
+              url: objectUrl,
+            };
+          } catch (error) {
+            console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+            return {
+              path: vehicle.variantImage,
+              url: null,
+            };
           }
-          return null;
         });
 
         const results = await Promise.all(fetchPromises);
 
-        results.forEach((result) => {
-          if (result) {
-            newImageUrls[result.path] = result.url;
-          }
+        // Merge với imageUrls hiện tại thay vì replace hoàn toàn
+        setImageUrls((prev) => {
+          const newImageUrls = { ...prev };
+          results.forEach((result) => {
+            if (result) {
+              newImageUrls[result.path] = result.url;
+            }
+          });
+          return newImageUrls;
         });
-
-        setImageUrls(newImageUrls);
       }
     };
 
@@ -94,7 +98,7 @@ export default function VehicleList() {
     return () => {
       objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [dealerCarLists]);
+  }, [dealerCarLists.length]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();

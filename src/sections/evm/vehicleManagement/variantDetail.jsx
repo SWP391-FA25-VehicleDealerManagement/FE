@@ -87,40 +87,6 @@ export default function VariantDetail() {
     }
   }, [variantDetail, fetchVariantDetails]);
 
-  useEffect(() => {
-    let objectUrl = null;
-
-    const fetchImage = async () => {
-      if (variantDetail?.defaultImageUrl) {
-        try {
-          // Dùng axiosClient để get, vì nó đã có interceptor gắn token
-          const response = await axiosClient.get(
-            variantDetail.defaultImageUrl,
-            {
-              responseType: "blob",
-            }
-          );
-          // Tạo URL tạm thời từ blob
-          objectUrl = URL.createObjectURL(response.data);
-          setImageUrl(objectUrl);
-        } catch (error) {
-          console.error("Không thể tải ảnh bảo vệ:", error);
-          setImageUrl(null);
-        }
-      } else {
-        setImageUrl(null); // Reset nếu không có ảnh
-      }
-    };
-
-    fetchImage();
-
-    // Cleanup: Xóa object URL khi component unmount hoặc ảnh thay đổi
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [variantDetail?.defaultImageUrl]);
 
   useEffect(() => {
     // Hàm 'return' này sẽ tự động chạy khi component bị "unmount"
@@ -370,41 +336,7 @@ export default function VariantDetail() {
       </div>
 
       <Row gutter={16}>
-        <Col span={8}>
-          <Card title="Hình ảnh phiên bản" bordered={false}>
-            <div className="flex flex-col items-center mb-6">
-              {variantDetail?.defaultImageUrl ? (
-                <Image
-                  width={250}
-                  height={200}
-                  src={imageUrl}
-                  alt={variantDetail.name}
-                  style={{ objectFit: "cover", borderRadius: 8 }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 250,
-                    height: 200,
-                    backgroundColor: "#f0f0f0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 8,
-                  }}
-                >
-                  <CarOutlined style={{ fontSize: 60, color: "#999" }} />
-                </div>
-              )}
-              <Title level={3} style={{ marginTop: 16, marginBottom: 0 }}>
-                {variantDetail?.name}
-              </Title>
-              <Text type="secondary">{variantDetail?.modelName}</Text>
-            </div>
-          </Card>
-        </Col>
-
-        <Col span={16}>
+        <Col span={24}>
           <Card title="Thông tin phiên bản">
             <Descriptions bordered column={2}>
               <Descriptions.Item

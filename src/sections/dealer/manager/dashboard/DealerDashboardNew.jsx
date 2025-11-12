@@ -36,9 +36,9 @@ export default function DealerDashboard() {
     }
   }, [userDetail, currentDate]);
 
-  // Process orders data (only orders with customerId)
-  const processOrdersData = () => {
-    if (!orderData) return { total: 0, totalAmount: 0, statusCounts: {} };
+  // Tối ưu: Sử dụng useMemo để cache kết quả
+  const processedOrders = React.useMemo(() => {
+    if (!orderData) return { total: 0, totalAmount: 0, statusCounts: {}, orders: [] };
 
     const ordersWithCustomers = orderData.filter(
       (order) => order.customerId !== null
@@ -60,12 +60,10 @@ export default function DealerDashboard() {
       statusCounts,
       orders: ordersWithCustomers,
     };
-  };
+  }, [orderData]);
 
-  // Calculate stats cards data
-  const getStatsData = () => {
-    const ordersInfo = processOrdersData();
-    
+  // Tối ưu: Memoize stats data calculation
+  const statsData = React.useMemo(() => {
     const totalCustomerDebt = customerDebtData?.reduce(
       (sum, debt) => sum + (debt.remainingAmount || 0),
       0
@@ -80,7 +78,7 @@ export default function DealerDashboard() {
       {
         type: "revenue",
         title: "Tổng doanh thu",
-        value: new Intl.NumberFormat("vi-VN").format(ordersInfo.totalAmount),
+        value: new Intl.NumberFormat("vi-VN").format(processedOrders.totalAmount),
         prefix: "₫",
         change: "+12.4%",
         isPositive: true,
@@ -102,7 +100,7 @@ export default function DealerDashboard() {
       {
         type: "orders",
         title: "Tổng đơn hàng",
-        value: ordersInfo.total,
+        value: processedOrders.total,
         change: "+15%",
         isPositive: true,
       },
@@ -123,12 +121,11 @@ export default function DealerDashboard() {
         isPositive: true,
       },
     ];
-  };
+  }, [processedOrders, customerDebtData, dealerDebtData, staffData, customerData]);
 
-  // Process revenue chart data
-  const getRevenueChartData = () => {
-    const ordersInfo = processOrdersData();
-    const orders = ordersInfo.orders || [];
+  // Tối ưu: Memoize revenue chart data
+  const revenueChartData = React.useMemo(() => {
+    const orders = processedOrders.orders || [];
 
     const categories = [];
     const values = [];
@@ -194,12 +191,11 @@ export default function DealerDashboard() {
     }
 
     return { categories, values };
-  };
+  }, [processedOrders.orders, timePeriod]);
 
-  // Process order status chart data
-  const getOrderStatusChartData = () => {
-    const ordersInfo = processOrdersData();
-    const statusCounts = ordersInfo.statusCounts || {};
+  // Tối ưu: Memoize order status chart data
+  const orderStatusChartData = React.useMemo(() => {
+    const statusCounts = processedOrders.statusCounts || {};
 
     const statusLabels = Object.keys(statusCounts).map((status) => {
       const statusMap = {
@@ -218,12 +214,11 @@ export default function DealerDashboard() {
       labels: statusLabels,
       values: statusValues,
     };
-  };
+  }, [processedOrders.statusCounts]);
 
-  // Process order count chart data
-  const getOrderCountChartData = () => {
-    const ordersInfo = processOrdersData();
-    const orders = ordersInfo.orders || [];
+  // Tối ưu: Memoize order count chart data
+  const orderCountChartData = React.useMemo(() => {
+    const orders = processedOrders.orders || [];
 
     const categories = [];
     const values = [];
@@ -274,10 +269,10 @@ export default function DealerDashboard() {
     }
 
     return { categories, values };
-  };
+  }, [processedOrders.orders, timePeriod]);
 
-  // Add customer names to debt data
-  const enrichCustomerDebtData = () => {
+  // Tối ưu: Memoize enriched customer debt data
+  const enrichedCustomerDebtData = React.useMemo(() => {
     if (!customerDebtData || !customerData) return customerDebtData;
 
     return customerDebtData.map((debt) => {
@@ -287,7 +282,7 @@ export default function DealerDashboard() {
         customerName: customer?.customerName || `Customer #${debt.customerId}`,
       };
     });
-  };
+  }, [customerDebtData, customerData]);
 
   return (
     <div className="fade-in">
@@ -317,22 +312,22 @@ export default function DealerDashboard() {
         </div>
 
         {/* Statistics Cards */}
-        <StatsCards stats={getStatsData()} />
+        <StatsCards stats={statsData} />
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <RevenueChart data={getRevenueChartData()} />
-          <OrderStatusChart data={getOrderStatusChartData()} />
+          <RevenueChart data={revenueChartData} />
+          <OrderStatusChart data={orderStatusChartData} />
         </div>
 
         {/* Order Count Chart */}
-        <OrderCountChart data={getOrderCountChartData()} />
+        <OrderCountChart data={orderCountChartData} />
 
         {/* Staff Performance */}
         <StaffPerformance data={staffSalesData || []} />
 
         {/* Customer Debt Table */}
-        <CustomerDebtTable data={enrichCustomerDebtData() || []} />
+        <CustomerDebtTable data={enrichedCustomerDebtData || []} />
 
         {/* Dealer Debt Table */}
         <DealerDebtTable data={dealerDebtData || []} />

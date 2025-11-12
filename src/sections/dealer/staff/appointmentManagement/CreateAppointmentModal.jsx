@@ -38,16 +38,24 @@ export default function CreateAppointmentModal({
 
   const [customerInfo, setCustomerInfo] = useState(null);
   const dealerId = userDetail?.dealer?.dealerId;
+  
+  // Tối ưu: Chỉ fetch khi thực sự cần thiết
   useEffect(() => {
-    if (isOpen && dealerId) {
+    if (!isOpen || !dealerId) return;
+    
+    // Chỉ fetch vehicles nếu chưa có data
+    if (!testDriveVehicle || testDriveVehicle.length === 0) {
       fetchTestDriverVehicles();
     }
+    
+    // Chỉ fetch customers nếu chưa có data
     if (!Customer || Customer.length === 0) {
       getCustomer(dealerId);
     }
   }, [isOpen, dealerId]);
 
-  const handlePhoneChange = (e) => {
+  // Tối ưu: Sử dụng useCallback để tránh re-create function
+  const handlePhoneChange = React.useCallback((e) => {
     const phone = e.target.value;
     form.setFields([{ name: "customerPhone", errors: [] }]);
     setCustomerInfo(null);
@@ -70,7 +78,7 @@ export default function CreateAppointmentModal({
         ]);
       }
     }
-  };
+  }, [Customer, form]);
 
   // Xử lý submit form
   const handleSubmit = async (values) => {

@@ -17,7 +17,6 @@ const RequestStatusChart = ({ data }) => {
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const total = data.values.reduce((a, b) => a + b, 0);
-      const percentage = ((payload[0].value / total) * 100).toFixed(1);
       return (
         <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
           <p className="font-semibold">{payload[0].name}</p>
@@ -102,11 +101,9 @@ const RequestStatusChart = ({ data }) => {
               iconType="circle"
               wrapperStyle={{ paddingTop: "20px" }}
               formatter={(value, entry) => {
-                const total = data.values.reduce((a, b) => a + b, 0);
-                const percentage = ((entry.payload.value / total) * 100).toFixed(1);
                 return (
                   <span className="text-sm">
-                    {value}: <span className="font-semibold">{entry.payload.value}</span> ({percentage}%)
+                    {value}: <span className="font-semibold">{entry.payload.value}</span> 
                   </span>
                 );
               }}

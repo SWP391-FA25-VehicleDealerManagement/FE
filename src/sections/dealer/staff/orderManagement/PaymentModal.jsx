@@ -72,7 +72,7 @@ export default function PaymentModal({ isOpen, onClose, order }) {
       const amount = (total * percentage) / 100;
       setCalculatedAmount(amount);
     }
-  }, [paymentType, installmentPercentage, order, form]);
+  }, [paymentType, installmentPercentage, order]);
 
   const handleFinish = async (values) => {
     if (!order) return;

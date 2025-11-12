@@ -25,7 +25,6 @@ export default function OrderList() {
   const { CustomerOrder, isLoadingCustomerOrder, getCustomerOrders } =
     useDealerOrder();
   const { payment, getPayment } = usePaymentStore();
-  const [mergedOrders, setMergedOrders] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
@@ -38,40 +37,28 @@ export default function OrderList() {
     }
   }, [getCustomerOrders, getPayment, dealerId]);
 
-  const filteredOrders = useMemo(() => {
-    return CustomerOrder.filter((order) => order.customerId == null);
-  }, [CustomerOrder]);
+  // Tối ưu: Kết hợp filter và merge trong 1 useMemo
+  const mergedOrders = useMemo(() => {
+    const filteredOrders = CustomerOrder.filter((order) => order.customerId == null);
+    
+    if (filteredOrders.length === 0 || !payment) return [];
 
-  useEffect(() => {
-    if (
-      filteredOrders &&
-      filteredOrders.length >= 0 &&
-      payment &&
-      payment.length >= 0
-    ) {
-      const paymentMap = new Map();
-      payment.forEach((p) => {
+    // Tạo payment map
+    const paymentMap = new Map();
+    payment.forEach((p) => {
+      if (p.amount && p.amount > 0) {
         const currentTotal = paymentMap.get(p.orderId) || 0;
+        paymentMap.set(p.orderId, currentTotal + p.amount);
+      }
+    });
 
-        if (p.amount && p.amount > 0) {
-          const newTotal = currentTotal + p.amount;
-          paymentMap.set(p.orderId, newTotal);
-        }
-      });
-      const combinedData = filteredOrders.map((order) => {
-        const totalPaid = paymentMap.get(order.orderId) || 0;
-
-        return {
-          ...order,
-          dealerName: userDetail?.dealer?.dealerName || "N/A",
-          totalPaid: totalPaid,
-        };
-      });
-      setMergedOrders(combinedData);
-    } else {
-      setMergedOrders([]);
-    }
-  }, [filteredOrders, payment, userDetail]);
+    // Merge data
+    return filteredOrders.map((order) => ({
+      ...order,
+      dealerName: userDetail?.dealer?.dealerName || "N/A",
+      totalPaid: paymentMap.get(order.orderId) || 0,
+    }));
+  }, [CustomerOrder, payment, userDetail?.dealer?.dealerName]);
 
   const handleViewDetail = (orderId) => {
     navigate(`/dealer-manager/dealer-orders/${orderId}`);

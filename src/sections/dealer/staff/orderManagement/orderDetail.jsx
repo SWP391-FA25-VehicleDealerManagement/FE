@@ -127,11 +127,10 @@ export default function OrderDetail() {
 
     const fetchAllImages = async () => {
       if (vehicleDetails && vehicleDetails.length > 0) {
-        const newImageUrls = { ...vehicleImageUrls };
         const pathsToFetch = vehicleDetails
           .map((v) => v?.variantImage)
           .filter(Boolean)
-          .filter((path) => !newImageUrls[path]);
+          .filter((path) => !vehicleImageUrls[path]);
 
         if (pathsToFetch.length === 0) return;
         const fetchPromises = pathsToFetch.map(async (imagePath) => {
@@ -150,12 +149,15 @@ export default function OrderDetail() {
 
         const results = await Promise.all(fetchPromises);
 
-        results.forEach((result) => {
-          if (result) {
-            newImageUrls[result.path] = result.url;
-          }
+        setVehicleImageUrls((prev) => {
+          const updated = { ...prev };
+          results.forEach((result) => {
+            if (result) {
+              updated[result.path] = result.url;
+            }
+          });
+          return updated;
         });
-        setVehicleImageUrls(newImageUrls);
       }
     };
 
@@ -167,7 +169,7 @@ export default function OrderDetail() {
       });
       objectUrlsToRevoke = [];
     };
-  }, [vehicleDetails]);
+  }, [vehicleDetails.length, vehicleImageUrls]);
 
   useEffect(() => {
     if (payment && payment.length > 0 && orderId) {
@@ -202,15 +204,16 @@ export default function OrderDetail() {
     ) {
       return null;
     }
-    const itemsWithVehicles = CustomerOrderDetail.map((item) => {
-      const vehicle = vehicleDetails.find(
-        (v) => v.vehicleId === item.vehicleId
-      );
-      return {
-        ...item,
-        vehicle: vehicle || null,
-      };
-    });
+
+    const vehicleMap = vehicleDetails.reduce((map, vehicle) => {
+      map[vehicle.vehicleId] = vehicle;
+      return map;
+    }, {});
+
+    const itemsWithVehicles = CustomerOrderDetail.map((item) => ({
+      ...item,
+      vehicle: vehicleMap[item.vehicleId] || null,
+    }));
 
     return {
       order: orderInfo,
@@ -227,7 +230,7 @@ export default function OrderDetail() {
     isLoadingPayment ||
     !mergedData;
 
-  const handlePayment = () => {
+  const handlePayment = useCallback(() => {
     if (!mergedData) {
       toast.error("Dữ liệu đơn hàng chưa sẵn sàng.");
       return;
@@ -240,10 +243,10 @@ export default function OrderDetail() {
       customerName: customer.customerName, // Modal cần trường này
     });
     setIsPaymentModalOpen(true);
-  };
+  }, [mergedData]);
 
   // 4. Thêm hàm đóng modal và tải lại dữ liệu
-  const handleClosePaymentModal = () => {
+  const handleClosePaymentModal = useCallback(() => {
     setIsPaymentModalOpen(false);
     setSelectedOrderForPayment(null);
     if (orderId && dealerId) {
@@ -251,13 +254,13 @@ export default function OrderDetail() {
       fetchCustomerOrderById(orderId);
       getPayment();
     }
-  };
+  }, [orderId, dealerId, getCustomerOrders, fetchCustomerOrderById, getPayment]);
 
-  const handleCancelOrder = () => {
+  const handleCancelOrder = useCallback(() => {
     toast.warn(`Thực hiện huỷ đơn hàng ${orderId}`);
-  };
+  }, [orderId]);
 
-  const getStatusTag = (status) => {
+  const getStatusTag = useCallback((status) => {
     let color = "processing";
     let text = status;
     if (status === "COMPLETED") {
@@ -281,7 +284,7 @@ export default function OrderDetail() {
       text = "Đang chờ";
     }
     return { color, text };
-  };
+  }, []);
 
   if (isLoading && !error) {
     return (

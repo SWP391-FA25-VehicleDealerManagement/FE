@@ -29,32 +29,26 @@ const UpdateDealerModal = ({ visible, onCancel, dealer }) => {
       setIsSubmitting(true);
 
       const response = await updateDealer(dealer.dealerId, values);
-      
+
       if (response && response.status === 200) {
         toast.success("Cập nhật đại lý thành công", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
         });
-        
-        // Refresh dealer data
         await fetchDealerById(dealer.dealerId);
-        
-        onCancel(); // Close the modal
-      } else {
-        toast.error("Cập nhật đại lý thất bại", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-        });
+        onCancel();
       }
     } catch (error) {
       console.error("Error updating dealer:", error);
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi cập nhật đại lý", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
+      toast.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật đại lý",
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        }
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -79,11 +73,7 @@ const UpdateDealerModal = ({ visible, onCancel, dealer }) => {
         </Button>,
       ]}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        name="updateDealerForm"
-      >
+      <Form form={form} layout="vertical" name="updateDealerForm">
         <Form.Item
           name="dealerName"
           label="Tên đại lý"
@@ -96,30 +86,11 @@ const UpdateDealerModal = ({ visible, onCancel, dealer }) => {
         >
           <Input placeholder="Nhập tên đại lý" />
         </Form.Item>
-{/* 
-        <Form.Item
-          name="email"
-          label="Email"
-          rules={[
-            {
-              required: true,
-              message: "Vui lòng nhập email",
-            },
-            {
-              type: "email",
-              message: "Email không hợp lệ",
-            },
-          ]}
-        >
-          <Input placeholder="Nhập email" />
-        </Form.Item> */}
-
         <Form.Item
           name="phone"
           label="Số điện thoại"
           rules={[
             {
-              required: true,
               message: "Vui lòng nhập số điện thoại",
             },
             {
@@ -136,29 +107,12 @@ const UpdateDealerModal = ({ visible, onCancel, dealer }) => {
           label="Địa chỉ"
           rules={[
             {
-              required: true,
               message: "Vui lòng nhập địa chỉ",
             },
           ]}
         >
           <Input.TextArea placeholder="Nhập địa chỉ" rows={3} />
         </Form.Item>
-
-        {/* <Form.Item
-          name="status"
-          label="Trạng thái"
-          rules={[
-            {
-              required: true,
-              message: "Vui lòng chọn trạng thái",
-            },
-          ]}
-        >
-          <Select placeholder="Chọn trạng thái">
-            <Option value="active">Hoạt động</Option>
-            <Option value="inactive">Không hoạt động</Option>
-          </Select>
-        </Form.Item> */}
       </Form>
     </Modal>
   );

@@ -95,13 +95,15 @@ export default function DealerDetail() {
 
   const handleDelete = async () => {
     try {
-      await deleteDealer(dealerId);
-      toast.success("Xóa đại lý thành công", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-      window.location.href = "/evm-staff/dealer-list";
+      const response = await deleteDealer(dealerId);
+      if (response && response.status === 200) {
+        toast.success("Xóa đại lý thành công", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+        window.location.href = "/evm-staff/dealer-list";
+      }
     } catch (error) {
       console.error("Error deleting dealer:", error);
       toast.error(error.response?.data?.message || "Xóa đại lý thất bại", {
@@ -170,28 +172,32 @@ export default function DealerDetail() {
       dataIndex: "userId",
       key: "userId",
       ...getColumnSearchProps("userId"),
+      render: (userId) => userId || "N/A",
     },
     {
       title: "Tên",
-      dataIndex: "fullName",
-      key: "fullName",
+      dataIndex: "username",
+      key: "username",
+      render: (username) => username || "N/A",
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      render: (email) => email || "N/A",
     },
     {
       title: "Điện thoại",
       dataIndex: "phone",
       key: "phone",
+      render: (phone) => phone || "N/A",
     },
     {
       title: "Chức vụ",
       dataIndex: "role",
       key: "role",
       render: (role) => {
-        if (!role) return null;
+        if (!role) return "N/A";
 
         const roleLowerCase = role.toLowerCase();
 
@@ -246,11 +252,7 @@ export default function DealerDetail() {
             Chỉnh sửa
           </Button>
           {dealerAccounts.length === 0 && (
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={showDeleteModal}
-            >
+            <Button danger icon={<DeleteOutlined />} onClick={showDeleteModal}>
               Xóa
             </Button>
           )}

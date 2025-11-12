@@ -72,15 +72,6 @@ const adminMenuItems = [
       "/evm-staff/allocate-inventory"
     ),
   ]),
-  getItem("Quản lý khuyến mãi", "6", <TagOutlined />, [
-    getItem(
-      "Khuyến mãi cho đại lý",
-      "8",
-      <FileTextOutlined />,
-      null,
-      "/evm-staff/promotion-dealer"
-    ),
-  ]),
 ];
 
 const EvmStaff = ({ children }) => {

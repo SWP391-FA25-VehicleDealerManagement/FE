@@ -54,30 +54,42 @@ export default function DealerVehicleDetail() {
 
   useEffect(() => {
     let objectUrl = null;
+    let isMounted = true;
 
     const fetchImage = async () => {
-      if (vehicleDetail?.variantImage) {
-        try {
-          // Dùng axiosClient để get, vì nó đã có interceptor gắn token
-          const response = await axiosClient.get(vehicleDetail?.variantImage, {
-            responseType: "blob",
-          });
-          // Tạo URL tạm thời từ blob
-          objectUrl = URL.createObjectURL(response.data);
-          setVehicleImageUrl(objectUrl);
-        } catch (error) {
-          console.error("Không thể tải ảnh bảo vệ:", error);
+      const imagePath = vehicleDetail?.variantImage;
+      
+      if (!imagePath) {
+        setVehicleImageUrl(null);
+        return;
+      }
+
+      // Chỉ fetch nếu chưa có trong cache
+      if (vehicleImageUrl && imagePath === vehicleDetail?.variantImage) {
+        return;
+      }
+
+      try {
+        const response = await axiosClient.get(imagePath, {
+          responseType: "blob",
+        });
+        
+        if (!isMounted) return;
+        
+        objectUrl = URL.createObjectURL(response.data);
+        setVehicleImageUrl(objectUrl);
+      } catch (error) {
+        console.error("Không thể tải ảnh:", error);
+        if (isMounted) {
           setVehicleImageUrl(null);
         }
-      } else {
-        setVehicleImageUrl(null); // Reset nếu không có ảnh
       }
     };
 
     fetchImage();
 
-    // Cleanup: Xóa object URL khi component unmount hoặc ảnh thay đổi
     return () => {
+      isMounted = false;
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }

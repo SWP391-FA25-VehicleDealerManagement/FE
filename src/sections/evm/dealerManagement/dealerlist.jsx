@@ -8,6 +8,7 @@ import {
   Typography,
   Spin,
   Modal,
+  Form,
 } from "antd";
 import {
   SearchOutlined,
@@ -23,12 +24,14 @@ import CreateDealerModal from "./createDealerModal";
 const { Title } = Typography;
 
 export default function DealerList() {
-  const { dealers, isLoading, fetchDealers, deleteDealer } = useDealerStore();
+  const { dealers, isLoading, fetchDealers, updateDealer } = useDealerStore();
+  const [form] = Form.useForm();
   const [searchText, setSearchText] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState(null);
   const [searchedColumn, setSearchedColumn] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
@@ -52,33 +55,58 @@ export default function DealerList() {
     setSearchText("");
   };
 
-  const handleDelete = async () => {
-    if (!selectedDealer) return;
+  const handleCreateSuccess = () => {
+    fetchDealers();
+  };
 
+  const showUpdateModal = (dealer) => {
+    setSelectedDealer(dealer);
+    form.setFieldsValue({
+      dealerName: dealer.dealerName,
+      phone: dealer.phone,
+      address: dealer.address,
+    });
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleUpdateCancel = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedDealer(null);
+    form.resetFields();
+  };
+
+  const handleUpdateSubmit = async () => {
     try {
-      await deleteDealer(selectedDealer.dealerId);
-      setIsModalOpen(false);
-      setSelectedDealer(null);
-      // Refetch dealers list after successful deletion
-      fetchDealers();
-    } catch (err) {
-      console.log("Error deleting dealer:", err);
+      const values = await form.validateFields();
+      setIsSubmitting(true);
+
+      const response = await updateDealer(selectedDealer.dealerId, values);
+
+      if (response && response.status === 200) {
+        toast.success("Cập nhật đại lý thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+
+        fetchDealers();
+        setIsUpdateModalOpen(false);
+        setSelectedDealer(null);
+        form.resetFields();
+      }
+    } catch (error) {
+      console.error("Error updating dealer:", error);
+      toast.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật đại lý",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const showDeleteConfirm = (dealer) => {
-    setSelectedDealer(dealer);
-    setIsModalOpen(true);
-  };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-    setSelectedDealer(null);
-  };
-
-  const handleCreateSuccess = () => {
-    fetchDealers(); // Refresh the dealers list
-  };
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
       setSelectedKeys,
@@ -161,29 +189,17 @@ export default function DealerList() {
       render: (_, record) => (
         <Space size="middle">
           <Link to={`/evm-staff/dealer-list/${record.dealerId}`}>
-            <Button
-              type="primary"
-              icon={<EyeOutlined />}
-              size="small"
-            >
+            <Button type="primary" icon={<EyeOutlined />} size="small">
               Xem
             </Button>
           </Link>
           <Button
             type="default"
             size="small"
-            onClick={() => showDeleteConfirm(record)}
+            onClick={() => showUpdateModal(record)}
           >
             Chỉnh sửa
           </Button>
-          {/* <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => showDeleteConfirm(record)}
-          >
-            Xóa
-          </Button> */}
         </Space>
       ),
     },
@@ -218,30 +234,77 @@ export default function DealerList() {
         )}
       </Card>
 
-      {/* Modal xác nhận xóa */}
-      <Modal
-        title="Xác nhận xóa đại lý"
-        open={isModalOpen}
-        onOk={handleDelete}
-        onCancel={handleCancel}
-        okText="Xóa"
-        cancelText="Hủy"
-        okType="danger"
-        closable={false}
-      >
-        <p>
-          Bạn có chắc chắn muốn xóa đại lý{" "}
-          <strong>{selectedDealer?.dealerName}</strong> không?
-        </p>
-        <p>Hành động này không thể hoàn tác.</p>
-      </Modal>
-
       {/* Modal tạo đại lý mới */}
       <CreateDealerModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCreateSuccess}
       />
+
+      {/* Modal chỉnh sửa đại lý */}
+      <Modal
+        title="Cập nhật thông tin đại lý"
+        open={isUpdateModalOpen}
+        onCancel={handleUpdateCancel}
+        footer={[
+          <Button key="back" onClick={handleUpdateCancel}>
+            Hủy
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={isSubmitting}
+            onClick={handleUpdateSubmit}
+          >
+            Cập nhật
+          </Button>,
+        ]}
+      >
+        <Form form={form} layout="vertical" name="updateDealerForm">
+          <Form.Item
+            name="dealerName"
+            label="Tên đại lý"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập tên đại lý",
+              },
+            ]}
+          >
+            <Input placeholder="Nhập tên đại lý" />
+          </Form.Item>
+
+          <Form.Item
+            name="phone"
+            label="Số điện thoại"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập số điện thoại",
+              },
+              {
+                pattern: /^(\+84|84|0)[3|5|7|8|9][0-9]{8}$/,
+                message: "Số điện thoại không hợp lệ",
+              },
+            ]}
+          >
+            <Input placeholder="Nhập số điện thoại" />
+          </Form.Item>
+
+          <Form.Item
+            name="address"
+            label="Địa chỉ"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập địa chỉ",
+              },
+            ]}
+          >
+            <Input.TextArea placeholder="Nhập địa chỉ" rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

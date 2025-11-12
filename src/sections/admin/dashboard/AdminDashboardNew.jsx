@@ -44,8 +44,8 @@ export default function AdminDashboardNew() {
     fetchAllEvmDashboardData(year, month);
   }, [currentDate]);
 
-  // Get stats data
-  const getStatsData = () => {
+  // Tối ưu: Memoize stats data
+  const statsData = React.useMemo(() => {
     const stats = calculateStatsData(
       dealerSaleData,
       dealerRequestData,
@@ -88,7 +88,7 @@ export default function AdminDashboardNew() {
         color: "#f5222d",
       },
     ];
-  };
+  }, [dealerSaleData, dealerRequestData, dealerData, evmStaffData, dealerDebtData]);
 
   return (
     <div className="fade-in">
@@ -119,24 +119,24 @@ export default function AdminDashboardNew() {
         </div>
 
         {/* Statistics Cards */}
-        <StatsCards stats={getStatsData()} />
+        <StatsCards stats={statsData} />
 
         {/* Charts Section */}
         <Row gutter={[16, 16]} className="mb-6">
           <Col xs={24} lg={12}>
             <RevenueChart
-              data={processRevenueChartData(dealerRequestData, timePeriod)}
+              data={React.useMemo(() => processRevenueChartData(dealerRequestData, timePeriod), [dealerRequestData, timePeriod])}
             />
           </Col>
           <Col xs={24} lg={12}>
             <RequestStatusChart
-              data={processRequestStatusChartData(dealerRequestData)}
+              data={React.useMemo(() => processRequestStatusChartData(dealerRequestData), [dealerRequestData])}
             />
           </Col>
         </Row>
 
         {/* Dealer Performance Table */}
-        <DealerPerformanceTable data={getTopDealers(dealerSaleData, 10)} />
+        <DealerPerformanceTable data={React.useMemo(() => getTopDealers(dealerSaleData, 10), [dealerSaleData])} />
 
         {/* Dealer Request Table */}
         <DealerRequestTable data={dealerRequestData || []} />

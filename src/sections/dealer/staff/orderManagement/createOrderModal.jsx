@@ -1,5 +1,5 @@
 // components/order/createOrderModal.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Modal,
   Form,
@@ -49,7 +49,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     }
   }, [isOpen, dealerId, fetchVehicleDealers, getCustomer, Customer]);
 
-  const handlePhoneChange = (e) => {
+  const handlePhoneChange = useCallback((e) => {
     const phone = e.target.value;
     form.setFields([{ name: "customerPhone", errors: [] }]);
     setCustomerInfo(null);
@@ -73,9 +73,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         ]);
       }
     }
-  };
+  }, [Customer, form]);
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = useCallback(async (values) => {
     if (!customerInfo) {
       form.setFields([
         {
@@ -120,7 +120,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         autoClose: 3000,
       });
     }
-  };
+  }, [customerInfo, userDetail, dealerCarLists, createDealerOrder, form, onOrderCreated]);
+
+  const availableVehicles = useMemo(
+    () => dealerCarLists.filter((vehicle) => vehicle.status === "IN_DEALER_STOCK"),
+    [dealerCarLists]
+  );
 
   return (
     <Modal
@@ -207,12 +212,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 />
               )
             }
-            options={dealerCarLists
-              .filter((vehicle) => vehicle.status === "IN_DEALER_STOCK")
-              .map((vehicle) => ({
-                value: vehicle.vehicleId,
-                label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`, //
-              }))}
+            options={availableVehicles.map((vehicle) => ({
+              value: vehicle.vehicleId,
+              label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`,
+            }))}
           >
             {dealerCarLists.map((vehicle) => (
               <Option

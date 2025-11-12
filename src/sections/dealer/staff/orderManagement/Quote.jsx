@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Card,
@@ -43,11 +43,10 @@ export default function Quote() {
     let objectUrlsToRevoke = [];
     const fetchAllImages = async () => {
       if (quoteData?.items && quoteData.items.length > 0) {
-        const newImageUrls = { ...vehicleImageUrls };
         const pathsToFetch = quoteData.items
           .map((item) => item.vehicle?.variantImage)
           .filter(Boolean)
-          .filter((path) => !newImageUrls[path]);
+          .filter((path) => !vehicleImageUrls[path]);
         if (pathsToFetch.length === 0) return;
         const fetchPromises = pathsToFetch.map(async (imagePath) => {
           try {
@@ -63,12 +62,15 @@ export default function Quote() {
           }
         });
         const results = await Promise.all(fetchPromises);
-        results.forEach((result) => {
-          if (result) {
-            newImageUrls[result.path] = result.url;
-          }
+        setVehicleImageUrls((prev) => {
+          const updated = { ...prev };
+          results.forEach((result) => {
+            if (result) {
+              updated[result.path] = result.url;
+            }
+          });
+          return updated;
         });
-        setVehicleImageUrls(newImageUrls);
       }
     };
 
@@ -78,10 +80,10 @@ export default function Quote() {
         if (url) URL.revokeObjectURL(url);
       });
     };
-  }, [quoteData]);
+  }, [quoteData?.items?.length, vehicleImageUrls]);
 
   // Hàm xử lý tạo đơn hàng
-  const handleCreateOrder = async () => {
+  const handleCreateOrder = useCallback(async () => {
     if (
       !quoteData ||
       !quoteData.customer ||
@@ -123,9 +125,9 @@ export default function Quote() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [quoteData, userDetail, createDealerOrder, navigate]);
 
-  const itemColumns = [
+  const itemColumns = useMemo(() => [
     {
       title: "Xe",
       key: "vehicle",
@@ -212,10 +214,21 @@ export default function Quote() {
         <Text strong>{`${(price || 0).toLocaleString("vi-VN")} VNĐ`}</Text>
       ),
     },
-  ];
+  ], [vehicleImageUrls]);
+
+  const totals = useMemo(() => {
+    if (!quoteData?.items) return { subtotal: 0, discount: 0, totalPayment: 0 };
+    const subtotal = quoteData.items.reduce(
+      (sum, item) => sum + (item.totalPrice || 0),
+      0
+    );
+    const discount = 0;
+    const totalPayment = subtotal - discount;
+    return { subtotal, discount, totalPayment };
+  }, [quoteData?.items]);
 
   // Hàm render nội dung chính của trang
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     if (!quoteData) {
       return (
         <Card>
@@ -230,13 +243,7 @@ export default function Quote() {
 
     // Lấy dữ liệu từ quoteData đã được truyền vào
     const { customer, items, dealerInfo, quoteDate } = quoteData;
-    // Tính toán tổng tiền
-    const subtotal = items.reduce(
-      (sum, item) => sum + (item.totalPrice || 0),
-      0
-    );
-    const discount = 0;
-    const totalPayment = subtotal - discount;
+    const { subtotal, discount, totalPayment } = totals;
     return (
       <Card id="quote-to-print">
         {/* Tiêu đề Báo Giá và Thông tin Đại lý */}
@@ -324,7 +331,7 @@ export default function Quote() {
         </Row>
       </Card>
     );
-  };
+  }, [quoteData, totals, itemColumns, navigate]);
 
   return (
     <div>
