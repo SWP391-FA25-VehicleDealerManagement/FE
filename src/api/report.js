@@ -16,3 +16,13 @@ export const getInventoryReport = () => {
 export const getTurnoverReport = () => {
   return axiosClient.get("/api/reports/turnover");
 };
+
+export const getDealerSales = ({ dealerId, year, month } = {}) =>
+  axiosClient.get("/api/reports/dealer-sales", {
+    params: { dealerId, year, month },
+  });
+
+export const getStaffSelfSales = ({ userId, year, month } = {}) =>
+  axiosClient.get("/api/reports/staff-sales-report", {
+    params: { userId, year, month },
+  });

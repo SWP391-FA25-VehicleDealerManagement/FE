@@ -195,6 +195,9 @@ const ContractListPage = lazy(() =>
 const ContractDetailPage = lazy(() =>
   import("../page/dealer/staff/contractDetailPage.jsx")
 );
+const StaffSalesReport = lazy(() =>
+  import("../page/dealer/staff/salesReportPage.jsx")
+);
 
 const Routes = () => {
   const { isAuthenticated, role, isInitialized } = useAuthen();
@@ -416,6 +419,7 @@ const Routes = () => {
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
         { path: "reviews", element: <FeedbackListPage /> },
         { path: "customer-contract", element: <ContractListPage /> },
+        { path: "sales-report", element: <StaffSalesReport /> },
         {
           path: "customer-contract/:contractId",
           element: <ContractDetailPage />,
