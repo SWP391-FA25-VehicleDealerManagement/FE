@@ -52,7 +52,7 @@ export default function OrderList() {
 
   useEffect(() => {
     loadData();
-  }, [getCustomerOrders, getCustomer, getPayment, dealerId]);
+  }, [dealerId]);
 
   // Tối ưu: Kết hợp filter và merge trong 1 useMemo
   const mergedOrders = useMemo(() => {

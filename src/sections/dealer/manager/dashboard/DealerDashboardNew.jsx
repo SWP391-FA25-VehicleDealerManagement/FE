@@ -68,16 +68,14 @@ export default function DealerDashboard() {
   // Tối ưu: Memoize stats data calculation
   const statsData = React.useMemo(() => {
     const totalCustomerDebt =
-      customerDebtData?.reduce(
-        (sum, debt) => sum + (debt.remainingAmount || 0),
-        0
-      ) || 0;
+      customerDebtData
+        ?.filter((debt) => debt.debtType === "CUSTOMER_DEBT")
+        .reduce((sum, debt) => sum + (debt.remainingAmount || 0), 0) || 0;
 
     const totalDealerDebt =
-      dealerDebtData?.reduce(
-        (sum, debt) => sum + (debt.remainingAmount || 0),
-        0
-      ) || 0;
+      dealerDebtData
+        ?.filter((debt) => debt.debtType === "DEALER_DEBT")
+        .reduce((sum, debt) => sum + (debt.remainingAmount || 0), 0) || 0;
 
     return [
       {
@@ -136,8 +134,6 @@ export default function DealerDashboard() {
     customerData,
   ]);
 
-
-
   // Tối ưu: Memoize order status chart data
   const orderStatusChartData = React.useMemo(() => {
     const statusCounts = processedOrders.statusCounts || {};
@@ -160,8 +156,6 @@ export default function DealerDashboard() {
       values: statusValues,
     };
   }, [processedOrders.statusCounts]);
-
-
 
   // Tối ưu: Memoize enriched customer debt data
   const enrichedCustomerDebtData = React.useMemo(() => {
@@ -213,7 +207,6 @@ export default function DealerDashboard() {
             orderData={orderData}
           />
         </div>
-
 
         {/* Contract Statistics  */}
         <div className="py-4">
