@@ -9,7 +9,7 @@ const DealerPerformanceTable = () => {
   const [loading, setLoading] = useState(false);
   const [timePeriod, setTimePeriod] = useState({
     year: dayjs().year(),
-    month: null,
+    month: dayjs().month(),
   });
 
   useEffect(() => {
