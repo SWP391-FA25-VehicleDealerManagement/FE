@@ -26,8 +26,6 @@ import useDealerDebt from "../../../../hooks/useDealerDebt";
 import { useParams, useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
-const { TextArea } = Input;
 
 export default function CustomerDebtDetail() {
   const { debtId } = useParams();
@@ -41,16 +39,11 @@ export default function CustomerDebtDetail() {
     isLoadingDebtSchedules,
     fetchDebtSchedules,
     clearDebtSchedules,
-    isLoadingCustomerPayment,
-    makeCustomerPayment,
     paymentHistory,
     isLoadingPaymentHistory,
     fetchPaymentHistory,
     clearPaymentHistory,
   } = useDealerDebt();
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [paymentForm] = Form.useForm();
 
   useEffect(() => {
     if (debtId) {
@@ -70,45 +63,6 @@ export default function CustomerDebtDetail() {
     clearPaymentHistory,
     fetchDealerDebtById,
   ]);
-
-  // Hàm mở modal thanh toán
-  const showPaymentModal = (scheduleRecord) => {
-    setSelectedSchedule(scheduleRecord);
-    setIsPaymentModalOpen(true);
-    paymentForm.setFieldsValue({
-      paymentAmount: scheduleRecord.remainingAmount,
-      paymentMethod: "BANK_TRANSFER",
-    });
-  };
-
-  const handleClosePaymentModal = () => {
-    setIsPaymentModalOpen(false);
-    setSelectedSchedule(null);
-    paymentForm.resetFields();
-  };
-
-  const handlePaymentSubmit = async (values) => {
-    if (!debtId || !selectedSchedule) return;
-    try {
-      const response = await makeCustomerPayment(
-        selectedSchedule.scheduleId,
-        values.paymentAmount,
-        values.paymentMethod,
-        values.notes
-      );
-
-      if (response && response.status === 200) {
-        toast.success("Thanh toán thành công!", { autoClose: 2000 });
-        handleClosePaymentModal();
-        fetchDebtSchedules(debtId);
-        fetchPaymentHistory(debtId);
-        fetchDealerDebtById(debtId);
-      }
-    } catch (error) {
-      console.error("Error making payment:", error);
-      toast.error("Thanh toán thất bại. Vui lòng thử lại.");
-    }
-  };
 
   const handleRefresh = () => {
     if (debtId) {
@@ -218,24 +172,6 @@ export default function CustomerDebtDetail() {
       width: 150,
       render: (text) => text || "N/A",
     },
-    {
-      title: "Thao tác",
-      key: "action",
-      fixed: "right",
-      width: 120,
-      render: (_, record) =>
-        record.status !== "PAID" && (record.remainingAmount || 0) > 0 ? (
-          <Button
-            type="primary"
-            size="small"
-            style={{ backgroundColor: "green", borderColor: "green" }}
-            icon={<CreditCardOutlined />}
-            onClick={() => showPaymentModal(record)}
-          >
-            Thanh toán
-          </Button>
-        ) : null,
-    },
   ];
 
   const paymentHistoryColumns = [
@@ -327,22 +263,22 @@ export default function CustomerDebtDetail() {
       {/* Header của trang */}
       <Space direction="vertical" style={{ width: "100%" }} size="large">
         <div className="flex flex-row justify-between">
-        <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
-          Quay lại danh sách
-        </Button>
+          <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
+            Quay lại danh sách
+          </Button>
 
-        <Button
-          type="primary"
-          icon={<ReloadOutlined />}
-          onClick={handleRefresh}
-          loading={
-            isLoadingDealerDebtById ||
-            isLoadingDebtSchedules ||
-            isLoadingPaymentHistory
-          }
-        >
-          Làm mới
-        </Button>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={
+              isLoadingDealerDebtById ||
+              isLoadingDebtSchedules ||
+              isLoadingPaymentHistory
+            }
+          >
+            Làm mới
+          </Button>
         </div>
         <Title level={2} className="flex items-center">
           <FileTextOutlined style={{ marginRight: 8 }} />
@@ -420,68 +356,6 @@ export default function CustomerDebtDetail() {
           </Spin>
         </Card>
       </Space>
-
-      <Modal
-        title={`Thanh toán Kỳ #${selectedSchedule?.periodNo}`}
-        open={isPaymentModalOpen}
-        onCancel={handleClosePaymentModal}
-        on
-        footer={[
-          <Button key="cancel" onClick={handleClosePaymentModal}>
-            Hủy
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            loading={isLoadingCustomerPayment}
-            onClick={() => paymentForm.submit()}
-          >
-            Xác nhận thanh toán
-          </Button>,
-        ]}
-      >
-        {/* 4. Thay đổi loading state */}
-        <Spin spinning={isLoadingCustomerPayment}>
-          <Form
-            form={paymentForm}
-            layout="vertical"
-            onFinish={handlePaymentSubmit}
-          >
-            <Form.Item
-              name="paymentAmount"
-              label="Số tiền thanh toán"
-              rules={[{ required: true, message: "Vui lòng nhập số tiền!" }]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                formatter={(value) =>
-                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
-                parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-                addonAfter="đ"
-              />
-            </Form.Item>
-            <Form.Item
-              name="paymentMethod"
-              label="Phương thức thanh toán"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng chọn phương thức thanh toán!",
-                },
-              ]}
-            >
-              <Select>
-                <Option value="BANK_TRANSFER">Chuyển khoản</Option>
-                <Option value="CASH">Tiền mặt</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="notes" label="Ghi chú">
-              <TextArea rows={3} />
-            </Form.Item>
-          </Form>
-        </Spin>
-      </Modal>
     </div>
   );
 }

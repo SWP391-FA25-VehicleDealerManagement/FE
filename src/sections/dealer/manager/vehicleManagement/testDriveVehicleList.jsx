@@ -15,8 +15,7 @@ import {
   SearchOutlined,
   EyeOutlined,
   CarOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -25,7 +24,6 @@ import useAuthen from "../../../../hooks/useAuthen";
 import axiosClient from "../../../../config/axiosClient";
 
 const { Title } = Typography;
-const { confirm } = Modal;
 
 export default function TestDriveVehicleList() {
   const navigate = useNavigate();
@@ -333,7 +331,7 @@ export default function TestDriveVehicleList() {
           </Button>
           <Button
             type="default"
-            icon={<CheckCircleOutlined />}
+            icon={<CloseCircleOutlined />}
             size="small"
             onClick={() => {
               setSelectedVehicleId(record);

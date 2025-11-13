@@ -106,6 +106,12 @@ const EvmContractDetailPage = lazy(() =>
 const SalesReportPage = lazy(() =>
   import("../page/dealer/manager/salesReportPage.jsx")
 );
+const CustomerDebtListPage = lazy(() =>
+  import("../page/dealer/manager/customerDebtListPage.jsx")
+);
+const CustomerDebtDetailPage2 = lazy(() =>
+  import("../page/dealer/manager/customerDebtDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -373,6 +379,8 @@ const Routes = () => {
           path: "evm-contract/:contractId",
           element: <EvmContractDetailPage />,
         },
+        { path: "customer-debt", element: <CustomerDebtListPage /> },
+        { path: "customer-debt/:debtId", element: <CustomerDebtDetailPage2 /> },
         { path: "*", element: <Error404 /> },
       ],
     },
