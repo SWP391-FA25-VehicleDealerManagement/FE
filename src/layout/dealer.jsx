@@ -55,6 +55,13 @@ const menuItems = [
       null,
       "/dealer-manager/customer-contract"
     ),
+    getItem(
+      "Công nợ khách hàng",
+      "customer-debt",
+      null,
+      null,
+      "/dealer-manager/customer-debt"
+    ),
   ]),
   getItem("Quản lý xe", "3", <CarOutlined />, [
     getItem(
@@ -119,13 +126,6 @@ const menuItems = [
       "/dealer-manager/sales-report"
     ),
     getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory"),
-    getItem(
-      "Báo cáo công nợ",
-      "6",
-      null,
-      null,
-      "/dealer-manager/customer-debt-report"
-    ),
   ]),
 ];
 

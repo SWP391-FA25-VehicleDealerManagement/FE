@@ -15,8 +15,7 @@ import {
   SearchOutlined,
   EyeOutlined,
   CarOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -25,7 +24,6 @@ import useAuthen from "../../../../hooks/useAuthen";
 import axiosClient from "../../../../config/axiosClient";
 
 const { Title } = Typography;
-const { confirm } = Modal;
 
 export default function TestDriveVehicleList() {
   const navigate = useNavigate();
@@ -33,8 +31,8 @@ export default function TestDriveVehicleList() {
   const {
     fetchVehicleDealers,
     dealerCarLists,
-    updateTestDriveStatus,
-    isLoadingUpdateTestDriveStatus,
+    removeTestDriveStatus,
+    isLoadingRemoveTestDriveStatus,
   } = useVehicleStore();
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -46,6 +44,8 @@ export default function TestDriveVehicleList() {
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   });
   const [imageUrls, setImageUrls] = useState({});
+  const [isOpenConfirmModal, setIsOpenConfirmModal] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
@@ -56,8 +56,8 @@ export default function TestDriveVehicleList() {
   }, [dealerId, fetchVehicleDealers]);
 
   // Filter only TEST_DRIVE vehicles
-  const testDriveVehicles = React.useMemo(() => 
-    dealerCarLists.filter((vehicle) => vehicle.status === "TEST_DRIVE"),
+  const testDriveVehicles = React.useMemo(
+    () => dealerCarLists.filter((vehicle) => vehicle.status === "TEST_DRIVE"),
     [dealerCarLists]
   );
 
@@ -129,36 +129,26 @@ export default function TestDriveVehicleList() {
     navigate(`/dealer-manager/vehicles/${vehicleId}`);
   };
 
-  const handleUpdateStatus = (vehicleId) => {
-    confirm({
-      title: "Xác nhận cập nhật",
-      icon: <ExclamationCircleOutlined />,
-      content: "Bạn có chắc chắn muốn chuyển xe này về trạng thái sẵn sàng bán?",
-      okText: "Xác nhận",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          const response = await updateTestDriveStatus(vehicleId);
-          if (response && response.status === 200) {
-            toast.success("Cập nhật trạng thái xe thành công", {
-              position: "top-right",
-              autoClose: 3000,
-            });
-            // Refresh data
-            fetchVehicleDealers(dealerId);
-          }
-        } catch (error) {
-          console.error("Error updating test drive status:", error);
-          toast.error(
-            error.response?.data?.message || "Cập nhật trạng thái xe thất bại",
-            {
-              position: "top-right",
-              autoClose: 3000,
-            }
-          );
+  const handleUpdateStatus = async () => {
+    try {
+      const response = await removeTestDriveStatus(selectedVehicleId.vehicleId);
+      if (response && response.status === 200) {
+        toast.success("Cập nhật trạng thái xe thành công", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        fetchVehicleDealers(dealerId);
+      }
+    } catch (error) {
+      console.error("Error updating test drive status:", error);
+      toast.error(
+        error.response?.data?.message || "Cập nhật trạng thái xe thất bại",
+        {
+          position: "top-right",
+          autoClose: 3000,
         }
-      },
-    });
+      );
+    }
   };
 
   const getColumnSearchProps = (dataIndex) => ({
@@ -339,6 +329,17 @@ export default function TestDriveVehicleList() {
           >
             Chi tiết
           </Button>
+          <Button
+            type="default"
+            icon={<CloseCircleOutlined />}
+            size="small"
+            onClick={() => {
+              setSelectedVehicleId(record);
+              setIsOpenConfirmModal(true);
+            }}
+          >
+            Bỏ lái thử
+          </Button>
         </Space>
       ),
     },
@@ -368,6 +369,21 @@ export default function TestDriveVehicleList() {
           />
         )}
       </Card>
+
+      <Modal
+        title="Xác nhận cập nhật trạng thái"
+        visible={isOpenConfirmModal}
+        onOk={() => {
+          handleUpdateStatus(selectedVehicleId);
+          setIsOpenConfirmModal(false);
+        }}
+        onCancel={() => setIsOpenConfirmModal(false)}
+        okText="Xác nhận"
+        cancelText="Hủy"
+        confirmLoading={isLoadingRemoveTestDriveStatus}
+      >
+        <p>Bạn có muốn bỏ xe này khỏi lái thử không ?</p>
+      </Modal>
     </div>
   );
 }

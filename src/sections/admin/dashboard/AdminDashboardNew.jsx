@@ -20,10 +20,7 @@ import DealerDebtSummary from "./DealerDebtSummary";
 
 import {
   calculateStatsData,
-  processRevenueChartData,
   processRequestStatusChartData,
-  processRequestCountChartData,
-  getTopDealers,
   formatCurrency,
 } from "../../../utils/EVMdashboardUtils";
 
