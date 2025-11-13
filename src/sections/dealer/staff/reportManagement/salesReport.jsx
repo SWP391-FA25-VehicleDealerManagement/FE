@@ -32,7 +32,7 @@ const VND = (n) =>
   });
 
 export default function DealerStaffSalesReport() {
-  const { user } = useAuthen();
+  const { userDetail } = useAuthen();
   const {
     isLoading,
     staffSelf,
@@ -44,13 +44,13 @@ export default function DealerStaffSalesReport() {
   const [month, setMonth] = useState();
 
   useEffect(() => {
-    if (user?.userId) {
-      fetchStaffSelfSales({ userId: user.userId });
+    if (userDetail?.dealer?.dealerId) {
+      fetchStaffSelfSales({ userId: userDetail?.dealer?.dealerId });
     }
-  }, [user?.userId, fetchStaffSelfSales]);
+  }, [userDetail?.dealer?.dealerId, fetchStaffSelfSales]);
 
   const onMonthChange = (d) => {
-    const payload = { userId: user?.userId };
+    const payload = { userId: userDetail?.dealer?.dealerId };
     if (d) {
       payload.month = d.month() + 1;
       payload.year = d.year();
@@ -113,7 +113,7 @@ export default function DealerStaffSalesReport() {
             icon={<ReloadOutlined />}
             onClick={() =>
               fetchStaffSelfSales({
-                userId: user?.userId,
+                userId: userDetail?.dealer?.dealerId,
                 month: month?.month,
                 year: month?.year,
               })
