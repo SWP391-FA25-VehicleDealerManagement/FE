@@ -15,10 +15,14 @@ import RevenueChart from "./RevenueChart";
 import RequestStatusChart from "./RequestStatusChart";
 import DealerPerformanceTable from "./DealerPerformanceTable";
 import DealerRequestTable from "./DealerRequestTable";
+import RequestCountChart from "./RequestCountChart";
+import DealerDebtSummary from "./DealerDebtSummary";
+
 import {
   calculateStatsData,
   processRevenueChartData,
   processRequestStatusChartData,
+  processRequestCountChartData,
   getTopDealers,
   formatCurrency,
 } from "../../../utils/EVMdashboardUtils";
@@ -31,10 +35,11 @@ export default function AdminDashboardNew() {
     dealerSaleData,
     dealerData,
     dealerDebtData,
+    vehicleInventoryData,
+    allVehiclesData,
     isLoading,
   } = useEvmDashboard();
 
-  const [timePeriod, setTimePeriod] = useState("month");
   const [currentDate, setCurrentDate] = useState(dayjs());
 
   // Fetch data on mount
@@ -75,7 +80,7 @@ export default function AdminDashboardNew() {
         color: "#13c2c2",
       },
       {
-        title: "Yêu cầu đại lý",
+        title: "Tổng đơn yêu cầu",
         value: stats.totalRequestCount,
         icon: <FileTextOutlined />,
         color: "#fa8c16",
@@ -88,58 +93,77 @@ export default function AdminDashboardNew() {
         color: "#f5222d",
       },
     ];
-  }, [dealerSaleData, dealerRequestData, dealerData, evmStaffData, dealerDebtData]);
+  }, [
+    dealerSaleData,
+    dealerRequestData,
+    dealerData,
+    evmStaffData,
+    dealerDebtData,
+    vehicleInventoryData,
+    allVehiclesData,
+  ]);
 
   return (
     <div className="fade-in">
       <Spin spinning={isLoading}>
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Dashboard Quản trị viên
-            </h1>
-            <p className="text-gray-600">
-              Tổng quan về hệ thống và hoạt động kinh doanh
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-gray-600 font-medium">Thời gian:</span>
-            <Select
-              value={timePeriod}
-              onChange={setTimePeriod}
-              style={{ width: 150 }}
-              options={[
-                { label: "Theo tuần", value: "week" },
-                { label: "Theo tháng", value: "month" },
-                { label: "Theo năm", value: "year" },
-              ]}
-            />
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Dashboard Quản trị viên
+          </h1>
+          <p className="text-gray-600">
+            Tổng quan về hệ thống và hoạt động kinh doanh
+          </p>
         </div>
 
         {/* Statistics Cards */}
-        <StatsCards stats={statsData} />
+        <div className="py-4">
+          <StatsCards stats={statsData} />
+        </div>
 
         {/* Charts Section */}
-        <Row gutter={[16, 16]} className="mb-6">
-          <Col xs={24} lg={12}>
-            <RevenueChart
-              data={React.useMemo(() => processRevenueChartData(dealerRequestData, timePeriod), [dealerRequestData, timePeriod])}
-            />
-          </Col>
-          <Col xs={24} lg={12}>
-            <RequestStatusChart
-              data={React.useMemo(() => processRequestStatusChartData(dealerRequestData), [dealerRequestData])}
-            />
-          </Col>
-        </Row>
+        <div className="py-4">
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <RevenueChart
+                data={dealerRequestData}
+              />
+            </Col>
+            <Col xs={24} lg={12}>
+              <RequestStatusChart
+                data={React.useMemo(
+                  () => processRequestStatusChartData(dealerRequestData),
+                  [dealerRequestData]
+                )}
+              />
+            </Col>
+          </Row>
+        </div>
+
+        {/* Request Count Chart */}
+        <div className="py-4">
+          <RequestCountChart
+            data={dealerRequestData}
+          />
+        </div>
+
+        {/* Dealer Debt Summary */}
+        <div className="py-4">
+          <DealerDebtSummary
+            dealerDebtData={dealerDebtData || []}
+            dealerData={dealerData || []}
+          />
+        </div>
 
         {/* Dealer Performance Table */}
-        <DealerPerformanceTable data={React.useMemo(() => getTopDealers(dealerSaleData, 10), [dealerSaleData])} />
+        <div className="py-4">
+          <DealerPerformanceTable />
+        </div>
 
         {/* Dealer Request Table */}
-        <DealerRequestTable data={dealerRequestData || []} />
+        <div className="py-4">
+          <DealerRequestTable data={dealerRequestData || []} />
+        </div>
       </Spin>
     </div>
   );

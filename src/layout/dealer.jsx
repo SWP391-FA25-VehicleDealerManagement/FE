@@ -100,13 +100,6 @@ const menuItems = [
       "/dealer-manager/dealer-orders"
     ),
   ]),
-  getItem(
-    "Kho hàng",
-    "inventory",
-    <InboxOutlined />,
-    null,
-    "/dealer-manager/inventory"
-  ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
     getItem(
@@ -125,7 +118,7 @@ const menuItems = [
       null,
       "/dealer-manager/sales-report"
     ),
-    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory-report"),
+    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory"),
     getItem(
       "Báo cáo công nợ",
       "6",

@@ -1,5 +1,5 @@
-import React from "react";
-import { Card } from "antd";
+import React, { useState, useMemo } from "react";
+import { Card, Select } from "antd";
 import { BarChartOutlined } from "@ant-design/icons";
 import {
   AreaChart,
@@ -10,13 +10,85 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import dayjs from "dayjs";
 
-const RevenueChart = ({ data }) => {
-  // Transform data for Recharts
-  const chartData = data.categories.map((category, index) => ({
-    name: category,
-    revenue: data.values[index],
-  }));
+const RevenueChart = ({ orders }) => {
+  const [timePeriod, setTimePeriod] = useState("month");
+
+  // Process chart data based on time period
+  const chartData = useMemo(() => {
+    if (!orders) return [];
+
+    const categories = [];
+    const values = [];
+
+    if (timePeriod === "week") {
+      // Last 12 weeks
+      for (let i = 11; i >= 0; i--) {
+        const weekStart = dayjs().subtract(i, "week").startOf("week");
+        const weekEnd = dayjs().subtract(i, "week").endOf("week");
+
+        const weekOrders = orders.filter((order) => {
+          const orderDate = dayjs(order.createdDate);
+          return orderDate.isAfter(weekStart) && orderDate.isBefore(weekEnd);
+        });
+
+        const weekRevenue = weekOrders.reduce(
+          (sum, order) => sum + (order.totalPrice || 0),
+          0
+        );
+
+        categories.push(
+          `${weekStart.format("DD/MM")} - ${weekEnd.format("DD/MM")}`
+        );
+        values.push(weekRevenue);
+      }
+    } else if (timePeriod === "month") {
+      // Last 12 months
+      for (let i = 11; i >= 0; i--) {
+        const month = dayjs().subtract(i, "month");
+
+        const monthOrders = orders.filter((order) => {
+          const orderDate = dayjs(order.createdDate);
+          return (
+            orderDate.year() === month.year() &&
+            orderDate.month() === month.month()
+          );
+        });
+
+        const monthRevenue = monthOrders.reduce(
+          (sum, order) => sum + (order.totalPrice || 0),
+          0
+        );
+
+        categories.push(month.format("MM/YYYY"));
+        values.push(monthRevenue);
+      }
+    } else if (timePeriod === "year") {
+      // Last 5 years
+      for (let i = 4; i >= 0; i--) {
+        const year = dayjs().subtract(i, "year");
+
+        const yearOrders = orders.filter((order) => {
+          const orderDate = dayjs(order.createdDate);
+          return orderDate.year() === year.year();
+        });
+
+        const yearRevenue = yearOrders.reduce(
+          (sum, order) => sum + (order.totalPrice || 0),
+          0
+        );
+
+        categories.push(year.format("YYYY"));
+        values.push(yearRevenue);
+      }
+    }
+
+    return categories.map((category, index) => ({
+      name: category,
+      revenue: values[index],
+    }));
+  }, [orders, timePeriod]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
@@ -49,9 +121,22 @@ const RevenueChart = ({ data }) => {
   return (
     <Card
       title={
-        <div className="flex items-center">
-          <BarChartOutlined className="mr-2 text-blue-600" />
-          <span>Biểu đồ doanh thu</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <BarChartOutlined className="mr-2 text-blue-600" />
+            <span>Biểu đồ doanh thu</span>
+          </div>
+          <Select
+            value={timePeriod}
+            onChange={setTimePeriod}
+            style={{ width: 130 }}
+            size="small"
+            options={[
+              { label: "Theo tuần", value: "week" },
+              { label: "Theo tháng", value: "month" },
+              { label: "Theo năm", value: "year" },
+            ]}
+          />
         </div>
       }
       className="shadow-sm mb-6"

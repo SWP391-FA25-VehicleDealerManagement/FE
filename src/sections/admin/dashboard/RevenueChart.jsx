@@ -1,5 +1,5 @@
-import React from "react";
-import { Card } from "antd";
+import React, { useState, useMemo } from "react";
+import { Card, Select } from "antd";
 import { BarChartOutlined } from "@ant-design/icons";
 import {
   AreaChart,
@@ -10,15 +10,20 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import dayjs from "dayjs";
+import { processRevenueChartData } from "../../../utils/EVMdashboardUtils";
 
 const RevenueChart = ({ data }) => {
-  // Handle both formats: {categories, values} or array format
-  const chartData = data.categories 
-    ? data.categories.map((category, index) => ({
-        name: category,
-        revenue: data.values[index],
-      }))
-    : data;
+  const [timePeriod, setTimePeriod] = useState("month");
+
+  // Process chart data based on time period
+  const chartData = useMemo(() => {
+    const processed = processRevenueChartData(data, timePeriod);
+    return processed.categories.map((category, index) => ({
+      name: category,
+      revenue: processed.values[index],
+    }));
+  }, [data, timePeriod]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
@@ -51,9 +56,22 @@ const RevenueChart = ({ data }) => {
   return (
     <Card
       title={
-        <div className="flex items-center">
-          <BarChartOutlined className="mr-2 text-blue-600" />
-          <span>Biểu đồ doanh thu</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <BarChartOutlined className="mr-2 text-blue-600" />
+            <span>Biểu đồ doanh thu</span>
+          </div>
+          <Select
+            value={timePeriod}
+            onChange={setTimePeriod}
+            style={{ width: 130 }}
+            size="small"
+            options={[
+              { label: "Theo tuần", value: "week" },
+              { label: "Theo tháng", value: "month" },
+              { label: "Theo năm", value: "year" },
+            ]}
+          />
         </div>
       }
       className="shadow-sm mb-6"
