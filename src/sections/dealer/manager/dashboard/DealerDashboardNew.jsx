@@ -23,7 +23,6 @@ export default function DealerDashboard() {
     orderData,
     customerDebtData,
     dealerDebtData,
-    inventoryData,
     testDriveData,
     contractData,
     isLoading,
