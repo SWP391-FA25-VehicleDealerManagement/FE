@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { getAllCustomers, getCustomerById, deleteCustomerById, createCustomer, updateCustomer } from "../api/customer";
+import {
+  getAllCustomers,
+  getCustomerById,
+  deleteCustomerById,
+  createCustomer,
+  updateCustomer,
+} from "../api/customer";
 
 const useCustomerStore = create((set) => ({
   customers: [],
@@ -10,8 +16,7 @@ const useCustomerStore = create((set) => ({
       const response = await getAllCustomers(Id);
       if (response && response.status === 200)
         set({ customers: response.data.data, isLoading: false });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Failed to fetch customers:", error);
     }
   },
@@ -23,8 +28,7 @@ const useCustomerStore = create((set) => ({
       if (response && response.status === 200) {
         set({ isLoading: false });
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Failed to delete customer:", error);
       set({ isLoading: false });
     }
@@ -38,8 +42,7 @@ const useCustomerStore = create((set) => ({
       if (response && response.status === 200) {
         set({ customerDetail: response.data.data, isLoading: false });
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Failed to fetch customer by ID:", error);
       set({ isLoading: false });
     }
@@ -52,8 +55,7 @@ const useCustomerStore = create((set) => ({
       if (response && response.status === 200) {
         set({ isLoading: false });
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Failed to delete customer by ID:", error);
       set({ isLoading: false });
     }
@@ -63,7 +65,7 @@ const useCustomerStore = create((set) => ({
     try {
       set({ isLoading: true });
       const response = await createCustomer(customerData);
-      if (response && (response.status === 200 || response.status === 201)) {
+      if (response && response.status === 200) {
         set({ isLoading: false });
         return response.data;
       }
@@ -72,21 +74,20 @@ const useCustomerStore = create((set) => ({
       set({ isLoading: false });
     }
   },
-
+  isLoadingUpdateCustomer: false,
   updateCustomer: async (Id, customerData) => {
     try {
-      set({ isLoading: true });
+      set({ isLoadingUpdateCustomer: true });
       const response = await updateCustomer(Id, customerData);
-      if (response && (response.status === 200 || response.status === 201)) {
-        set({ isLoading: false });
-        return response.data;
+      if (response && response.status === 200) {
+        set({ isLoadingUpdateCustomer: false });
       }
+      return response;
     } catch (error) {
       console.error("Failed to update customer:", error);
-      set({ isLoading: false });
+      set({ isLoadingUpdateCustomer: false });
     }
   },
 }));
-
 
 export default useCustomerStore;

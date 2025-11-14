@@ -20,7 +20,6 @@ import {
   BankOutlined,
 } from "@ant-design/icons";
 import usePaymentStore from "../../../../hooks/usePayment";
-import { createPaymentWithVNPay } from "../../../../api/payment";
 import { toast } from "react-toastify";
 import useAuthen from "../../../../hooks/useAuthen";
 
@@ -37,7 +36,6 @@ export default function PaymentModal({ isOpen, onClose, order }) {
   } = usePaymentStore();
   const { userDetail } = useAuthen();
   const [calculatedAmount, setCalculatedAmount] = useState(0);
-  const [isProcessingVNPay, setIsProcessingVNPay] = useState(false);
 
   const paymentType = Form.useWatch("paymentType", form);
   const paymentMethod = Form.useWatch("paymentMethod", form);
@@ -82,64 +80,6 @@ export default function PaymentModal({ isOpen, onClose, order }) {
       return;
     }
 
-    // ✅ Validate số tiền tối thiểu cho VNPay
-    if (values.paymentMethod === "BANK_TRANSFER" && calculatedAmount < 10000) {
-      toast.error("Số tiền thanh toán VNPay tối thiểu là 10,000 VND");
-      return;
-    }
-
-    // ========== XỬ LÝ VNPAY (BANK_TRANSFER) ==========
-    if (values.paymentMethod === "BANK_TRANSFER") {
-      try {
-        setIsProcessingVNPay(true);
-
-        const vnpayPayload = {
-          orderId: order.orderId,
-          amount: calculatedAmount,
-          paymentMethod: "BANK_TRANSFER",
-          paymentType: values.paymentType,
-        };
-
-        console.log("Creating VNPay payment with payload:", vnpayPayload);
-
-        // Gọi API tạo VNPay URL
-        const response = await createPaymentWithVNPay(vnpayPayload);
-
-        console.log("VNPay response:", response);
-
-        if (response?.data?.data?.vnpayUrl) {
-          // Lưu thông tin vào sessionStorage để xử lý sau khi callback
-          sessionStorage.setItem(
-            "pendingVNPayPayment",
-            JSON.stringify({
-              orderId,
-              paymentType: values.paymentType,
-              installmentPercentage: values.installmentPercentage,
-              paymentId: response.data.data.paymentId,
-              userRole: "DEALER_MANAGER", // ✅ Lưu role để redirect đúng
-            })
-          );
-
-          toast.info("Đang chuyển đến cổng thanh toán VNPay...");
-
-          // Redirect đến VNPay
-          window.location.href = response.data.data.vnpayUrl;
-        } else {
-          toast.error("Không thể tạo link thanh toán VNPay");
-        }
-      } catch (error) {
-        console.error("Lỗi tạo VNPay payment:", error);
-        toast.error(
-          error.response?.data?.message ||
-            "Đã xảy ra lỗi khi tạo thanh toán VNPay"
-        );
-      } finally {
-        setIsProcessingVNPay(false);
-      }
-      return; // Dừng xử lý tiếp
-    }
-
-    // ========== XỬ LÝ TIỀN MẶT (CASH) - GIỮ NGUYÊN ==========
     const paymentPayload = {
       orderId: order.orderId,
       amount: calculatedAmount,
@@ -194,39 +134,15 @@ export default function PaymentModal({ isOpen, onClose, order }) {
         <Button
           key="submit"
           type="primary"
-          loading={
-            isLoadingCreatePayment ||
-            isPaymentSuccessLoading ||
-            isProcessingVNPay
-          }
+          loading={isLoadingCreatePayment || isPaymentSuccessLoading}
           onClick={() => form.submit()}
-          icon={
-            paymentMethod === "BANK_TRANSFER" ? (
-              <BankOutlined />
-            ) : (
-              <CreditCardOutlined />
-            )
-          }
+          icon={<CreditCardOutlined />}
         >
-          {paymentMethod === "BANK_TRANSFER"
-            ? "Thanh toán qua VNPay"
-            : "Xác nhận Thanh toán"}
+          Xác nhận Thanh toán
         </Button>,
       ]}
       width={600}
     >
-      {/* Alert khi chọn BANK_TRANSFER */}
-      {paymentMethod === "BANK_TRANSFER" && (
-        <Alert
-          message="Thanh toán qua VNPay"
-          description="Bạn sẽ được chuyển đến cổng thanh toán VNPay để hoàn tất giao dịch."
-          type="info"
-          showIcon
-          icon={<BankOutlined />}
-          style={{ marginBottom: 16 }}
-        />
-      )}
-
       {order && (
         <Descriptions
           bordered
@@ -260,7 +176,7 @@ export default function PaymentModal({ isOpen, onClose, order }) {
                   <DollarOutlined /> Tiền mặt
                 </Option>
                 <Option value="BANK_TRANSFER">
-                  <BankOutlined /> Chuyển khoản (VNPay)
+                  <BankOutlined /> Chuyển khoản
                 </Option>
               </Select>
             </Form.Item>

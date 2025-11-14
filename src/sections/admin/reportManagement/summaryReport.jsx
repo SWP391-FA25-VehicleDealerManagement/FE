@@ -222,7 +222,7 @@ export default function SummaryReport() {
         <Col xs={24} md={8}>
           <Card>
             <Statistic
-              title="Tổng doanh thu"
+              title="Tổng doanh thu của đại lý"
               value={totals.totalRevenue}
               prefix={<DollarOutlined />}
               valueStyle={{ fontWeight: 700 }}

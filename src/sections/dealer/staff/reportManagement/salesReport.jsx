@@ -34,31 +34,34 @@ const VND = (n) =>
 export default function DealerStaffSalesReport() {
   const { userDetail } = useAuthen();
   const {
-    isLoading,
+    isLoadingStaffSale,
     staffSelf,
     fetchStaffSelfSales,
     staffSelfTotalOrders,
     staffSelfTotalRevenue,
   } = useReport();
 
-  const [month, setMonth] = useState();
+  const [month, setMonth] = useState({
+    month: dayjs().month() + 1,
+    year: dayjs().year(),
+  });
 
   useEffect(() => {
-    if (userDetail?.dealer?.dealerId) {
-      fetchStaffSelfSales({ userId: userDetail?.dealer?.dealerId });
+    if (userDetail?.userId) {
+      fetchStaffSelfSales(userDetail?.userId, month.year, month.month);
     }
-  }, [userDetail?.dealer?.dealerId, fetchStaffSelfSales]);
+  }, [userDetail?.userId, month]);
 
   const onMonthChange = (d) => {
-    const payload = { userId: userDetail?.dealer?.dealerId };
     if (d) {
-      payload.month = d.month() + 1;
-      payload.year = d.year();
-      setMonth({ month: payload.month, year: payload.year });
+      const year = d.year();
+      const month = d.month() + 1;
+      setMonth({ month, year });
+      fetchStaffSelfSales(userDetail?.userId, year, month);
     } else {
       setMonth(undefined);
+      fetchStaffSelfSales(userDetail?.userId, undefined, undefined);
     }
-    fetchStaffSelfSales(payload);
   };
 
   // đổi vai trò hiển thị
@@ -72,25 +75,25 @@ export default function DealerStaffSalesReport() {
   const columns = useMemo(
     () => [
       {
-        title: "Ngày tạo",
-        dataIndex: "createdDate",
-        key: "createdDate",
-        width: 160,
-        render: (v) => (v ? dayjs(v).format("DD/MM/YYYY") : "—"),
-      },
-      {
         title: "Mã đơn",
         dataIndex: "orderId",
         key: "orderId",
-        width: 120,
+        width: "10%",
         render: (v) => <Text strong>#{v ?? "—"}</Text>,
       },
       {
         title: "Doanh thu",
         dataIndex: "totalPrice",
         key: "totalPrice",
-        align: "right",
+        width: "10%",
         render: (v) => <Tag color="blue">{VND(v)}</Tag>,
+      },
+      {
+        title: "Ngày tạo",
+        dataIndex: "createdDate",
+        key: "createdDate",
+        width: "10%",
+        render: (v) => (v ? dayjs(v).format("DD/MM/YYYY") : "—"),
       },
     ],
     []
@@ -104,19 +107,23 @@ export default function DealerStaffSalesReport() {
           Báo cáo doanh thu cá nhân
         </Title>
         <Space>
-          <DatePicker
+          {/* <DatePicker
             picker="month"
+            format="MM/YYYY"
             onChange={onMonthChange}
-            placeholder="Chọn tháng (tuỳ chọn)"
-          />
+            placeholder="Chọn tháng/năm (tuỳ chọn)"
+            value={
+              month
+                ? dayjs()
+                    .month(month.month - 1)
+                    .year(month.year)
+                : null
+            }
+          /> */}
           <Button
             icon={<ReloadOutlined />}
             onClick={() =>
-              fetchStaffSelfSales({
-                userId: userDetail?.dealer?.dealerId,
-                month: month?.month,
-                year: month?.year,
-              })
+              fetchStaffSelfSales(userDetail?.userId, month?.year, month?.month)
             }
           >
             Tải lại
@@ -132,22 +139,34 @@ export default function DealerStaffSalesReport() {
           column={{ xs: 1, sm: 2, md: 3 }}
           labelStyle={{ width: 120 }}
         >
-          <Descriptions.Item label={<Space><UserOutlined />User</Space>}>
+          <Descriptions.Item
+            label={
+              <Space>
+                <UserOutlined />
+                User
+              </Space>
+            }
+          >
             {staffSelf?.userName || "—"}
           </Descriptions.Item>
           <Descriptions.Item label="Họ tên">
             {staffSelf?.fullName || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Vai trò">
-            {roleLabel}
-          </Descriptions.Item>
+          <Descriptions.Item label="Vai trò">{roleLabel}</Descriptions.Item>
           <Descriptions.Item label="Email">
             {staffSelf?.email || "—"}
           </Descriptions.Item>
           <Descriptions.Item label="SĐT">
             {staffSelf?.phone || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label={<Space><ShopOutlined />Đại lý</Space>}>
+          <Descriptions.Item
+            label={
+              <Space>
+                <ShopOutlined />
+                Đại lý
+              </Space>
+            }
+          >
             {staffSelf?.dealerName || "—"}
           </Descriptions.Item>
         </Descriptions>
@@ -186,7 +205,7 @@ export default function DealerStaffSalesReport() {
       {/* Bảng danh sách đơn */}
       <Card>
         <Table
-          loading={isLoading}
+          loading={isLoadingStaffSale}
           columns={columns}
           dataSource={staffSelf?.orders || []}
           rowKey={(r, idx) => r?.orderId ?? idx}

@@ -90,13 +90,6 @@ const useAuthen = create((set, get) => ({
     const userRole = localStorage.getItem("userRole");
     const userDetail = localStorage.getItem("userDetail");
 
-    console.log("🔐 InitAuth - Checking storage:", {
-      hasToken: !!token,
-      isAuthenticated,
-      userRole,
-      hasUserDetail: !!userDetail,
-    });
-
     if (token && isAuthenticated === "true" && userRole && userDetail) {
       try {
         const parsedUserDetail = JSON.parse(userDetail);

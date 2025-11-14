@@ -22,7 +22,7 @@ export const getDealerSales = ({ dealerId, year, month } = {}) =>
     params: { dealerId, year, month },
   });
 
-export const getStaffSelfSales = ({ userId, year, month } = {}) =>
-  axiosClient.get("/api/reports/staff-sales-report", {
-    params: { userId, year, month },
-  });
+export const getStaffSelfSales = (userId, year, month) =>
+  axiosClient.get(
+    `/api/reports/staff-sales-report?userId=${userId}`
+  );

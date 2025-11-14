@@ -1,129 +1,131 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Form, Input, Button, Row, Col } from "antd";
-import { toast } from "react-toastify";
+import React, { useEffect } from "react";
+import { Modal, Form, Input, Button, Spin } from "antd";
+import { UserOutlined, PhoneOutlined, MailOutlined } from "@ant-design/icons";
 import useCustomerStore from "../../../../hooks/useCustomer";
-import useAuthen from "../../../../hooks/useAuthen";
+import { toast } from "react-toastify";
 
-export default function UpdateCustomerModal({ open, onClose, customer, onSuccess }) {
+export default function UpdateCustomerModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  customer,
+}) {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const { updateCustomer } = useCustomerStore();
-  const { userDetail } = useAuthen();
-
-  // Giá trị ban đầu cho form
-  const initialValues = useMemo(
-    () => ({
-      customerName: customer?.customerName || "",
-      phone: customer?.phone || "",
-      email: customer?.email || "",
-    }),
-    [customer]
-  );
+  const { updateCustomer, isLoadingUpdateCustomer } = useCustomerStore();
 
   useEffect(() => {
-    if (open) form.setFieldsValue(initialValues);
-  }, [open, initialValues, form]);
+    if (isOpen && customer) {
+      form.setFieldsValue({
+        customerName: customer.customerName,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [isOpen, customer, form]);
 
-  const handleSubmit = async (values) => {
-    setLoading(true);
+  const handleFinish = async (values) => {
     try {
-      // Lấy dealerId và createBy đúng nguồn
-      const dealerId =
-        customer?.dealerId ?? userDetail?.dealer?.dealerId ?? null;
-      const createBy = userDetail?.userName || customer?.createBy || "system";
-
-      if (!dealerId) {
-        toast.error("Không tìm thấy dealerId để cập nhật.", { autoClose: 2500 });
-        setLoading(false);
-        return;
+      const response = await updateCustomer(customer.customerId, values);
+      if (response && response.status === 200) {
+        toast.success("Cập nhật khách hàng thành công!");
+        form.resetFields();
+        onClose();
+        onSuccess();
       }
-
-      // Payload phải khớp schema backend
-      const payload = {
-        customerId: customer?.customerId,
-        dealerId,
-        customerName: values.customerName?.trim(),
-        email: values.email?.trim() || null,
-        phone: values.phone?.trim(),
-        createBy,
-      };
-
-      await updateCustomer(customer.customerId, payload);
-      toast.success("Cập nhật khách hàng thành công!", { autoClose: 2500 });
-      onSuccess?.(); // ví dụ: refetch chi tiết
-      onClose();
-    } catch (e) {
-      console.error(e);
-      toast.error("Cập nhật khách hàng thất bại!", { autoClose: 2500 });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      toast.error(
+        error?.response?.data?.message || "Cập nhật khách hàng thất bại!"
+      );
     }
   };
 
   return (
     <Modal
-      title="Chỉnh sửa khách hàng"
-      open={open}
-      onCancel={() => {
-        form.resetFields();
-        onClose();
-      }}
+      title="Cập nhật thông tin khách hàng"
+      open={isOpen}
+      onCancel={onClose}
       footer={null}
       width={600}
-      destroyOnClose
-      closable={false}
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="customerName"
-              label="Tên khách hàng"
-              rules={[
-                { required: true, message: "Vui lòng nhập tên!" },
-                { min: 2, message: "Ít nhất 2 ký tự!" },
-              ]}
-            >
-              <Input size="large" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="phone"
-              label="Số điện thoại"
-              rules={[
-                { required: true, message: "Vui lòng nhập SĐT!" },
-                { pattern: /^[0-9+\-\s()]+$/, message: "SĐT không hợp lệ!" },
-              ]}
-            >
-              <Input size="large" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item
-          name="email"
-          label="Email (tuỳ chọn)"
-          rules={[{ type: "email", message: "Email không hợp lệ!" }]}
+      <Spin spinning={isLoadingUpdateCustomer}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          autoComplete="off"
         >
-          <Input size="large" />
-        </Form.Item>
-
-        <div className="flex gap-4 mt-6">
-          <Button
-            onClick={() => {
-              form.resetFields();
-              onClose();
-            }}
-            size="large"
+          <Form.Item
+            label="Tên khách hàng"
+            name="customerName"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên khách hàng!" },
+              {
+                min: 2,
+                message: "Tên khách hàng phải có ít nhất 2 ký tự!",
+              },
+            ]}
           >
-            Hủy
-          </Button>
-          <Button type="primary" htmlType="submit" loading={loading} size="large">
-            Lưu thay đổi
-          </Button>
-        </div>
-      </Form>
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="Nhập tên khách hàng"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Số điện thoại"
+            name="phone"
+            rules={[
+              { required: true, message: "Vui lòng nhập số điện thoại!" },
+              {
+                pattern: /^[0-9]{10}$/,
+                message: "Số điện thoại phải có 10 chữ số!",
+              },
+            ]}
+          >
+            <Input
+              prefix={<PhoneOutlined />}
+              placeholder="Nhập số điện thoại"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: "Vui lòng nhập email!" },
+              { type: "email", message: "Email không hợp lệ!" },
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="Nhập email"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <div className="flex justify-end gap-2">
+              <Button onClick={onClose} size="large">
+                Hủy
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                loading={isLoadingUpdateCustomer}
+              >
+                Cập nhật
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Modal>
   );
 }
