@@ -148,9 +148,6 @@ const VehicleModelDetail = lazy(() =>
 const EVMDealerDebtDetailPage = lazy(() =>
   import("../page/evm/dealerDebtDetailPage.jsx")
 );
-const PromotionListPage = lazy(() =>
-  import("../page/evm/promotionListPage.jsx")
-);
 
 //User Profile
 const UserProfilePage = lazy(() =>
@@ -331,7 +328,6 @@ const Routes = () => {
         { path: "vehicle-models/:id", element: <VehicleModelDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
         { path: "allocate-inventory", element: <AllocateInventoryPage /> },
-        { path: "promotion-dealer", element: <PromotionListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
