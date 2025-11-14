@@ -20,6 +20,11 @@ export default function CustomerDebtList() {
 
   const columns = [
     { title: "Mã Nợ", dataIndex: "debtId", key: "debtId", width: 80 },
+     {
+      title: "Tên Khách Hàng",
+      dataIndex: ["customer", "customerName"],
+      key: "customerName",
+    },
     {
       title: "Tổng tiền",
       dataIndex: "amountDue",

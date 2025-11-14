@@ -356,10 +356,10 @@ export default function DeaerDebtDetail() {
               <Card title="Thông tin đại lý" size="small">
                 <Descriptions bordered column={2} size="small">
                   <Descriptions.Item label="Tên đại lý">
-                    <Text strong>{selectedDebt.dealerName}</Text>
+                    <Text strong>{selectedDebt.dealer?.dealerName || "N/A"}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
-                    {selectedDebt.phone}
+                    {selectedDebt.dealer?.phoneNumber || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Số phiếu nhập">
                     <Tag color="blue">
@@ -367,7 +367,7 @@ export default function DeaerDebtDetail() {
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Địa chỉ" span={2}>
-                    {selectedDebt.address}
+                    {selectedDebt.dealer?.address || "N/A"}
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
