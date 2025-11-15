@@ -36,13 +36,13 @@ const adminMenuItems = [
       null,
       "/evm-staff/dealer-list"
     ),
-    getItem(
-      "Hợp đồng với đại lý",
-      "11",
-      <FileTextOutlined />,
-      null,
-      "/evm-staff/dealer-contract"
-    ),
+    // getItem(
+    //   "Hợp đồng với đại lý",
+    //   "11",
+    //   <FileTextOutlined />,
+    //   null,
+    //   "/evm-staff/dealer-contract"
+    // ),
     getItem("Công nợ", "12", <DollarOutlined />, null, "/evm-staff/debts"),
   ]),
   getItem("Quản lý sản phẩm", "2", <CarOutlined />, [
