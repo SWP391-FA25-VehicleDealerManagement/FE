@@ -111,19 +111,20 @@ export default function CustomerContractList() {
     (contract) => contract.status === "DRAFT"
   ).length;
 
-  const filteredContracts = contractList.filter((contract) => {
-    const searchLower = searchText.toLowerCase();
-    const matchSearch =
-      contract.contractNumber?.toLowerCase().includes(searchLower) ||
-      contract.customerName?.toLowerCase().includes(searchLower) ||
-      contract.modelName?.toLowerCase().includes(searchLower) ||
-      contract.vinNumber?.toLowerCase().includes(searchLower);
+  const filteredContracts = contractList
+    .filter((contract) => contract.status !== "CANCELLED")
+    .filter((contract) => {
+      const searchLower = searchText.toLowerCase();
+      const matchSearch =
+        contract.contractNumber?.toLowerCase().includes(searchLower) ||
+        contract.customerName?.toLowerCase().includes(searchLower) ||
+        contract.modelName?.toLowerCase().includes(searchLower);
 
-    const matchStatus =
-      statusFilter === "all" || contract.status === statusFilter;
+      const matchStatus =
+        statusFilter === "all" || contract.status === statusFilter;
 
-    return matchSearch && matchStatus;
-  });
+      return matchSearch && matchStatus;
+    });
 
   const columns = [
     {
@@ -209,9 +210,7 @@ export default function CustomerContractList() {
             type="primary"
             icon={<EyeOutlined />}
             onClick={() =>
-              navigate(
-                `/dealer-manager/customer-contract/${record.contractId}`
-              )
+              navigate(`/dealer-manager/customer-contract/${record.contractId}`)
             }
           >
             Chi tiết
@@ -262,7 +261,7 @@ export default function CustomerContractList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <Input
-          placeholder="Tìm kiếm theo số HĐ, tên khách hàng, xe, VIN..."
+          placeholder="Tìm kiếm theo số HĐ, tên khách hàng, xe"
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -364,9 +363,7 @@ export default function CustomerContractList() {
                             Khách hàng ID: #{order.customerId}
                           </div>
                         </div>
-                        <Tag
-                          color={statusColorMap[order.status] || "default"}
-                        >
+                        <Tag color={statusColorMap[order.status] || "default"}>
                           {statusMap[order.status] || order.status}
                         </Tag>
                       </div>
