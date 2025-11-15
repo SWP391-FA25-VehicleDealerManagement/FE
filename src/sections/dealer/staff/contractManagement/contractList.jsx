@@ -106,16 +106,14 @@ export default function ContractList() {
     return statusText[status] || status;
   };
 
-  const filteredContracts = contractList
-    .filter((contract) => contract.status !== "CANCELLED")
-    .filter((contract) => {
-      const searchLower = searchText.toLowerCase();
-      return (
-        contract.contractNumber?.toLowerCase().includes(searchLower) ||
-        contract.customerName?.toLowerCase().includes(searchLower) ||
-        contract.modelName?.toLowerCase().includes(searchLower)
-      );
-    });
+  const filteredContracts = contractList.filter((contract) => {
+    const searchLower = searchText.toLowerCase();
+    return (
+      contract.contractNumber?.toLowerCase().includes(searchLower) ||
+      contract.customerName?.toLowerCase().includes(searchLower) ||
+      contract.modelName?.toLowerCase().includes(searchLower)
+    );
+  });
 
   const columns = [
     {
@@ -285,6 +283,7 @@ export default function ContractList() {
                     .includes(input.toLowerCase())
                 }
                 options={orderList
+                  .filter((order) => order.status !== "CANCELLED")
                   .filter((order) => order.customerId != null)
                   .map((order) => ({
                     value: order.orderDetailId,

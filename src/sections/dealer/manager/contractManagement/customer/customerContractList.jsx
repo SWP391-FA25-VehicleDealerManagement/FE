@@ -112,7 +112,6 @@ export default function CustomerContractList() {
   ).length;
 
   const filteredContracts = contractList
-    .filter((contract) => contract.status !== "CANCELLED")
     .filter((contract) => {
       const searchLower = searchText.toLowerCase();
       const matchSearch =
@@ -324,6 +323,7 @@ export default function CustomerContractList() {
                     .includes(input.toLowerCase())
                 }
                 options={orderList
+                  .filter((order) => order.status !== "CANCELLED")
                   .filter((order) => order.customerId != null)
                   .map((order) => ({
                     value: order.orderDetailId,
