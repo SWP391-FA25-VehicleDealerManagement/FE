@@ -163,7 +163,6 @@ export default function OrderDetail() {
   }, [vehicleDetails]);
 
   useEffect(() => {
-  // ✅ Ưu tiên dùng amountPaid từ Order (backend đã tính sẵn từ Debt hoặc Payment)
   if (orderInfo && orderInfo.amountPaid != null && orderInfo.amountPaid > 0) {
     setTotalPaidAmount(orderInfo.amountPaid);
     return;
@@ -232,8 +231,6 @@ export default function OrderDetail() {
       return;
     }
 
-    // Tạo đối tượng order cho modal,
-    // gán 'dealerName' vào 'customerName' như logic của orderList
     const orderForModal = {
       orderId: mergedData.order.orderId,
       totalPrice: mergedData.order.totalPrice,
