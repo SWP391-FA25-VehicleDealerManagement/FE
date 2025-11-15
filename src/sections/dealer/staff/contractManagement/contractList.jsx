@@ -196,7 +196,7 @@ export default function ContractList() {
       render: (_, record) => (
         <Space>
           <Button
-            type="link"
+            type="primary"
             icon={<EyeOutlined />}
             onClick={() =>
               navigate(`/dealer-staff/customer-contract/${record.contractId}`)
