@@ -11,9 +11,8 @@ import dayjs from "dayjs";
 
 const DealerDebtSummary = ({ dealerDebtData, dealerData }) => {
   // Filter only DEALER_DEBT type
-  const dealerDebts = dealerDebtData?.filter(
-    (debt) => debt.debtType === "DEALER_DEBT"
-  ) || [];
+  const dealerDebts =
+    dealerDebtData?.filter((debt) => debt.debtType === "DEALER_DEBT") || [];
 
   // Calculate debt statistics
   const debtStats = useMemo(() => {
@@ -37,7 +36,9 @@ const DealerDebtSummary = ({ dealerDebtData, dealerData }) => {
 
     const overdueDebts = dealerDebts.filter((debt) => {
       if (debt.dueDate) {
-        return dayjs(debt.dueDate).isBefore(dayjs()) && debt.remainingAmount > 0;
+        return (
+          dayjs(debt.dueDate).isBefore(dayjs()) && debt.remainingAmount > 0
+        );
       }
       return false;
     }).length;
@@ -71,14 +72,20 @@ const DealerDebtSummary = ({ dealerDebtData, dealerData }) => {
     {
       title: "Tên đại lý",
       key: "dealerName",
-      render: (_, record) => {
-        const dealer = dealerData?.find((d) => d.dealerId === record.dealerId);
-        return (
-          <span className="font-semibold">
-            {dealer?.dealerName || `Dealer #${record.dealerId}`}
-          </span>
-        );
-      },
+      dataIndex: ["dealer", "dealerName"],
+      render: (_, record) =>
+        record.dealer?.dealerName ||
+        dealerData?.find((d) => d.dealerId === record.dealerId)?.dealerName ||
+        "N/A",
+    },
+    {
+      title: "SĐT đại lý",
+      key: "phoneNumber",
+      dataIndex: ["dealer", "phoneNumber"],
+      render: (_, record) =>
+        record.dealer?.phoneNumber ||
+        dealerData?.find((d) => d.dealerId === record.dealerId)?.phoneNumber ||
+        "N/A",
     },
     {
       title: "Tổng nợ (VNĐ)",
@@ -120,13 +127,14 @@ const DealerDebtSummary = ({ dealerDebtData, dealerData }) => {
       dataIndex: "status",
       key: "status",
       render: (status, record) => {
-        const isOverdue = record.dueDate 
-          ? dayjs(record.dueDate).isBefore(dayjs()) && record.remainingAmount > 0
+        const isOverdue = record.dueDate
+          ? dayjs(record.dueDate).isBefore(dayjs()) &&
+            record.remainingAmount > 0
           : false;
 
         let color = "green";
         let text = "Bình thường";
-        
+
         if (isOverdue) {
           color = "red";
           text = "Quá hạn";
@@ -217,7 +225,8 @@ const DealerDebtSummary = ({ dealerDebtData, dealerData }) => {
           <div className="flex items-center text-red-800">
             <ExclamationCircleOutlined className="mr-2 text-lg" />
             <span className="font-medium">
-              Cảnh báo: Có {debtStats.overdueDebts} khoản nợ đã quá hạn thanh toán!
+              Cảnh báo: Có {debtStats.overdueDebts} khoản nợ đã quá hạn thanh
+              toán!
             </span>
           </div>
         </div>

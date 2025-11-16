@@ -13,11 +13,11 @@ import {
   SearchOutlined,
   UserAddOutlined,
   DeleteOutlined,
-  EyeOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
 import useEvmStaffStore from "../../../hooks/useEvmStaff";
 import CreateEvmStaffModal from "./createEvmStaffModal";
+import UpdateEvmStaffModal from "./updateEvmStaffModal";
 
 const { Title } = Typography;
 
@@ -26,6 +26,7 @@ export default function EvmStaffList() {
     useEvmStaffStore();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -93,6 +94,14 @@ export default function EvmStaffList() {
   // Chuẩn hoá hiển thị tên
   const getName = (r) => r.staffName ?? r.fullName ?? r.userName ?? "—";
 
+  // Dịch vai trò
+  const translateRole = (role) => {
+    const roleMap = {
+      EVM_STAFF: "Nhân viên EVM",
+    };
+    return roleMap[role] || role || "—";
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -127,27 +136,32 @@ export default function EvmStaffList() {
         title: "Vai trò",
         dataIndex: "role",
         key: "role",
-        ...getColSearch("role"),
-      },
-      {
-        title: "Địa chỉ",
-        dataIndex: "address",
-        key: "address",
-        ...getColSearch("address"),
+        render: (role) => translateRole(role),
+        filters: [
+          { text: "Nhân viên EVM", value: "EVM_STAFF" },
+          { text: "Quản lý EVM", value: "EVM_MANAGER" },
+          { text: "Quản trị viên", value: "ADMIN" },
+        ],
+        onFilter: (value, record) => record.role === value,
       },
       {
         title: "Thao tác",
         key: "action",
         width: 170,
         render: (_, r) => {
-          const id = getRowId(r);
           return (
             <Space size="middle">
-              <Link to={`/admin/staff-management/${id}`}>
-                <Button type="primary" icon={<EyeOutlined />} size="small">
-                  Xem
-                </Button>
-              </Link>
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                size="small"
+                onClick={() => {
+                  setSelected(r);
+                  setIsUpdateOpen(true);
+                }}
+              >
+                Sửa
+              </Button>
               <Button
                 danger
                 icon={<DeleteOutlined />}
@@ -236,6 +250,17 @@ export default function EvmStaffList() {
       <CreateEvmStaffModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => fetchEvmStaffs()}
+      />
+
+      {/* Update modal */}
+      <UpdateEvmStaffModal
+        isOpen={isUpdateOpen}
+        onClose={() => {
+          setIsUpdateOpen(false);
+          setSelected(null);
+        }}
+        staff={selected}
         onSuccess={() => fetchEvmStaffs()}
       />
     </div>

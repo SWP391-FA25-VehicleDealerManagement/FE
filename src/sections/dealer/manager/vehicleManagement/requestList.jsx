@@ -15,6 +15,7 @@ import {
   Statistic,
   Modal,
   Form,
+  Tabs,
 } from "antd";
 import {
   SearchOutlined,
@@ -28,6 +29,9 @@ import {
   CheckSquareOutlined,
   CheckOutlined,
   CloseOutlined,
+  TruckOutlined,
+  HistoryOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -38,6 +42,7 @@ import dayjs from "dayjs";
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 export default function RequestList() {
   const navigate = useNavigate();
@@ -59,6 +64,7 @@ export default function RequestList() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [confirmForm] = Form.useForm();
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -73,9 +79,18 @@ export default function RequestList() {
     loadData();
   }, []);
 
-  // Tối ưu filterData với useMemo thay vì useEffect
+  // Tối ưu lọc dữ liệu với useMemo
   const filteredData = React.useMemo(() => {
     let filtered = [...requestLists];
+
+    // Filter by tab (active or history)
+    if (activeTab === "active") {
+      // Exclude REJECTED and DELIVERED
+      filtered = filtered.filter(
+        (item) => item.status !== "REJECTED" && item.status !== "DELIVERED"
+      );
+    }
+    // For history tab, show all requests (no filtering by status)
 
     // Filter by search text
     if (searchText) {
@@ -103,7 +118,7 @@ export default function RequestList() {
     }
 
     return filtered;
-  }, [requestLists, searchText, statusFilter, dateRange]);
+  }, [requestLists, searchText, statusFilter, dateRange, activeTab]);
 
   const loadData = React.useCallback(async () => {
     const dealerId = userDetail?.dealer?.dealerId;
@@ -196,12 +211,16 @@ export default function RequestList() {
   };
 
   // Tối ưu Calculate statistics với useMemo
-  const stats = React.useMemo(() => ({
-    total: requestLists.length,
-    pending: requestLists.filter((r) => r.status === "PENDING").length,
-    approved: requestLists.filter((r) => r.status === "APPROVED").length,
-    rejected: requestLists.filter((r) => r.status === "REJECTED").length,
-  }), [requestLists]);
+  const stats = React.useMemo(() => {
+    return {
+      total: requestLists.length,
+      pending: requestLists.filter((r) => r.status === "PENDING").length,
+      approved: requestLists.filter((r) => r.status === "APPROVED").length,
+      rejected: requestLists.filter((r) => r.status === "REJECTED").length,
+      shipped: requestLists.filter((r) => r.status === "SHIPPED").length,
+      delivered: requestLists.filter((r) => r.status === "DELIVERED").length,
+    };
+  }, [requestLists]);
 
   const getStatusTag = (status) => {
     const statusConfig = {
@@ -423,106 +442,205 @@ export default function RequestList() {
       {/* Statistics Cards */}
       <Row gutter={16} className="mb-6">
         <Col xs={24} sm={12} md={6}>
-          <Card hoverable>
+          <Card hoverable={true}>
             <Statistic
-              title="Tổng yêu cầu"
+              title={<span style={{ fontSize: 14 }}>Tổng yêu cầu</span>}
               value={stats.total}
-              valueStyle={{ color: "#1890ff" }}
-              prefix={<FileTextOutlined />}
+              valueStyle={{ color: "#1890ff", fontWeight: "bold" }}
+              prefix={<FileTextOutlined style={{ fontSize: 24, color: "#1890ff" }} />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card hoverable>
+          <Card hoverable={true}>
             <Statistic
-              title="Chờ duyệt"
+              title={<span style={{ fontSize: 14 }}>Chờ duyệt</span>}
               value={stats.pending}
-              valueStyle={{ color: "#faad14" }}
-              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: "#faad14", fontWeight: "bold" }}
+              prefix={<ClockCircleOutlined style={{ fontSize: 24, color: "#faad14" }} />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
-              title="Đã duyệt"
+              title={<span style={{ fontSize: 14 }}>Đã duyệt</span>}
               value={stats.approved}
-              valueStyle={{ color: "#52c41a" }}
-              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: "#1890ff", fontWeight: "bold" }}
+              prefix={<CheckCircleOutlined style={{ fontSize: 24, color: "#1890ff" }} />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
-              title="Từ chối"
+              title={<span style={{ fontSize: 14 }}>Đang vận chuyển</span>}
+              value={stats.shipped}
+              valueStyle={{ color: "#722ed1", fontWeight: "bold" }}
+              prefix={<TruckOutlined style={{ fontSize: 24, color: "#722ed1" }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable={true}>
+            <Statistic
+              title={<span style={{ fontSize: 14 }}>Hoàn thành</span>}
+              value={stats.delivered}
+              valueStyle={{ color: "#52c41a", fontWeight: "bold" }}
+              prefix={<CheckOutlined style={{ fontSize: 24, color: "#52c41a" }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable={true}>
+            <Statistic
+              title={<span style={{ fontSize: 14 }}>Từ chối</span>}
               value={stats.rejected}
-              valueStyle={{ color: "#ff4d4f" }}
-              prefix={<CloseCircleOutlined />}
+              valueStyle={{ color: "#ff4d4f", fontWeight: "bold" }}
+              prefix={<CloseOutlined style={{ fontSize: 24, color: "#ff4d4f" }} />}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Filters */}
-      <Card className="mb-4">
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={8}>
-            <Input
-              placeholder="Tìm kiếm theo mã yêu cầu hoặc ghi chú"
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              allowClear
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Select
-              style={{ width: "100%" }}
-              placeholder="Lọc theo trạng thái"
-              value={statusFilter}
-              onChange={setStatusFilter}
-              suffixIcon={<FilterOutlined />}
-            >
-              <Option value="ALL">Tất cả trạng thái</Option>
-              <Option value="PENDING">Chờ duyệt</Option>
-              <Option value="APPROVED">Đã duyệt</Option>
-              <Option value="REJECTED">Từ chối</Option>
-              <Option value="SHIPPED">Đang vận chuyển</Option>
-              <Option value="ALLOCATED">Đã phân bổ</Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={10}>
-            <RangePicker
-              style={{ width: "100%" }}
-              format="DD/MM/YYYY"
-              placeholder={["Từ ngày", "Đến ngày"]}
-              value={dateRange}
-              onChange={setDateRange}
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Table */}
       <Card>
-        {isLoading ? (
-          <div className="flex justify-center items-center p-10">
-            <Spin size="large" />
-          </div>
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={filteredData}
-            rowKey="requestId"
-            pagination={pagination}
-            onChange={(pagination) => setPagination(pagination)}
-            scroll={{ x: 1200 }}
-            locale={{
-              emptyText: "Không có yêu cầu nào",
-            }}
-          />
-        )}
+        <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          <TabPane
+            tab={
+              <span>
+                <UnorderedListOutlined />
+                Yêu cầu đang xử lý
+              </span>
+            }
+            key="active"
+          >
+            {/* Filters */}
+            <Card className="mb-4">
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} md={8}>
+                  <Input
+                    placeholder="Tìm kiếm theo mã yêu cầu hoặc ghi chú"
+                    prefix={<SearchOutlined />}
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    allowClear
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Select
+                    style={{ width: "100%" }}
+                    placeholder="Lọc theo trạng thái"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    suffixIcon={<FilterOutlined />}
+                  >
+                    <Option value="ALL">Tất cả trạng thái</Option>
+                    <Option value="PENDING">Chờ duyệt</Option>
+                    <Option value="APPROVED">Đã duyệt</Option>
+                    <Option value="SHIPPED">Đang vận chuyển</Option>
+                  </Select>
+                </Col>
+                <Col xs={24} sm={12} md={10}>
+                  <RangePicker
+                    style={{ width: "100%" }}
+                    format="DD/MM/YYYY"
+                    placeholder={["Từ ngày", "Đến ngày"]}
+                    value={dateRange}
+                    onChange={setDateRange}
+                  />
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Table */}
+            {isLoading ? (
+              <div className="flex justify-center items-center p-10">
+                <Spin size="large" />
+              </div>
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={filteredData}
+                rowKey="requestId"
+                pagination={pagination}
+                onChange={(pagination) => setPagination(pagination)}
+                scroll={{ x: 1200 }}
+                locale={{
+                  emptyText: "Không có yêu cầu nào",
+                }}
+              />
+            )}
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <HistoryOutlined />
+                Lịch sử
+              </span>
+            }
+            key="history"
+          >
+            {/* Filters */}
+            <Card className="mb-4">
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} md={8}>
+                  <Input
+                    placeholder="Tìm kiếm theo mã yêu cầu hoặc ghi chú"
+                    prefix={<SearchOutlined />}
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    allowClear
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Select
+                    style={{ width: "100%" }}
+                    placeholder="Lọc theo trạng thái"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    suffixIcon={<FilterOutlined />}
+                  >
+                    <Option value="ALL">Tất cả trạng thái</Option>
+                    <Option value="PENDING">Chờ duyệt</Option>
+                    <Option value="APPROVED">Đã duyệt</Option>
+                    <Option value="REJECTED">Từ chối</Option>
+                    <Option value="SHIPPED">Đang vận chuyển</Option>
+                    <Option value="DELIVERED">Hoàn thành</Option>
+                  </Select>
+                </Col>
+                <Col xs={24} sm={12} md={10}>
+                  <RangePicker
+                    style={{ width: "100%" }}
+                    format="DD/MM/YYYY"
+                    placeholder={["Từ ngày", "Đến ngày"]}
+                    value={dateRange}
+                    onChange={setDateRange}
+                  />
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Table */}
+            {isLoading ? (
+              <div className="flex justify-center items-center p-10">
+                <Spin size="large" />
+              </div>
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={filteredData}
+                rowKey="requestId"
+                pagination={pagination}
+                onChange={(pagination) => setPagination(pagination)}
+                scroll={{ x: 1200 }}
+                locale={{
+                  emptyText: "Không có yêu cầu nào",
+                }}
+              />
+            )}
+          </TabPane>
+        </Tabs>
       </Card>
 
       {/* Modal xác nhận đã nhận xe */}

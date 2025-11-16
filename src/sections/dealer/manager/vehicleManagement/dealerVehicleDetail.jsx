@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Card,
   Button,
@@ -37,11 +37,11 @@ const { Title, Text } = Typography;
 
 export default function DealerVehicleDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { fetchVehicleById, isLoading, vehicleDetail } = useVehicleStore();
-  const [isUpdatePriceModalOpen, setIsUpdatePriceModalOpen] = useState(false);
-  const [form] = Form.useForm();
   const [vehicleImageUrl, setVehicleImageUrl] = useState(null);
+  const priceFromList = location.state?.price;
 
   useEffect(() => {
     const loadData = async () => {
@@ -54,101 +54,42 @@ export default function DealerVehicleDetail() {
 
   useEffect(() => {
     let objectUrl = null;
-    let isMounted = true;
 
     const fetchImage = async () => {
-      const imagePath = vehicleDetail?.variantImage;
-      
-      if (!imagePath) {
-        setVehicleImageUrl(null);
-        return;
-      }
-
-      // Chỉ fetch nếu chưa có trong cache
-      if (vehicleImageUrl && imagePath === vehicleDetail?.variantImage) {
-        return;
-      }
-
-      try {
-        const response = await axiosClient.get(imagePath, {
-          responseType: "blob",
-        });
-        
-        if (!isMounted) return;
-        
-        objectUrl = URL.createObjectURL(response.data);
-        setVehicleImageUrl(objectUrl);
-      } catch (error) {
-        console.error("Không thể tải ảnh:", error);
-        if (isMounted) {
+      if (vehicleDetail?.imageUrl) {
+        try {
+          // Dùng axiosClient để get, vì nó đã có interceptor gắn token
+          const response = await axiosClient.get(vehicleDetail?.imageUrl, {
+            responseType: "blob",
+          });
+          // Tạo URL tạm thời từ blob
+          objectUrl = URL.createObjectURL(response.data);
+          setVehicleImageUrl(objectUrl);
+        } catch (error) {
+          console.error("Không thể tải ảnh bảo vệ:", error);
           setVehicleImageUrl(null);
         }
+      } else {
+        setVehicleImageUrl(null);
       }
     };
 
     fetchImage();
 
     return () => {
-      isMounted = false;
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [vehicleDetail?.variantImage]);
+  }, [vehicleDetail?.imageUrl]);
 
   const statusMap = {
     IN_MANUFACTURER_STOCK: { text: "Trong kho nhà SX", color: "blue" },
     IN_DEALER_STOCK: { text: "Tại đại lý", color: "green" },
     SOLD: { text: "Đã bán", color: "red" },
     SHIPPING: { text: "Đang vận chuyển", color: "gold" },
+    TEST_DRIVE: { text: "Xe lái thử", color: "orange" },
   };
-
-  const showUpdatePriceModal = () => {
-    form.setFieldsValue({
-      price: vehicle?.price
-        ? parseFloat(vehicle.price.replace(/[^0-9]/g, ""))
-        : 0,
-    });
-    setIsUpdatePriceModalOpen(true);
-  };
-
-  const handleUpdatePriceCancel = () => {
-    setIsUpdatePriceModalOpen(false);
-    form.resetFields();
-  };
-
-  // const handleUpdatePriceSubmit = async () => {
-  //   try {
-  //     const values = await form.validateFields();
-
-  //     const updateData = {
-  //       price: values.price,
-  //     };
-
-  //     // TODO: Gọi API cập nhật giá
-  //     console.log("Update price data:", updateData);
-
-  //     await updateVehicle(id, updateData);
-
-  //     toast.success("Cập nhật giá bán thành công", {
-  //       position: "top-right",
-  //       autoClose: 3000,
-  //     });
-
-  //     // Refresh vehicle data
-  //     const vehicleData = await fetchVehicleById(id);
-  //     setVehicle(vehicleData);
-
-  //     setIsUpdatePriceModalOpen(false);
-  //     form.resetFields();
-  //   } catch (error) {
-  //     console.error("Error updating price:", error);
-  //     toast.error("Cập nhật giá bán thất bại", {
-  //       position: "top-right",
-  //       autoClose: 3000,
-  //     });
-  //   }
-  // };
 
   if (isLoading) {
     return (
@@ -189,22 +130,13 @@ export default function DealerVehicleDetail() {
             {vehicleDetail?.variantName}
           </Title>
         </div>
-        <Space>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={showUpdatePriceModal}
-          >
-            Cập nhật giá bán
-          </Button>
-        </Space>
       </div>
 
       <Row gutter={16}>
         <Col span={8}>
           <Card title="Thông tin cơ bản" bordered={false}>
             <div className="flex flex-col items-center mb-6">
-              {vehicleDetail?.variantImage ? (
+              {vehicleDetail?.imageUrl ? (
                 <Image
                   width={250}
                   height={200}
@@ -267,8 +199,8 @@ export default function DealerVehicleDetail() {
                   </span>
                 }
               >
-                {vehicleDetail?.price
-                  ? Number(vehicleDetail.price).toLocaleString("vi-VN")
+                {priceFromList
+                  ? Number(priceFromList).toLocaleString("vi-VN")
                   : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item
@@ -492,50 +424,6 @@ export default function DealerVehicleDetail() {
           </Card>
         </Col>
       </Row>
-
-      {/* Modal cập nhật giá */}
-      <Modal
-        title="Cập nhật giá bán"
-        open={isUpdatePriceModalOpen}
-        // onOk={handleUpdatePriceSubmit}
-        onCancel={handleUpdatePriceCancel}
-        okText="Cập nhật"
-        cancelText="Hủy"
-        width={500}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="price"
-            label="Giá bán (VNĐ)"
-            rules={[
-              { required: true, message: "Vui lòng nhập giá bán" },
-              { type: "number", min: 0, message: "Giá bán phải lớn hơn 0" },
-            ]}
-          >
-            <InputNumber
-              min={0}
-              style={{ width: "100%" }}
-              placeholder="Nhập giá bán"
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-            />
-          </Form.Item>
-
-          <div className="bg-gray-50 p-4 rounded">
-            <p className="mb-2">
-              <strong>Xe:</strong> {vehicleDetail?.variantName}
-            </p>
-            <p className="mb-2">
-              <strong>Model:</strong> {vehicleDetail?.modelName}
-            </p>
-            <p className="mb-2">
-              <strong>Giá hiện tại:</strong> {vehicleDetail?.msrp || "N/A"}
-            </p>
-          </div>
-        </Form>
-      </Modal>
     </div>
   );
 }

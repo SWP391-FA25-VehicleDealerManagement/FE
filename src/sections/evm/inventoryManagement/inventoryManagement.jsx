@@ -423,7 +423,7 @@ export default function InventoryManagement() {
         <TabPane
           tab={
             <span>
-              <ShopOutlined /> Danh sách đại lý ({dealers.length})
+              <ShopOutlined /> Danh sách đại lý
             </span>
           }
           key="2"

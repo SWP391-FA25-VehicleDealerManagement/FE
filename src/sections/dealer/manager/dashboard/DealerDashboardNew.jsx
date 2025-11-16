@@ -23,7 +23,6 @@ export default function DealerDashboard() {
     orderData,
     customerDebtData,
     dealerDebtData,
-    inventoryData,
     testDriveData,
     contractData,
     isLoading,
@@ -48,10 +47,10 @@ export default function DealerDashboard() {
       (order) => order.customerId !== null
     );
 
-    const totalAmount = ordersWithCustomers.reduce(
-      (sum, order) => sum + (order.totalPrice || 0),
-      0
-    );
+    // Tính tổng doanh thu chỉ từ các đơn hàng không bị hủy
+    const totalAmount = ordersWithCustomers
+      .filter((order) => order.status !== "CANCELLED")
+      .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
 
     const statusCounts = ordersWithCustomers.reduce((acc, order) => {
       acc[order.status] = (acc[order.status] || 0) + 1;
@@ -69,16 +68,14 @@ export default function DealerDashboard() {
   // Tối ưu: Memoize stats data calculation
   const statsData = React.useMemo(() => {
     const totalCustomerDebt =
-      customerDebtData?.reduce(
-        (sum, debt) => sum + (debt.remainingAmount || 0),
-        0
-      ) || 0;
+      customerDebtData
+        ?.filter((debt) => debt.debtType === "CUSTOMER_DEBT")
+        .reduce((sum, debt) => sum + (debt.remainingAmount || 0), 0) || 0;
 
     const totalDealerDebt =
-      dealerDebtData?.reduce(
-        (sum, debt) => sum + (debt.remainingAmount || 0),
-        0
-      ) || 0;
+      dealerDebtData
+        ?.filter((debt) => debt.debtType === "DEALER_DEBT")
+        .reduce((sum, debt) => sum + (debt.remainingAmount || 0), 0) || 0;
 
     return [
       {
@@ -137,8 +134,6 @@ export default function DealerDashboard() {
     customerData,
   ]);
 
-
-
   // Tối ưu: Memoize order status chart data
   const orderStatusChartData = React.useMemo(() => {
     const statusCounts = processedOrders.statusCounts || {};
@@ -161,8 +156,6 @@ export default function DealerDashboard() {
       values: statusValues,
     };
   }, [processedOrders.statusCounts]);
-
-
 
   // Tối ưu: Memoize enriched customer debt data
   const enrichedCustomerDebtData = React.useMemo(() => {
@@ -214,7 +207,6 @@ export default function DealerDashboard() {
             orderData={orderData}
           />
         </div>
-
 
         {/* Contract Statistics  */}
         <div className="py-4">

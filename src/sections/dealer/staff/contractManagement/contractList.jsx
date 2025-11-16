@@ -111,8 +111,7 @@ export default function ContractList() {
     return (
       contract.contractNumber?.toLowerCase().includes(searchLower) ||
       contract.customerName?.toLowerCase().includes(searchLower) ||
-      contract.modelName?.toLowerCase().includes(searchLower) ||
-      contract.vinNumber?.toLowerCase().includes(searchLower)
+      contract.modelName?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -197,7 +196,7 @@ export default function ContractList() {
       render: (_, record) => (
         <Space>
           <Button
-            type="link"
+            type="primary"
             icon={<EyeOutlined />}
             onClick={() =>
               navigate(`/dealer-staff/customer-contract/${record.contractId}`)
@@ -284,6 +283,7 @@ export default function ContractList() {
                     .includes(input.toLowerCase())
                 }
                 options={orderList
+                  .filter((order) => order.status !== "CANCELLED")
                   .filter((order) => order.customerId != null)
                   .map((order) => ({
                     value: order.orderDetailId,
@@ -323,9 +323,7 @@ export default function ContractList() {
                             Khách hàng ID: #{order.customerId}
                           </div>
                         </div>
-                        <Tag
-                          color={statusColorMap[order.status] || "default"}
-                        >
+                        <Tag color={statusColorMap[order.status] || "default"}>
                           {statusMap[order.status] || order.status}
                         </Tag>
                       </div>

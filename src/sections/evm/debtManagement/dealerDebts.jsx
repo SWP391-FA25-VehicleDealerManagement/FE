@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Statistic,
+  Tabs,
 } from "antd";
 import {
   DollarOutlined,
@@ -21,6 +22,8 @@ import {
   ClockCircleOutlined,
   WarningOutlined,
   FileTextOutlined,
+  UnorderedListOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -28,6 +31,7 @@ import useDealerDebt from "../../../hooks/useDealerDebt";
 import useDealerStore from "../../../hooks/useDealer";
 
 const { Title, Text } = Typography;
+const { TabPane } = Tabs;
 
 export default function DealerDebts() {
   const [isDebtLoading, setIsDebtLoading] = useState(false);
@@ -38,6 +42,7 @@ export default function DealerDebts() {
     isLoading: isDealerLoading,
   } = useDealerStore();
   const [mergedData, setMergedData] = useState([]);
+  const [activeTab, setActiveTab] = useState("active");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -139,20 +144,20 @@ export default function DealerDebts() {
       title: "Mã",
       dataIndex: "debtId",
       key: "debtId",
-      width: 130,
+      width: 50,
       ...getColumnSearchProps("debtId"),
     },
     {
       title: "Đại lý",
-      dataIndex: "dealerName",
+      dataIndex: ["dealer" , "dealerName"],
       key: "dealerName",
       width: "10%",
       ...getColumnSearchProps("dealerName"),
     },
     {
       title: "SĐT",
-      dataIndex: "phone",
-      key: "phone",
+      dataIndex: ["dealer", "phoneNumber"],
+      key: "phoneNumber",
       width: 110,
     },
     {
@@ -227,17 +232,6 @@ export default function DealerDebts() {
       },
     },
     {
-      title: "Tổng lãi",
-      dataIndex: "totalInterest",
-      key: "totalInterest",
-      width: 130,
-      render: (value) => {
-        const val = value || 0;
-        return <Text type="warning">{`${val.toLocaleString("vi-VN")} đ`}</Text>;
-      },
-      sorter: (a, b) => (a.totalInterest || 0) - (b.totalInterest || 0),
-    },
-    {
       title: "Hạn thanh toán",
       dataIndex: "dueDate",
       key: "dueDate",
@@ -260,37 +254,16 @@ export default function DealerDebts() {
       },
     },
     {
-      title: "Hình thức trả",
-      dataIndex: "paymentType",
-      key: "paymentType",
-      width: 120,
-      render: (type) => {
-        if (type === "INSTALLMENT") return <Tag color="blue">Trả góp</Tag>;
-        if (type === "FULL") return <Tag color="green">Trả hết</Tag>;
-        return <Tag>{type}</Tag>;
-      },
-    },
-    {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       width: 140,
       render: (status) => {
         const statusConfig = {
-          paid: {
+          PAID: {
             color: "success",
             text: "Đã thanh toán đủ",
             icon: <CheckCircleOutlined />,
-          },
-          partial: {
-            color: "processing",
-            text: "Thanh toán 1 phần",
-            icon: <ClockCircleOutlined />,
-          },
-          PENDING: {
-            color: "warning",
-            text: "Chưa thanh toán",
-            icon: <ExclamationCircleOutlined />,
           },
           OVERDUE: {
             color: "error",
@@ -325,13 +298,6 @@ export default function DealerDebts() {
       onFilter: (value, record) => record.status === value,
     },
     {
-      title: "Ghi chú",
-      dataIndex: "notes",
-      key: "notes",
-      width: 200,
-      ellipsis: true,
-    },
-    {
       title: "Thao tác",
       key: "action",
       width: 180,
@@ -351,26 +317,47 @@ export default function DealerDebts() {
     },
   ];
 
-  // Calculate statistics
+  // Filter data based on active tab
+  const filteredData = useMemo(() => {
+    if (activeTab === "active") {
+      return mergedData.filter((d) => d.status === "ACTIVE");
+    } else if (activeTab === "paid") {
+      return mergedData.filter((d) => d.status === "PAID");
+    } else if (activeTab === "overdue") {
+      return mergedData.filter((d) => d.status === "OVERDUE" || d.overdue === true);
+    }
+    return mergedData;
+  }, [mergedData, activeTab]);
+
+  // Calculate counts for tab titles
+  const tabCounts = useMemo(() => {
+    return {
+      active: mergedData.filter((d) => d.status === "ACTIVE").length,
+      paid: mergedData.filter((d) => d.status === "PAID").length,
+      overdue: mergedData.filter((d) => d.status === "OVERDUE" || d.overdue === true).length,
+    };
+  }, [mergedData]);
+
+  // Calculate statistics based on current tab
   const stats = useMemo(() => {
     return {
       totalDebt: mergedData.reduce(
         (sum, d) => sum + (d.totalAmount || d.amountDue || 0),
         0
-      ),
+      ).toLocaleString('vi-VN'),
       totalPaid: mergedData.reduce((sum, d) => {
         const paid = d.paidAmount || d.amountPaid || 0;
         return sum + (typeof paid === 'number' ? paid : 0);
-      }, 0),
+      }, 0).toLocaleString('vi-VN'),
       totalRemaining: mergedData.reduce((sum, d) => {
         const remaining = d.remainingAmount || 0;
         return sum + (typeof remaining === 'number' ? remaining : 0);
-      }, 0),
+      }, 0).toLocaleString('vi-VN'),
       overdueCount: mergedData.filter(
         (d) => d.status === "OVERDUE" || d.status === "overdue" || d.overdue === true
       ).length,
     };
-  }, [mergedData]);
+  }, [filteredData]);
 
   return (
     <div>
@@ -386,43 +373,40 @@ export default function DealerDebts() {
       {/* Statistics Cards */}
       <Row gutter={16} className="mb-4">
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
-              title="Tổng tiền hàng đã giao"
+              title="Tổng tiền hàng"
               value={stats.totalDebt}
               prefix={<FileTextOutlined />}
-              suffix="đ"
-              precision={0}
+              suffix=" đ"
               valueStyle={{ color: "#1890ff" }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Đại lý đã thanh toán"
               value={stats.totalPaid}
               prefix={<CheckCircleOutlined />}
-              suffix="đ"
-              precision={0}
+              suffix=" đ"
               valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Đại lý còn nợ"
               value={stats.totalRemaining}
               prefix={<DollarOutlined />}
-              suffix="đ"
-              precision={0}
+              suffix=" đ"
               valueStyle={{ color: "#cf1322" }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Số phiếu quá hạn"
               value={stats.overdueCount}
@@ -439,13 +423,59 @@ export default function DealerDebts() {
             <Spin size="large" />
           </div>
         ) : (
-          <Table
-            columns={columns}
-            dataSource={Array.isArray(mergedData) ? mergedData : []}
-            rowKey="debtId"
-            pagination={{ pageSize: 10, showSizeChanger: true }}
-            scroll={{ x: 2000 }}
-          />
+          <Tabs activeKey={activeTab} onChange={setActiveTab}>
+            <TabPane
+              tab={
+                <span>
+                  <UnorderedListOutlined />
+                  Đang hoạt động ({tabCounts.active})
+                </span>
+              }
+              key="active"
+            >
+              <Table
+                columns={columns}
+                dataSource={Array.isArray(filteredData) ? filteredData : []}
+                rowKey="debtId"
+                pagination={{ pageSize: 10, showSizeChanger: true }}
+                scroll={{ x: 2000 }}
+              />
+            </TabPane>
+            <TabPane
+              tab={
+                <span>
+                  <WarningOutlined />
+                  Quá hạn ({tabCounts.overdue})
+                </span>
+              }
+              key="overdue"
+            >
+              <Table
+                columns={columns}
+                dataSource={Array.isArray(filteredData) ? filteredData : []}
+                rowKey="debtId"
+                pagination={{ pageSize: 10, showSizeChanger: true }}
+                scroll={{ x: 2000 }}
+              />
+            </TabPane>
+            <TabPane
+              tab={
+                <span>
+                  <HistoryOutlined />
+                  Đã thanh toán ({tabCounts.paid})
+                </span>
+              }
+              key="paid"
+            >
+              <Table
+                columns={columns}
+                dataSource={Array.isArray(filteredData) ? filteredData : []}
+                rowKey="debtId"
+                pagination={{ pageSize: 10, showSizeChanger: true }}
+                scroll={{ x: 2000 }}
+              />
+            </TabPane>
+          </Tabs>
         )}
       </Card>
     </div>

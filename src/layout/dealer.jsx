@@ -34,13 +34,13 @@ const menuItems = [
     "/dealer-manager/dashboard"
   ),
   getItem("Hợp đồng và công nợ", "2", <FileOutlined />, [
-    getItem(
-      "Hợp đồng với hãng",
-      "evm-contract",
-      null,
-      null,
-      "/dealer-manager/evm-contract"
-    ),
+    // getItem(
+    //   "Hợp đồng với hãng",
+    //   "evm-contract",
+    //   null,
+    //   null,
+    //   "/dealer-manager/evm-contract"
+    // ),
     getItem(
       "Công nợ với hãng",
       "dealer-debt",

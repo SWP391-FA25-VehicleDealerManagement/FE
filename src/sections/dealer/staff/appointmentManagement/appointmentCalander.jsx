@@ -45,9 +45,9 @@ const getStatusProps = (status) => {
   const upperStatus = status?.toUpperCase();
   switch (upperStatus) {
     case "SCHEDULED":
-      return { color: "gray", text: "Đã lên lịch" };
+      return { color: "blue", text: "Đã lên lịch" };
     case "CONFIRMED":
-      return { color: "blue", text: "Đã xác nhận" };
+      return { color: "purple", text: "Đã xác nhận" };
     case "COMPLETED":
       return { color: "green", text: "Đã hoàn thành" };
     case "CANCELLED":

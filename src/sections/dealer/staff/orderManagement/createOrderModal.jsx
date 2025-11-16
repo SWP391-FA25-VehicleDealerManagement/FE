@@ -17,7 +17,6 @@ import { toast } from "react-toastify";
 import useDealerOrder from "../../../../hooks/useDealerOrder";
 import useVehicleStore from "../../../../hooks/useVehicle";
 import useAuthen from "../../../../hooks/useAuthen";
-import { debounce } from "lodash";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -49,81 +48,100 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     }
   }, [isOpen, dealerId, fetchVehicleDealers, getCustomer, Customer]);
 
-  const handlePhoneChange = useCallback((e) => {
-    const phone = e.target.value;
-    form.setFields([{ name: "customerPhone", errors: [] }]);
-    setCustomerInfo(null);
-    form.resetFields(["customerName", "customerEmail"]);
+  const handlePhoneChange = useCallback(
+    (e) => {
+      const phone = e.target.value;
+      form.setFields([{ name: "customerPhone", errors: [] }]);
+      setCustomerInfo(null);
+      form.resetFields(["customerName", "customerEmail"]);
 
-    if (phone && phone.length >= 10) {
-      const foundCustomer = Customer.find((cust) => cust.phone === phone);
+      if (phone && phone.length >= 10) {
+        const foundCustomer = Customer.find((cust) => cust.phone === phone);
 
-      if (foundCustomer) {
-        setCustomerInfo(foundCustomer);
-        form.setFieldsValue({
-          customerName: foundCustomer.customerName,
-          customerEmail: foundCustomer.email,
-        });
-      } else {
+        if (foundCustomer) {
+          setCustomerInfo(foundCustomer);
+          form.setFieldsValue({
+            customerName: foundCustomer.customerName,
+            customerEmail: foundCustomer.email,
+          });
+        } else {
+          form.setFields([
+            {
+              name: "customerPhone",
+              errors: ["Không tìm thấy khách hàng với SĐT này!"],
+            },
+          ]);
+        }
+      }
+    },
+    [Customer, form]
+  );
+
+  const handleSubmit = useCallback(
+    async (values) => {
+      if (!customerInfo) {
         form.setFields([
           {
             name: "customerPhone",
-            errors: ["Không tìm thấy khách hàng với SĐT này!"],
+            errors: ["Vui lòng tìm và chọn khách hàng hợp lệ!"],
           },
         ]);
+        toast.error("Vui lòng tìm khách hàng hợp lệ bằng SĐT.");
+        return;
       }
-    }
-  }, [Customer, form]);
 
-  const handleSubmit = useCallback(async (values) => {
-    if (!customerInfo) {
-      form.setFields([
-        {
-          name: "customerPhone",
-          errors: ["Vui lòng tìm và chọn khách hàng hợp lệ!"],
-        },
-      ]);
-      toast.error("Vui lòng tìm khách hàng hợp lệ bằng SĐT.");
-      return;
-    }
+      const payload = {
+        customerId: customerInfo.customerId,
+        userId: userDetail.userId,
+        dealerId: userDetail.dealer.dealerId,
+        orderDetails: values.vehicleIds.map((vehicleId) => {
+          const vehicle = dealerCarLists.find((v) => v.vehicleId === vehicleId);
+          return {
+            vehicleId: vehicleId,
+            promotionId: null,
+            quantity: 1,
+            price: vehicle.price,
+          };
+        }),
+      };
 
-    const payload = {
-      customerId: customerInfo.customerId,
-      userId: userDetail.userId,
-      dealerId: userDetail.dealer.dealerId,
-      orderDetails: values.vehicleIds.map((vehicleId) => {
-        const vehicle = dealerCarLists.find((v) => v.vehicleId === vehicleId);
-        return {
-          vehicleId: vehicleId,
-          promotionId: null,
-          quantity: 1,
-          price: vehicle.price,
-        };
-      }),
-    };
-
-    try {
-      console.log("check payload", payload);
-      const response = await createDealerOrder(payload);
-      if (response && response.status === 200) {
-        toast.success("Tạo đơn hàng thành công!", {
+      try {
+        console.log("check payload", payload);
+        const response = await createDealerOrder(payload);
+        if (response && response.status === 200) {
+          toast.success("Tạo đơn hàng thành công!", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          form.resetFields();
+          setCustomerInfo(null);
+          onOrderCreated();
+        }
+      } catch (error) {
+        toast.error(error.response.data.message, {
           position: "top-right",
           autoClose: 3000,
         });
-        form.resetFields();
-        setCustomerInfo(null);
-        onOrderCreated();
       }
-    } catch (error) {
-      toast.error(error.response.data.message, {
-        position: "top-right",
-        autoClose: 3000,
-      });
-    }
-  }, [customerInfo, userDetail, dealerCarLists, createDealerOrder, form, onOrderCreated]);
+    },
+    [
+      customerInfo,
+      userDetail,
+      dealerCarLists,
+      createDealerOrder,
+      form,
+      onOrderCreated,
+    ]
+  );
 
   const availableVehicles = useMemo(
-    () => dealerCarLists.filter((vehicle) => vehicle.status === "IN_DEALER_STOCK"),
+    () =>
+      dealerCarLists.filter(
+        (vehicle) =>
+          vehicle.status === "IN_DEALER_STOCK" &&
+          vehicle.price !== null &&
+          vehicle.price !== undefined
+      ),
     [dealerCarLists]
   );
 
@@ -214,21 +232,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             }
             options={availableVehicles.map((vehicle) => ({
               value: vehicle.vehicleId,
-              label: `${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`,
+              label: `${vehicle.modelName} ${vehicle.variantName} - ${
+                vehicle.color
+              } (VIN: ${vehicle.vinNumber}) - ${vehicle.price.toLocaleString(
+                "vi-VN"
+              )} VNĐ`,
             }))}
           >
-            {dealerCarLists.map((vehicle) => (
-              <Option
-                key={vehicle.vehicleId}
-                value={vehicle.vehicleId}
-                disabled={vehicle.status !== "IN_DEALER_STOCK"}
-              >
-                {`${vehicle.modelName} ${vehicle.variantName} - ${vehicle.color} (VIN: ${vehicle.vinNumber})`}
-                {vehicle.status !== "IN_DEALER_STOCK" && (
-                  <Text type="danger"> (Đã bán)</Text>
-                )}
-              </Option>
-            ))}
           </Select>
         </Form.Item>
       </Form>

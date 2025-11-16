@@ -55,7 +55,19 @@ const DealerRequestTable = ({ data }) => {
   ];
 
   return (
-    <Card title="Yêu cầu đại lý gần đây" className="shadow-sm">
+    <Card
+      title={
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <span>Yêu cầu đại lý gần đây</span>
+          </div>
+          <div className="text-sm font-normal text-gray-500">
+            Tổng: {data.length} yêu cầu
+          </div>
+        </div>
+      }
+      className="shadow-sm"
+    >
       <Table
         columns={columns}
         dataSource={data}

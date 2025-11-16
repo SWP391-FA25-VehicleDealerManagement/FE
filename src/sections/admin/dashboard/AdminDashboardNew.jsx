@@ -109,7 +109,7 @@ export default function AdminDashboardNew() {
             Dashboard Quản trị viên
           </h1>
           <p className="text-gray-600">
-            Tổng quan về hệ thống và hoạt động kinh doanh
+           Tổng quan về doanh thu, đơn yêu cầu và công nợ
           </p>
         </div>
 

@@ -4,7 +4,6 @@ import {
   getDealerCustomerData,
   getDealerOrderData,
   getCustomerDebtData,
-  getDealerEvmDebtData,
   getDealerRevenueData,
   getDealerDebtData,
   getStaffData,
@@ -99,24 +98,6 @@ const useDashboard = create((set, get) => ({
     } catch (error) {
       set({ error: error.message, isLoading: false });
       console.error("Error fetching customer debt data:", error);
-      return null;
-    }
-  },
-
-  // Fetch dealer EVM debt data
-  fetchDealerEvmDebtData: async (dealerId) => {
-    try {
-      set({ isLoading: true, error: null });
-      const response = await getDealerEvmDebtData(dealerId);
-      if (response?.data?.success) {
-        set({ dealerEvmDebtData: response.data.data, isLoading: false });
-        return response.data.data;
-      }
-      set({ isLoading: false });
-      return null;
-    } catch (error) {
-      set({ error: error.message, isLoading: false });
-      console.error("Error fetching dealer EVM debt data:", error);
       return null;
     }
   },
@@ -259,7 +240,6 @@ const useDashboard = create((set, get) => ({
         state.fetchCustomerData(dealerId),
         state.fetchOrderData(dealerId),
         state.fetchCustomerDebtData(dealerId),
-        state.fetchDealerEvmDebtData(dealerId),
         state.fetchDealerDebtData(dealerId),
         state.fetchRevenueData(dealerId, year, month),
         state.fetchInventoryData(dealerId),

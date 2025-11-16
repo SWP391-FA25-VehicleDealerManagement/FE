@@ -61,11 +61,9 @@ export default function DealerStaffFeedbackListPage() {
           await fetchAll();
         }
       } catch (e) {
-        /* ignore */
+        console.log("error feedback", e);
       }
     })();
-    // intentionally empty deps to avoid "changed size" warning
-    // fetchAll from hook is expected to be stable; if not, wrap it with useCallback in the hook
   }, []);
 
   useEffect(() => {
@@ -202,9 +200,9 @@ export default function DealerStaffFeedbackListPage() {
             value={filterType || undefined}
             onChange={(val) => setFilterType(val || "")}
           >
-            <Option value="POSITIVE">POSITIVE</Option>
-            <Option value="NEGATIVE">NEGATIVE</Option>
-            <Option value="NEUTRAL">NEUTRAL</Option>
+            <Option value="POSITIVE">Tích cực</Option>
+            <Option value="NEGATIVE">Tiêu cực</Option>
+            <Option value="NEUTRAL">Trung Lập</Option>
           </Select>
         </div>
 
@@ -240,8 +238,17 @@ export default function DealerStaffFeedbackListPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Thông tin cơ bản */}
             <div>
-              <Text strong style={{ fontSize: 16 }}>Thông tin Feedback</Text>
-              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+              <Text strong style={{ fontSize: 16 }}>
+                Thông tin Feedback
+              </Text>
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
                 <div>
                   <Text strong>ID: </Text>
                   <Text>{selected.feedbackId || "—"}</Text>
@@ -296,8 +303,17 @@ export default function DealerStaffFeedbackListPage() {
             {/* Thông tin Test Drive */}
             {selected.testDrive && (
               <div>
-                <Text strong style={{ fontSize: 16 }}>Thông tin Test Drive</Text>
-                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                <Text strong style={{ fontSize: 16 }}>
+                  Thông tin Test Drive
+                </Text>
+                <div
+                  style={{
+                    marginTop: 12,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
                   <div>
                     <Text strong>ID Test Drive: </Text>
                     <Text>{selected.testDrive.testDriveId || "—"}</Text>
@@ -306,14 +322,24 @@ export default function DealerStaffFeedbackListPage() {
                     <Text strong>Ngày hẹn: </Text>
                     <Text>
                       {selected.testDrive.scheduledDate
-                        ? new Date(selected.testDrive.scheduledDate).toLocaleString("vi-VN")
+                        ? new Date(
+                            selected.testDrive.scheduledDate
+                          ).toLocaleString("vi-VN")
                         : "—"}
                     </Text>
                   </div>
                   <div>
                     <Text strong>Trạng thái: </Text>
-                    <Tag color={selected.testDrive.status === "COMPLETED" ? "green" : "blue"}>
-                      {selected.testDrive.status === "COMPLETED" ? "Đã hoàn thành" : selected.testDrive.status}
+                    <Tag
+                      color={
+                        selected.testDrive.status === "COMPLETED"
+                          ? "green"
+                          : "blue"
+                      }
+                    >
+                      {selected.testDrive.status === "COMPLETED"
+                        ? "Đã hoàn thành"
+                        : selected.testDrive.status}
                     </Tag>
                   </div>
                   <div>
@@ -324,7 +350,9 @@ export default function DealerStaffFeedbackListPage() {
                     <Text strong>Ngày tạo: </Text>
                     <Text>
                       {selected.testDrive.createdDate
-                        ? new Date(selected.testDrive.createdDate).toLocaleString("vi-VN")
+                        ? new Date(
+                            selected.testDrive.createdDate
+                          ).toLocaleString("vi-VN")
                         : "—"}
                     </Text>
                   </div>

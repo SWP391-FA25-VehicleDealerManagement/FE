@@ -141,7 +141,7 @@ export default function CompareEVModal({
             {/* Xe 1 */}
             <Col span={12}>
               <VehicleImage
-                imageUrl={imageUrls[v1.variantImage]}
+                imageUrl={imageUrls[v1.imageUrl]}
                 alt={v1.modelName}
               />
               <Title level={4}>
@@ -153,7 +153,7 @@ export default function CompareEVModal({
             {/* Xe 2 */}
             <Col span={12}>
               <VehicleImage
-                imageUrl={imageUrls[v2.variantImage]}
+                imageUrl={imageUrls[v2.imageUrl]}
                 alt={v2.modelName}
               />
               <Title level={4}>

@@ -6,8 +6,8 @@ import {
   getDealersSummary,
   getInventoryReport,
   getTurnoverReport,
-  getDealerSales,      // doanh thu 1 đại lý (manager xem)
-  getStaffSelfSales,   // báo cáo DOANH THU CÁ NHÂN của dealer staff
+  getDealerSales, // doanh thu 1 đại lý (manager xem)
+  getStaffSelfSales, // báo cáo DOANH THU CÁ NHÂN của dealer staff
 } from "../api/report";
 
 const useReport = create(
@@ -17,12 +17,12 @@ const useReport = create(
       error: null,
 
       // ===== STATE =====
-      staffSales: [],        // báo cáo theo nhân viên của 1 đại lý (manager xem)
-      dealersSummary: [],    // tổng hợp theo đại lý
-      inventoryReport: [],   // tồn kho
-      turnoverReport: [],    // tốc độ tiêu thụ
-      dealerSales: [],       // doanh thu 1 đại lý (filter theo năm/tháng)
-      staffSelf: null,       // báo cáo CÁ NHÂN của dealer staff: { ... , orders: [] }
+      staffSales: [], // báo cáo theo nhân viên của 1 đại lý (manager xem)
+      dealersSummary: [], // tổng hợp theo đại lý
+      inventoryReport: [], // tồn kho
+      turnoverReport: [], // tốc độ tiêu thụ
+      dealerSales: [], // doanh thu 1 đại lý (filter theo năm/tháng)
+      staffSelf: null, // báo cáo CÁ NHÂN của dealer staff: { ... , orders: [] }
 
       // ===== ACTIONS =====
       /** Báo cáo theo nhân viên của 1 đại lý (manager xem) */
@@ -139,23 +139,22 @@ const useReport = create(
         }
       },
 
-      /** ✅ Báo cáo DOANH THU CÁ NHÂN của dealer staff (dùng cho trang staff) */
-      fetchStaffSelfSales: async ({ userId, year, month } = {}) => {
+      isLoadingStaffSale: false,
+      fetchStaffSelfSales: async (userId, year, month) => {
         try {
-          set({ isLoading: true, error: null });
-          const res = await getStaffSelfSales({ userId, year, month });
-          const data = res?.data?.data || {};
-          const orders = Array.isArray(data?.orders) ? data.orders : [];
-          const normalizedOrders = orders.map((o) => ({
-            ...o,
-            totalPrice: Number(o?.totalPrice) || 0,
-            createdDate: o?.createdDate || null,
-            orderId: o?.orderId ?? null,
-          }));
-          set({ staffSelf: { ...data, orders: normalizedOrders }, isLoading: false });
+          set({ isLoadingStaffSale: true, error: null });
+          const response = await getStaffSelfSales(userId, year, month);
+          if (response && response.status === 200) {
+            set({
+              staffSelf: response.data.data,
+              isLoadingStaffSale: false,
+            });
+          }
+          return response;
         } catch (err) {
+          console.log("error at get staffsale", err);
           set({
-            isLoading: false,
+            isLoadingStaffSale: false,
             error: err?.response?.data?.message || "Lỗi tải báo cáo cá nhân",
           });
           throw err;
@@ -164,18 +163,30 @@ const useReport = create(
 
       // ===== HELPERS =====
       totalOrders: () =>
-        get().staffSales.reduce((s, i) => s + (Number(i.totalOrders) || 0), 0),
+        get().staffSales.reduce(
+          (s, i) => s + (Number(i.totalOrders) || 0),
+          0
+        ),
       totalRevenue: () =>
         get().staffSales.reduce((s, i) => s + (Number(i.totalRevenue) || 0), 0),
 
       summaryTotalOrders: () =>
-        get().dealersSummary.reduce((s, i) => s + (Number(i.totalOrders) || 0), 0),
+        get().dealersSummary.reduce(
+          (s, i) => s + (Number(i.totalOrders) || 0),
+          0
+        ),
       summaryTotalRevenue: () =>
-        get().dealersSummary.reduce((s, i) => s + (Number(i.totalRevenue) || 0), 0),
+        get().dealersSummary.reduce(
+          (s, i) => s + (Number(i.totalRevenue) || 0),
+          0
+        ),
       summaryDealerCount: () => get().dealersSummary.length,
 
       invTurnoverTotalSold: () =>
-        get().turnoverReport.reduce((s, i) => s + (Number(i.totalSold) || 0), 0),
+        get().turnoverReport.reduce(
+          (s, i) => s + (Number(i.totalSold) || 0),
+          0
+        ),
       invTurnoverAvgRate: () => {
         const arr = get().turnoverReport;
         if (!arr.length) return 0;
@@ -184,20 +195,32 @@ const useReport = create(
       },
 
       invTotalVehicles: () =>
-        get().inventoryReport.reduce((s, i) => s + (Number(i.totalVehicles) || 0), 0),
+        get().inventoryReport.reduce(
+          (s, i) => s + (Number(i.totalVehicles) || 0),
+          0
+        ),
       invTotalAvailable: () =>
-        get().inventoryReport.reduce((s, i) => s + (Number(i.availableVehicles) || 0), 0),
+        get().inventoryReport.reduce(
+          (s, i) => s + (Number(i.availableVehicles) || 0),
+          0
+        ),
       invTotalSold: () =>
-        get().inventoryReport.reduce((s, i) => s + (Number(i.soldVehicles) || 0), 0),
+        get().inventoryReport.reduce(
+          (s, i) => s + (Number(i.soldVehicles) || 0),
+          0
+        ),
 
       // dealer sales helpers
       dealerSalesTotalOrders: () =>
         get().dealerSales.reduce((s, i) => s + (Number(i.totalOrders) || 0), 0),
       dealerSalesTotalRevenue: () =>
-        get().dealerSales.reduce((s, i) => s + (Number(i.totalRevenue) || 0), 0),
+        get().dealerSales.reduce(
+          (s, i) => s + (Number(i.totalRevenue) || 0),
+          0
+        ),
 
       // helpers cho báo cáo cá nhân
-      staffSelfTotalOrders: () => (get().staffSelf?.orders?.length || 0),
+      staffSelfTotalOrders: () => get().staffSelf?.orders?.length || 0,
       staffSelfTotalRevenue: () =>
         (get().staffSelf?.orders || []).reduce(
           (s, o) => s + (Number(o.totalPrice) || 0),

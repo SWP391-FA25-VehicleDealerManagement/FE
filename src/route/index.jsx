@@ -35,6 +35,9 @@ const SummaryReportPage = lazy(() =>
 const InventoryReportPage = lazy(() =>
   import("../page/admin/inventoryReportPage.jsx")
 );
+const ManufacturerInventoryReportPage = lazy(() =>
+  import("../page/admin/manufacturerInventoryReportPage.jsx")
+);
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
@@ -144,9 +147,6 @@ const VehicleModelDetail = lazy(() =>
 );
 const EVMDealerDebtDetailPage = lazy(() =>
   import("../page/evm/dealerDebtDetailPage.jsx")
-);
-const PromotionListPage = lazy(() =>
-  import("../page/evm/promotionListPage.jsx")
 );
 
 //User Profile
@@ -294,6 +294,7 @@ const Routes = () => {
         { path: "staff-management/:staffId", element: <EvmStaffDetailPage /> },
         { path: "sales-by-dealer", element: <SummaryReportPage /> },
         { path: "inventory-consumption", element: <InventoryReportPage /> },
+        { path: "manufacturer-inventory", element: <ManufacturerInventoryReportPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -327,7 +328,6 @@ const Routes = () => {
         { path: "vehicle-models/:id", element: <VehicleModelDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
         { path: "allocate-inventory", element: <AllocateInventoryPage /> },
-        { path: "promotion-dealer", element: <PromotionListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -402,10 +402,6 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerStaffCustomerListPage /> },
-        {
-          path: "customers/:customerId",
-          element: <DealerStaffCustomerDetailPage />,
-        },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <DealerStaffVehicleListPage /> },
         {

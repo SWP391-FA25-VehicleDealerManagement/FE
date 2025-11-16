@@ -91,7 +91,7 @@ const useContract = create((set) => ({
     try {
       set({ isLoadingCreateContract: true });
       const response = await createContract(data);
-      if (response && response.status === 201) {
+      if (response && response.status === 200) {
         set({ isLoadingCreateContract: false });
       }
       return response;

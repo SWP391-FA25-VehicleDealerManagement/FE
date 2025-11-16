@@ -7,6 +7,14 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
   const [isSaving, setIsSaving] = useState(false);
   const { updateEvmStaff } = useEvmStaffStore();
 
+  // Dịch vai trò
+  const translateRole = (role) => {
+    const roleMap = {
+      EVM_STAFF: "Nhân viên EVM",
+    };
+    return roleMap[role] || role || "";
+  };
+
   useEffect(() => {
     if (staff) {
       form.setFieldsValue({
@@ -14,8 +22,7 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
         fullName: staff.fullName ?? staff.staffName ?? staff.name ?? "",
         email: staff.email ?? "",
         phone: staff.phone ?? staff.phoneNumber ?? "",
-        role: staff.role ?? "",
-        address: staff.address ?? "",
+        role: translateRole(staff.role),
       });
     } else {
       form.resetFields();
@@ -32,8 +39,6 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
         fullName: values.fullName,
         email: values.email,
         phone: values.phone,
-        role: values.role,
-        address: values.address,
       };
       const payload = Object.fromEntries(
         Object.entries(raw).filter(
@@ -102,12 +107,8 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
           <Input />
         </Form.Item>
 
-        <Form.Item name="role" label="Vai trò">
-          <Input />
-        </Form.Item>
-
-        <Form.Item name="address" label="Địa chỉ">
-          <Input />
+        <Form.Item name="role" label="Vai trò" rules={[{ required: true, message: "Chọn vai trò" }]}>
+          <Input disabled placeholder="Vai trò không thể thay đổi" />
         </Form.Item>
       </Form>
     </Modal>

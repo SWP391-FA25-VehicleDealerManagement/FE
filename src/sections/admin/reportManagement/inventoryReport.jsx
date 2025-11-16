@@ -236,7 +236,7 @@ export default function InventoryReportPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <Title level={2} style={{ margin: 0 }}>
-            Báo cáo tồn kho
+            Báo cáo tồn kho từng đại lý
           </Title>
           <Text type="secondary">Tổng hợp theo từng đại lý</Text>
         </div>
