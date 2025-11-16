@@ -871,7 +871,17 @@ export default function VehicleAllocation() {
       </div>
 
       <Row gutter={16} className="mb-6">
-        <Col span={8}>
+        <Col span={6}>
+          <Card hoverable>
+            <Statistic
+              title="Tổng số yêu cầu"
+              value={vehicleRequestLists.length}
+              valueStyle={{ color: "#1890ff" }}
+              prefix={<FileDoneOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
           <Card hoverable>
             <Statistic
               title="Tổng số xe sẵn có để phân bổ"
@@ -881,7 +891,7 @@ export default function VehicleAllocation() {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <Card hoverable>
             <Statistic
               title="Tổng số đại lý"
@@ -891,7 +901,7 @@ export default function VehicleAllocation() {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <Card hoverable>
             <Statistic
               title="Yêu cầu chờ duyệt"

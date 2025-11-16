@@ -4,14 +4,36 @@ import { PieChartOutlined } from "@ant-design/icons";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const OrderStatusChart = ({ data }) => {
-  // Transform data for Recharts
-  const chartData = data.labels.map((label, index) => ({
-    name: label,
-    value: data.values[index],
+  // Transform data for Recharts - merge PAID and PARTIAL into "Đã thanh toán"
+  const mergedData = {};
+  
+  data.labels.forEach((label, index) => {
+    const value = data.values[index];
+    
+    // Merge PAID and PARTIAL into "Đã thanh toán"
+    if (label === "PAID" || label === "PARTIAL" || label === "Đã thanh toán" || label === "Thanh toán 1 phần") {
+      mergedData["Đã thanh toán"] = (mergedData["Đã thanh toán"] || 0) + value;
+    } else {
+      mergedData[label] = (mergedData[label] || 0) + value;
+    }
+  });
+
+  const chartData = Object.entries(mergedData).map(([name, value]) => ({
+    name,
+    value,
   }));
 
-  // Colors matching the previous ApexCharts colors
-  const COLORS = ["#52c41a", "#1890ff", "#faad14", "#f5222d", "#722ed1"];
+  // Colors based on status type
+  const getColorForStatus = (status) => {
+    if (status === "Đã thanh toán") return "#52c41a"; // green
+    if (status === "CANCELLED" || status === "Đã hủy" || status === "Huỷ") return "#f5222d"; // red
+    if (status === "PENDING" || status === "Chờ xử lý") return "#faad14"; // orange
+    if (status === "PROCESSING" || status === "Đang xử lý") return "#1890ff"; // blue
+    if (status === "DELIVERED" || status === "Đã giao" || status === "Hoàn thành" || status === "COMPLETED") return "#52c41a"; // green/success
+    return "#8884d8"; // default
+  };
+
+  const COLORS = chartData.map(item => getColorForStatus(item.name));
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {

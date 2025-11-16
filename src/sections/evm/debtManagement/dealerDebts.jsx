@@ -357,15 +357,15 @@ export default function DealerDebts() {
       totalDebt: mergedData.reduce(
         (sum, d) => sum + (d.totalAmount || d.amountDue || 0),
         0
-      ),
+      ).toLocaleString('vi-VN'),
       totalPaid: mergedData.reduce((sum, d) => {
         const paid = d.paidAmount || d.amountPaid || 0;
         return sum + (typeof paid === 'number' ? paid : 0);
-      }, 0),
+      }, 0).toLocaleString('vi-VN'),
       totalRemaining: mergedData.reduce((sum, d) => {
         const remaining = d.remainingAmount || 0;
         return sum + (typeof remaining === 'number' ? remaining : 0);
-      }, 0),
+      }, 0).toLocaleString('vi-VN'),
       overdueCount: mergedData.filter(
         (d) => d.status === "OVERDUE" || d.status === "overdue" || d.overdue === true
       ).length,
@@ -386,43 +386,40 @@ export default function DealerDebts() {
       {/* Statistics Cards */}
       <Row gutter={16} className="mb-4">
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Tổng tiền hàng đã giao"
               value={stats.totalDebt}
               prefix={<FileTextOutlined />}
-              suffix="đ"
-              precision={0}
+              suffix=" đ"
               valueStyle={{ color: "#1890ff" }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Đại lý đã thanh toán"
               value={stats.totalPaid}
               prefix={<CheckCircleOutlined />}
-              suffix="đ"
-              precision={0}
+              suffix=" đ"
               valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Đại lý còn nợ"
               value={stats.totalRemaining}
               prefix={<DollarOutlined />}
-              suffix="đ"
-              precision={0}
+              suffix=" đ"
               valueStyle={{ color: "#cf1322" }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card hoverable={true}>
             <Statistic
               title="Số phiếu quá hạn"
               value={stats.overdueCount}

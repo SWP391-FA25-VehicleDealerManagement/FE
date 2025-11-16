@@ -45,6 +45,7 @@ const StatsCards = ({ stats }) => {
             <Card
               className="h-full shadow-sm hover:shadow-md transition-shadow border-t-4"
               style={{ borderTopColor: color }}
+              hoverable={true}
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center">
