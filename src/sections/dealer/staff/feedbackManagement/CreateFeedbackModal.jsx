@@ -128,17 +128,13 @@ export default function CreateFeedbackModal({ open, onClose, onSuccess }) {
 
   return (
     <Modal
-      title={
-        <Space>
-          <PlusOutlined />
-          Tạo Feedback mới
-        </Space>
-      }
+      title={<p>Tạo Feedback mới</p>}
       open={open}
       onCancel={handleCancel}
       footer={null}
       width={700}
       destroyOnClose
+      confirmLoading={isLoadingCreate}
     >
       {completedTestDrives.length === 0 && !loadingTestDrives ? (
         <Alert
@@ -312,7 +308,6 @@ export default function CreateFeedbackModal({ open, onClose, onSuccess }) {
               type="primary"
               htmlType="submit"
               loading={isLoadingCreate}
-              icon={<PlusOutlined />}
             >
               Tạo Feedback
             </Button>

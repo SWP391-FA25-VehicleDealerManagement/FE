@@ -6,10 +6,22 @@ import dayjs from "dayjs";
 const CustomerDebtTable = ({ data }) => {
   const columns = [
     {
+      title: "Mã nợ",
+      dataIndex: "debtId",
+      key: "debtId",
+      render: (id) => `#${id}`,
+    },
+    {
       title: "Khách hàng",
-      dataIndex: "customerName",
+      dataIndex: ["customer", "customerName"],
       key: "customerName",
-      render: (text, record) => text || `Customer #${record.customerId}`,
+      render: (text) => text || `N/A`,
+    },
+    {
+      title: "Số điện thoại",
+      dataIndex: ["customer", "phoneNumber"],
+      key: "phoneNumber",
+      render: (text) => text || "N/A",
     },
     {
       title: "Tổng nợ (VNĐ)",

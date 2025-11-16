@@ -29,6 +29,15 @@ const EvmStaffPage = lazy(() => import("../page/admin/evmStaffPage.jsx"));
 const EvmStaffDetailPage = lazy(() =>
   import("../page/admin/evmStaffDetailPage.jsx")
 );
+const SummaryReportPage = lazy(() =>
+  import("../page/admin/summaryReportPage.jsx")
+);
+const InventoryReportPage = lazy(() =>
+  import("../page/admin/inventoryReportPage.jsx")
+);
+const ManufacturerInventoryReportPage = lazy(() =>
+  import("../page/admin/manufacturerInventoryReportPage.jsx")
+);
 
 //Dealer Manager
 const DealerDashboard = lazy(() =>
@@ -100,6 +109,12 @@ const EvmContractDetailPage = lazy(() =>
 const SalesReportPage = lazy(() =>
   import("../page/dealer/manager/salesReportPage.jsx")
 );
+const CustomerDebtListPage = lazy(() =>
+  import("../page/dealer/manager/customerDebtListPage.jsx")
+);
+const CustomerDebtDetailPage2 = lazy(() =>
+  import("../page/dealer/manager/customerDebtDetailPage.jsx")
+);
 
 //EVM Staff
 const DealerList = lazy(() => import("../page/evm/dealerListPage.jsx"));
@@ -132,9 +147,6 @@ const VehicleModelDetail = lazy(() =>
 );
 const EVMDealerDebtDetailPage = lazy(() =>
   import("../page/evm/dealerDebtDetailPage.jsx")
-);
-const PromotionListPage = lazy(() =>
-  import("../page/evm/promotionListPage.jsx")
 );
 
 //User Profile
@@ -188,6 +200,9 @@ const ContractListPage = lazy(() =>
 );
 const ContractDetailPage = lazy(() =>
   import("../page/dealer/staff/contractDetailPage.jsx")
+);
+const StaffSalesReport = lazy(() =>
+  import("../page/dealer/staff/salesReportPage.jsx")
 );
 
 const Routes = () => {
@@ -277,6 +292,9 @@ const Routes = () => {
         { path: "profile", element: <UserProfilePage /> },
         { path: "staff-management", element: <EvmStaffPage /> },
         { path: "staff-management/:staffId", element: <EvmStaffDetailPage /> },
+        { path: "sales-by-dealer", element: <SummaryReportPage /> },
+        { path: "inventory-consumption", element: <InventoryReportPage /> },
+        { path: "manufacturer-inventory", element: <ManufacturerInventoryReportPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -310,7 +328,6 @@ const Routes = () => {
         { path: "vehicle-models/:id", element: <VehicleModelDetail /> },
         { path: "inventory", element: <VehicleInventoryPage /> },
         { path: "allocate-inventory", element: <AllocateInventoryPage /> },
-        { path: "promotion-dealer", element: <PromotionListPage /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -362,6 +379,8 @@ const Routes = () => {
           path: "evm-contract/:contractId",
           element: <EvmContractDetailPage />,
         },
+        { path: "customer-debt", element: <CustomerDebtListPage /> },
+        { path: "customer-debt/:debtId", element: <CustomerDebtDetailPage2 /> },
         { path: "*", element: <Error404 /> },
       ],
     },
@@ -383,10 +402,6 @@ const Routes = () => {
       children: [
         { path: "dashboard", element: <DealerDashboard /> },
         { path: "customer-list", element: <DealerStaffCustomerListPage /> },
-        {
-          path: "customers/:customerId",
-          element: <DealerStaffCustomerDetailPage />,
-        },
         { path: "profile", element: <UserProfilePage /> },
         { path: "vehicles", element: <DealerStaffVehicleListPage /> },
         {
@@ -408,6 +423,7 @@ const Routes = () => {
         { path: "deliveries/:orderId", element: <DeliveryDetailPage /> },
         { path: "reviews", element: <FeedbackListPage /> },
         { path: "customer-contract", element: <ContractListPage /> },
+        { path: "sales-report", element: <StaffSalesReport /> },
         {
           path: "customer-contract/:contractId",
           element: <ContractDetailPage />,

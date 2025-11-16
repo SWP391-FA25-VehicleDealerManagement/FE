@@ -44,6 +44,10 @@ const updateVehicleTestDriveStatus = (id) => {
   return axiosClient.put(`/api/vehicles/${id}/test-drive`);
 }
 
+const removeVehicleTestDriveStatus = (id) => {
+  return axiosClient.put(`/api/vehicles/${id}/return-test-drive`);
+}
+
 export {
   getAllVehicles,
   getVehicleById,
@@ -53,5 +57,6 @@ export {
   deleteVehicle,
   getEVMVehicles,
   getTestDriverVehicles,
-  updateVehicleTestDriveStatus
+  updateVehicleTestDriveStatus,
+  removeVehicleTestDriveStatus,
 };

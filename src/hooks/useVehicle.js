@@ -9,6 +9,7 @@ import {
   getEVMVehicles,
   getTestDriverVehicles,
   updateVehicleTestDriveStatus,
+  removeVehicleTestDriveStatus,
 } from "../api/vehicle";
 
 const useVehicleStore = create((set) => ({
@@ -142,6 +143,22 @@ const useVehicleStore = create((set) => ({
     } catch (error) {
       console.log("error at updateTestDriveStatus", error);
       set({ isLoadingUpdateTestDriveStatus: false });
+      throw error;
+    }
+  },
+
+  isLoadingRemoveTestDriveStatus: false,
+  removeTestDriveStatus: async (id) => {
+    try {
+      set({ isLoadingRemoveTestDriveStatus: true });
+      const response = await removeVehicleTestDriveStatus(id);
+      if (response && response.status === 200) {
+        set({ isLoadingRemoveTestDriveStatus: false });
+      }
+      return response;
+    } catch (error) {
+      console.log("error at removeTestDriveStatus", error);
+      set({ isLoadingRemoveTestDriveStatus: false });
       throw error;
     }
   },

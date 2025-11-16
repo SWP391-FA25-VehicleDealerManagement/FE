@@ -5,10 +5,8 @@ import dayjs from "dayjs";
 import useCustomerDebt from "../../../../hooks/useCustomerDebt";
 import useAuthen from "../../../../hooks/useAuthen";
 import { useNavigate } from "react-router-dom";
-
 const { Title, Text } = Typography;
-
-export default function CustomerDebt() {
+export default function CustomerDebtList() {
   const { userDetail } = useAuthen();
   const navigate = useNavigate();
   const { customerDebtsList, isLoadingCustomerDebts, fetchCustomerDebtsById } =
@@ -22,7 +20,7 @@ export default function CustomerDebt() {
 
   const columns = [
     { title: "Mã Nợ", dataIndex: "debtId", key: "debtId", width: 80 },
-    {
+     {
       title: "Tên Khách Hàng",
       dataIndex: ["customer", "customerName"],
       key: "customerName",
@@ -90,7 +88,7 @@ export default function CustomerDebt() {
           type="primary"
           icon={<EyeOutlined />}
           onClick={() =>
-            navigate(`/dealer-staff/customer-debt/${record.debtId}`)
+            navigate(`/dealer-manager/customer-debt/${record.debtId}`)
           }
         >
           Chi tiết

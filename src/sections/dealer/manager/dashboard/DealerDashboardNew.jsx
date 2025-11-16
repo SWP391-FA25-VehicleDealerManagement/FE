@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Select, Spin, message } from "antd";
+import { Select, Spin } from "antd";
 import dayjs from "dayjs";
 import useAuthen from "../../../../hooks/useAuthen";
 import useDashboard from "../../../../hooks/useDashboard";
@@ -10,6 +10,8 @@ import CustomerDebtTable from "./CustomerDebtTable";
 import DealerDebtTable from "./DealerDebtTable";
 import OrderStatusChart from "./OrderStatusChart";
 import OrderCountChart from "./OrderCountChart";
+import TestDriveStatistics from "./TestDriveStatistics";
+import ContractStatistics from "./ContractStatistics";
 
 export default function DealerDashboard() {
   const { userDetail } = useAuthen();
@@ -21,12 +23,12 @@ export default function DealerDashboard() {
     orderData,
     customerDebtData,
     dealerDebtData,
-    revenueData,
+    testDriveData,
+    contractData,
     isLoading,
   } = useDashboard();
 
   const [currentDate, setCurrentDate] = useState(dayjs());
-  const [timePeriod, setTimePeriod] = useState("month");
 
   useEffect(() => {
     if (userDetail?.dealer?.dealerId) {
@@ -38,7 +40,8 @@ export default function DealerDashboard() {
 
   // Tối ưu: Sử dụng useMemo để cache kết quả
   const processedOrders = React.useMemo(() => {
-    if (!orderData) return { total: 0, totalAmount: 0, statusCounts: {}, orders: [] };
+    if (!orderData)
+      return { total: 0, totalAmount: 0, statusCounts: {}, orders: [] };
 
     const ordersWithCustomers = orderData.filter(
       (order) => order.customerId !== null
@@ -64,21 +67,23 @@ export default function DealerDashboard() {
 
   // Tối ưu: Memoize stats data calculation
   const statsData = React.useMemo(() => {
-    const totalCustomerDebt = customerDebtData?.reduce(
-      (sum, debt) => sum + (debt.remainingAmount || 0),
-      0
-    ) || 0;
+    const totalCustomerDebt =
+      customerDebtData
+        ?.filter((debt) => debt.debtType === "CUSTOMER_DEBT")
+        .reduce((sum, debt) => sum + (debt.remainingAmount || 0), 0) || 0;
 
-    const totalDealerDebt = dealerDebtData?.reduce(
-      (sum, debt) => sum + (debt.remainingAmount || 0),
-      0
-    ) || 0;
+    const totalDealerDebt =
+      dealerDebtData
+        ?.filter((debt) => debt.debtType === "DEALER_DEBT")
+        .reduce((sum, debt) => sum + (debt.remainingAmount || 0), 0) || 0;
 
     return [
       {
         type: "revenue",
         title: "Tổng doanh thu",
-        value: new Intl.NumberFormat("vi-VN").format(processedOrders.totalAmount),
+        value: new Intl.NumberFormat("vi-VN").format(
+          processedOrders.totalAmount
+        ),
         prefix: "₫",
         change: "+12.4%",
         isPositive: true,
@@ -121,77 +126,13 @@ export default function DealerDashboard() {
         isPositive: true,
       },
     ];
-  }, [processedOrders, customerDebtData, dealerDebtData, staffData, customerData]);
-
-  // Tối ưu: Memoize revenue chart data
-  const revenueChartData = React.useMemo(() => {
-    const orders = processedOrders.orders || [];
-
-    const categories = [];
-    const values = [];
-
-    if (timePeriod === "week") {
-      // Last 12 weeks
-      for (let i = 11; i >= 0; i--) {
-        const weekStart = dayjs().subtract(i, "week").startOf("week");
-        const weekEnd = dayjs().subtract(i, "week").endOf("week");
-        
-        const weekOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return orderDate.isAfter(weekStart) && orderDate.isBefore(weekEnd);
-        });
-
-        const weekRevenue = weekOrders.reduce(
-          (sum, order) => sum + (order.totalPrice || 0),
-          0
-        );
-
-        categories.push(`${weekStart.format("DD/MM")} - ${weekEnd.format("DD/MM")}`);
-        values.push(weekRevenue);
-      }
-    } else if (timePeriod === "month") {
-      // Last 12 months
-      for (let i = 11; i >= 0; i--) {
-        const month = dayjs().subtract(i, "month");
-        
-        const monthOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return (
-            orderDate.year() === month.year() &&
-            orderDate.month() === month.month()
-          );
-        });
-
-        const monthRevenue = monthOrders.reduce(
-          (sum, order) => sum + (order.totalPrice || 0),
-          0
-        );
-
-        categories.push(month.format("MM/YYYY"));
-        values.push(monthRevenue);
-      }
-    } else if (timePeriod === "year") {
-      // Last 5 years
-      for (let i = 4; i >= 0; i--) {
-        const year = dayjs().subtract(i, "year");
-        
-        const yearOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return orderDate.year() === year.year();
-        });
-
-        const yearRevenue = yearOrders.reduce(
-          (sum, order) => sum + (order.totalPrice || 0),
-          0
-        );
-
-        categories.push(year.format("YYYY"));
-        values.push(yearRevenue);
-      }
-    }
-
-    return { categories, values };
-  }, [processedOrders.orders, timePeriod]);
+  }, [
+    processedOrders,
+    customerDebtData,
+    dealerDebtData,
+    staffData,
+    customerData,
+  ]);
 
   // Tối ưu: Memoize order status chart data
   const orderStatusChartData = React.useMemo(() => {
@@ -216,67 +157,14 @@ export default function DealerDashboard() {
     };
   }, [processedOrders.statusCounts]);
 
-  // Tối ưu: Memoize order count chart data
-  const orderCountChartData = React.useMemo(() => {
-    const orders = processedOrders.orders || [];
-
-    const categories = [];
-    const values = [];
-
-    if (timePeriod === "week") {
-      // Last 12 weeks
-      for (let i = 11; i >= 0; i--) {
-        const weekStart = dayjs().subtract(i, "week").startOf("week");
-        const weekEnd = dayjs().subtract(i, "week").endOf("week");
-        
-        const weekOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return orderDate.isAfter(weekStart) && orderDate.isBefore(weekEnd);
-        });
-
-        categories.push(`${weekStart.format("DD/MM")} - ${weekEnd.format("DD/MM")}`);
-        values.push(weekOrders.length);
-      }
-    } else if (timePeriod === "month") {
-      // Last 12 months
-      for (let i = 11; i >= 0; i--) {
-        const month = dayjs().subtract(i, "month");
-        
-        const monthOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return (
-            orderDate.year() === month.year() &&
-            orderDate.month() === month.month()
-          );
-        });
-
-        categories.push(month.format("MM/YYYY"));
-        values.push(monthOrders.length);
-      }
-    } else if (timePeriod === "year") {
-      // Last 5 years
-      for (let i = 4; i >= 0; i--) {
-        const year = dayjs().subtract(i, "year");
-        
-        const yearOrders = orders.filter((order) => {
-          const orderDate = dayjs(order.createdDate);
-          return orderDate.year() === year.year();
-        });
-
-        categories.push(year.format("YYYY"));
-        values.push(yearOrders.length);
-      }
-    }
-
-    return { categories, values };
-  }, [processedOrders.orders, timePeriod]);
-
   // Tối ưu: Memoize enriched customer debt data
   const enrichedCustomerDebtData = React.useMemo(() => {
     if (!customerDebtData || !customerData) return customerDebtData;
 
     return customerDebtData.map((debt) => {
-      const customer = customerData.find((c) => c.customerId === debt.customerId);
+      const customer = customerData.find(
+        (c) => c.customerId === debt.customerId
+      );
       return {
         ...debt,
         customerName: customer?.customerName || `Customer #${debt.customerId}`,
@@ -287,50 +175,58 @@ export default function DealerDashboard() {
   return (
     <div className="fade-in">
       <Spin spinning={isLoading}>
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Bảng điều khiển Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Tổng quan về doanh thu, đơn hàng và công nợ
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-gray-600 font-medium">Thời gian:</span>
-            <Select
-              value={timePeriod}
-              onChange={setTimePeriod}
-              style={{ width: 150 }}
-              options={[
-                { label: "Theo tuần", value: "week" },
-                { label: "Theo tháng", value: "month" },
-                { label: "Theo năm", value: "year" },
-              ]}
-            />
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Bảng điều khiển Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Tổng quan về doanh thu, đơn hàng và công nợ
+          </p>
         </div>
 
         {/* Statistics Cards */}
-        <StatsCards stats={statsData} />
+        <div className="py-4">
+          <StatsCards stats={statsData} />
+        </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <RevenueChart data={revenueChartData} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 py-4">
+          <RevenueChart orders={processedOrders.orders} />
           <OrderStatusChart data={orderStatusChartData} />
         </div>
 
         {/* Order Count Chart */}
-        <OrderCountChart data={orderCountChartData} />
+        <div className="py-4">
+          <OrderCountChart orders={processedOrders.orders} />
+        </div>
+
+        {/* Test Drive Statistics */}
+        <div className="py-4">
+          <TestDriveStatistics
+            testDriveData={testDriveData}
+            orderData={orderData}
+          />
+        </div>
+
+        {/* Contract Statistics  */}
+        <div className="py-4">
+          <ContractStatistics contractData={contractData} />
+        </div>
 
         {/* Staff Performance */}
-        <StaffPerformance data={staffSalesData || []} />
+        <div className="py-4">
+          <StaffPerformance data={staffSalesData || []} />
+        </div>
 
         {/* Customer Debt Table */}
-        <CustomerDebtTable data={enrichedCustomerDebtData || []} />
+        <div className="py-4">
+          <CustomerDebtTable data={enrichedCustomerDebtData || []} />
+        </div>
 
         {/* Dealer Debt Table */}
-        <DealerDebtTable data={dealerDebtData || []} />
+        <div className="py-4">
+          <DealerDebtTable data={dealerDebtData || []} />
+        </div>
       </Spin>
     </div>
   );

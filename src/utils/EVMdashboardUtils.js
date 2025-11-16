@@ -162,8 +162,89 @@ export const getTopDealers = (dealerSaleData, limit = 10) => {
 };
 
 /**
+ * Process request count chart data for admin dashboard
+ */
+export const processRequestCountChartData = (dealerRequestData, timePeriod = "month") => {
+  if (!dealerRequestData) return { categories: [], values: [] };
+
+  const categories = [];
+  const values = [];
+
+  if (timePeriod === "week") {
+    // Last 12 weeks
+    for (let i = 11; i >= 0; i--) {
+      const weekStart = dayjs().subtract(i, "week").startOf("week");
+      const weekEnd = dayjs().subtract(i, "week").endOf("week");
+      
+      const weekRequests = dealerRequestData.filter((request) => {
+        const requestDate = dayjs(request.requestDate);
+        return requestDate.isAfter(weekStart) && requestDate.isBefore(weekEnd);
+      });
+
+      categories.push(`${weekStart.format("DD/MM")} - ${weekEnd.format("DD/MM")}`);
+      values.push(weekRequests.length);
+    }
+  } else if (timePeriod === "month") {
+    // Last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const month = dayjs().subtract(i, "month");
+      
+      const monthRequests = dealerRequestData.filter((request) => {
+        const requestDate = dayjs(request.requestDate);
+        return (
+          requestDate.year() === month.year() &&
+          requestDate.month() === month.month()
+        );
+      });
+
+      categories.push(month.format("MM/YYYY"));
+      values.push(monthRequests.length);
+    }
+  } else if (timePeriod === "year") {
+    // Last 5 years
+    for (let i = 4; i >= 0; i--) {
+      const year = dayjs().subtract(i, "year");
+      
+      const yearRequests = dealerRequestData.filter((request) => {
+        const requestDate = dayjs(request.requestDate);
+        return requestDate.year() === year.year();
+      });
+
+      categories.push(year.format("YYYY"));
+      values.push(yearRequests.length);
+    }
+  }
+
+  return { categories, values };
+};
+
+/**
  * Format currency in VND
  */
 export const formatCurrency = (value) => {
   return new Intl.NumberFormat("vi-VN").format(value);
 };
+
+/**
+ * Calculate vehicle statistics
+ */
+export const calculateVehicleStats = (vehicleInventoryData, allVehiclesData) => {
+  const totalEvmVehicles =
+    vehicleInventoryData?.reduce(
+      (sum, item) => sum + (item.stockQuantity || 0),
+      0
+    ) || 0;
+
+  const totalVehiclesInSystem = allVehiclesData?.length || 0;
+
+  const totalDealerVehicles = totalVehiclesInSystem - totalEvmVehicles;
+
+  return {
+    totalEvmVehicles,
+    totalDealerVehicles,
+    totalVehiclesInSystem,
+  };
+};
+
+
+

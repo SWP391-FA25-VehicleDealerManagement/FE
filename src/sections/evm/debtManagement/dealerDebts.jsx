@@ -144,15 +144,15 @@ export default function DealerDebts() {
     },
     {
       title: "Đại lý",
-      dataIndex: "dealerName",
+      dataIndex: ["dealer" , "dealerName"],
       key: "dealerName",
       width: "10%",
       ...getColumnSearchProps("dealerName"),
     },
     {
       title: "SĐT",
-      dataIndex: "phone",
-      key: "phone",
+      dataIndex: ["dealer", "phoneNumber"],
+      key: "phoneNumber",
       width: 110,
     },
     {

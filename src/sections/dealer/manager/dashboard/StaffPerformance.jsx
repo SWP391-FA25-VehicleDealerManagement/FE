@@ -5,6 +5,12 @@ import { TeamOutlined } from "@ant-design/icons";
 const StaffPerformance = ({ data }) => {
   const columns = [
     {
+      title: "Mã nhân viên",
+      dataIndex: "userId",
+      key: "userId",
+      render: (text) => <span className="text-sm">{text || "N/A"}</span>,
+    },
+    {
       title: "Nhân viên",
       dataIndex: "fullName",
       key: "fullName",
@@ -54,15 +60,15 @@ const StaffPerformance = ({ data }) => {
         }).format(val || 0),
       sorter: (a, b) => a.totalRevenue - b.totalRevenue,
     },
-    {
-      title: "Thời gian",
-      key: "period",
-      render: (_, record) => (
-        <span className="text-sm text-gray-600">
-          {record.month}/{record.year}
-        </span>
-      ),
-    },
+    // {
+    //   title: "Thời gian",
+    //   key: "period",
+    //   render: (_, record) => (
+    //     <span className="text-sm text-gray-600">
+    //       {record.month}/{record.year}
+    //     </span>
+    //   ),
+    // },
   ];
 
   return (

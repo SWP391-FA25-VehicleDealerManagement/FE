@@ -31,7 +31,7 @@ const adminMenuItems = [
     null,
     "/admin/dashboard"
   ),
-  getItem("Báo cáo", "reports", <BarChartOutlined />, [
+  getItem("Báo cáo đại lý", "reports", <BarChartOutlined />, [
     getItem(
       "Doanh số theo đại lý",
       "sales-by-dealer",
@@ -40,7 +40,7 @@ const adminMenuItems = [
       "/admin/sales-by-dealer"
     ),
     getItem(
-      "Kho hàng & Tiêu thụ",
+      "Kho hàng & Tiêu thụ đại lý",
       "inventory-consumption",
       <FileTextOutlined />,
       null,
@@ -53,6 +53,13 @@ const adminMenuItems = [
     <TeamOutlined />,
     null,
     "/admin/staff-management"
+  ),
+  getItem(
+    "Kho hàng",
+    "manufacturer-inventory",
+    <CarOutlined />,
+    null,
+    "/admin/manufacturer-inventory"
   ),
 ];
 

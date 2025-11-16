@@ -34,13 +34,13 @@ const menuItems = [
     "/dealer-manager/dashboard"
   ),
   getItem("Hợp đồng và công nợ", "2", <FileOutlined />, [
-    getItem(
-      "Hợp đồng với hãng",
-      "evm-contract",
-      null,
-      null,
-      "/dealer-manager/evm-contract"
-    ),
+    // getItem(
+    //   "Hợp đồng với hãng",
+    //   "evm-contract",
+    //   null,
+    //   null,
+    //   "/dealer-manager/evm-contract"
+    // ),
     getItem(
       "Công nợ với hãng",
       "dealer-debt",
@@ -54,6 +54,13 @@ const menuItems = [
       null,
       null,
       "/dealer-manager/customer-contract"
+    ),
+    getItem(
+      "Công nợ khách hàng",
+      "customer-debt",
+      null,
+      null,
+      "/dealer-manager/customer-debt"
     ),
   ]),
   getItem("Quản lý xe", "3", <CarOutlined />, [
@@ -100,13 +107,6 @@ const menuItems = [
       "/dealer-manager/dealer-orders"
     ),
   ]),
-  getItem(
-    "Kho hàng",
-    "inventory",
-    <InboxOutlined />,
-    null,
-    "/dealer-manager/inventory"
-  ),
   getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
     getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
     getItem(
@@ -125,14 +125,7 @@ const menuItems = [
       null,
       "/dealer-manager/sales-report"
     ),
-    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory-report"),
-    getItem(
-      "Báo cáo công nợ",
-      "6",
-      null,
-      null,
-      "/dealer-manager/customer-debt-report"
-    ),
+    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory"),
   ]),
 ];
 

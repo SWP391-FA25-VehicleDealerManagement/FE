@@ -5,6 +5,8 @@ import {
   getDealerSaleData,
   getDealerData,
   getDealerDebtData,
+  getVehicleInventoryData,
+  getAllVehiclesData,
 } from "../api/evmDashboard";
 
 const useEvmDashboard = create((set) => ({
@@ -14,6 +16,10 @@ const useEvmDashboard = create((set) => ({
   dealerSaleData: null,
   dealerData: null,
   dealerDebtData: null,
+  vehicleInventoryData: null,
+  allVehiclesData: null,
+  feedbacksData: null,
+  paymentsData: null,
 
   // Loading state
   isLoading: false,
@@ -78,6 +84,31 @@ const useEvmDashboard = create((set) => ({
     }
   },
 
+  // Fetch vehicle inventory data
+  fetchVehicleInventoryData: async () => {
+    try {
+      const response = await getVehicleInventoryData();
+      if (response.data.success) {
+        set({ vehicleInventoryData: response.data.data });
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle inventory data:", error);
+    }
+  },
+
+  // Fetch all vehicles data
+  fetchAllVehiclesData: async () => {
+    try {
+      const response = await getAllVehiclesData();
+      if (response.data.success) {
+        set({ allVehiclesData: response.data.data });
+      }
+    } catch (error) {
+      console.error("Error fetching all vehicles data:", error);
+    }
+  },
+
+
   // Fetch all dashboard data
   fetchAllEvmDashboardData: async (year, month) => {
     set({ isLoading: true });
@@ -88,6 +119,8 @@ const useEvmDashboard = create((set) => ({
         useEvmDashboard.getState().fetchDealerSaleData(year, month),
         useEvmDashboard.getState().fetchDealerData(),
         useEvmDashboard.getState().fetchDealerDebtData(),
+        useEvmDashboard.getState().fetchVehicleInventoryData(),
+        useEvmDashboard.getState().fetchAllVehiclesData(),
       ]);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -104,6 +137,10 @@ const useEvmDashboard = create((set) => ({
       dealerSaleData: null,
       dealerData: null,
       dealerDebtData: null,
+      vehicleInventoryData: null,
+      allVehiclesData: null,
+      feedbacksData: null,
+      paymentsData: null,
     });
   },
 }));
