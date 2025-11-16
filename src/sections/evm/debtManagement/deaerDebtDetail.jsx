@@ -420,7 +420,7 @@ export default function DeaerDebtDetail() {
                       đ
                     </Text>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái" span={2}>
+                  <Descriptions.Item label="Trạng thái">
                     <Tag
                       color={
                         selectedDebt.overdue && selectedDebt.status !== "PAID"
@@ -442,6 +442,28 @@ export default function DeaerDebtDetail() {
                         ? "Quá hạn"
                         : selectedDebt.status}
                     </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Loại công nợ">
+                    <Tag color="purple">
+                      {selectedDebt.debtType === "DEALER_DEBT"
+                        ? "Công nợ Dealer"
+                        : selectedDebt.debtType === "CUSTOMER_DEBT"
+                        ? "Công nợ Khách hàng"
+                        : selectedDebt.debtType}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Phương thức thanh toán">
+                    {selectedDebt.paymentMethod === "CASH"
+                      ? "Tiền mặt"
+                      : selectedDebt.paymentMethod === "BANK_TRANSFER"
+                      ? "Chuyển khoản"
+                      : selectedDebt.paymentMethod}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ngày tạo">
+                    {dayjs(selectedDebt.createdDate).format("DD/MM/YYYY HH:mm")}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ngày cập nhật">
+                    {dayjs(selectedDebt.updatedDate).format("DD/MM/YYYY HH:mm")}
                   </Descriptions.Item>
                 </Descriptions>
               </Card>

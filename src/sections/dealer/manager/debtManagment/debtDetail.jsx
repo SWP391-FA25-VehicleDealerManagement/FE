@@ -363,36 +363,109 @@ export default function DebtDetailPage() {
           Chi tiết công nợ - Mã #{dealerDebtById?.debtId || debtId}
         </Title>
         {dealerDebtById && (
-          <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Tổng tiền">
-              <Text strong style={{ fontSize: 16 }}>
-                {dealerDebtById.amountDue?.toLocaleString("vi-VN")} đ
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Đã thanh toán">
-              <Text type="success" strong style={{ fontSize: 16 }}>
-                {dealerDebtById.amountPaid?.toLocaleString("vi-VN")} đ
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Còn nợ">
-              <Text type="danger" strong style={{ fontSize: 18 }}>
-                {dealerDebtById.remainingAmount?.toLocaleString("vi-VN")} đ
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag
-                color={
-                  dealerDebtById.overdue && dealerDebtById.status !== "PAID"
-                    ? "error"
-                    : "default"
-                }
-              >
-                {dealerDebtById.overdue && dealerDebtById.status !== "PAID"
-                  ? "Quá hạn"
-                  : dealerDebtById.status}
-              </Tag>
-            </Descriptions.Item>
-          </Descriptions>
+          <>
+            {/* Thông tin Dealer */}
+            {dealerDebtById.dealer && (
+              <Card title="Thông tin Dealer" size="small" className="mb-4">
+                <Descriptions bordered column={2} size="small">
+                  <Descriptions.Item label="Tên Dealer">
+                    <Text strong>
+                      {dealerDebtById.dealer?.dealerName || "N/A"}
+                    </Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mã Dealer">
+                    {dealerDebtById.dealer?.dealerCode || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Người liên hệ">
+                    {dealerDebtById.dealer?.contactPerson || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Email">
+                    {dealerDebtById.dealer?.email || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Số điện thoại">
+                    {dealerDebtById.dealer?.phoneNumber || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Địa chỉ">
+                    {dealerDebtById.dealer?.address || "N/A"}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            )}
+            {/* Thông tin công nợ */}
+            <Card title="Thông tin công nợ" size="small">
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="Tổng tiền">
+                  <Text strong style={{ fontSize: 16 }}>
+                    {dealerDebtById.amountDue?.toLocaleString("vi-VN")} đ
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Đã thanh toán">
+                  <Text type="success" strong style={{ fontSize: 16 }}>
+                    {dealerDebtById.amountPaid?.toLocaleString("vi-VN")} đ
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Còn nợ">
+                  <Text type="danger" strong style={{ fontSize: 18 }}>
+                    {dealerDebtById.remainingAmount?.toLocaleString("vi-VN")} đ
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái">
+                  <Tag
+                    color={
+                      dealerDebtById.overdue && dealerDebtById.status !== "PAID"
+                        ? "error"
+                        : dealerDebtById.status === "PAID"
+                        ? "success"
+                        : dealerDebtById.status === "ACTIVE"
+                        ? "processing"
+                        : "default"
+                    }
+                  >
+                    {dealerDebtById.overdue && dealerDebtById.status !== "PAID"
+                      ? "Quá hạn"
+                      : dealerDebtById.status === "PAID"
+                      ? "Đã thanh toán"
+                      : dealerDebtById.status === "ACTIVE"
+                      ? "Đang hoạt động"
+                      : dealerDebtById.status === "OVERDUE"
+                      ? "Quá hạn"
+                      : dealerDebtById.status}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Loại công nợ">
+                  <Tag color="purple">
+                    {dealerDebtById.debtType === "DEALER_DEBT"
+                      ? "Công nợ Dealer"
+                      : dealerDebtById.debtType === "CUSTOMER_DEBT"
+                      ? "Công nợ Khách hàng"
+                      : dealerDebtById.debtType}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày bắt đầu">
+                  {dayjs(dealerDebtById.startDate).format("DD/MM/YYYY")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày đến hạn">
+                  {dayjs(dealerDebtById.dueDate).format("DD/MM/YYYY")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Phương thức thanh toán">
+                  {dealerDebtById.paymentMethod === "CASH"
+                    ? "Tiền mặt"
+                    : dealerDebtById.paymentMethod === "BANK_TRANSFER"
+                    ? "Chuyển khoản"
+                    : dealerDebtById.paymentMethod}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày tạo">
+                  {dayjs(dealerDebtById.createdDate).format("DD/MM/YYYY HH:mm")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày cập nhật">
+                  {dayjs(dealerDebtById.updatedDate).format("DD/MM/YYYY HH:mm")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ghi chú" span={2}>
+                  {dealerDebtById.notes || "N/A"}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </>
         )}
 
         {/* 2. Bảng Lịch trả nợ */}

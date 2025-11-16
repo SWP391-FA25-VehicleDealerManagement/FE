@@ -337,6 +337,15 @@ export default function CustomerDebtDetail() {
                       : dealerDebtById.status}
                   </Tag>
                 </Descriptions.Item>
+                <Descriptions.Item label="Loại công nợ">
+                  <Tag color="purple">
+                    {dealerDebtById.debtType === "DEALER_DEBT"
+                      ? "Công nợ Dealer"
+                      : dealerDebtById.debtType === "CUSTOMER_DEBT"
+                      ? "Công nợ Khách hàng"
+                      : dealerDebtById.debtType}
+                  </Tag>
+                </Descriptions.Item>
                 <Descriptions.Item label="Ngày bắt đầu">
                   {dayjs(dealerDebtById.startDate).format("DD/MM/YYYY")}
                 </Descriptions.Item>
@@ -353,9 +362,9 @@ export default function CustomerDebtDetail() {
                 <Descriptions.Item label="Ngày tạo">
                   {dayjs(dealerDebtById.createdDate).format("DD/MM/YYYY HH:mm")}
                 </Descriptions.Item>
-                {/* <Descriptions.Item label="Ghi chú" span={2}>
-                          {dealerDebtById.notes || "N/A"}
-                        </Descriptions.Item> */}
+                <Descriptions.Item label="Ngày cập nhật">
+                  {dayjs(dealerDebtById.updatedDate).format("DD/MM/YYYY HH:mm")}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
           </>
