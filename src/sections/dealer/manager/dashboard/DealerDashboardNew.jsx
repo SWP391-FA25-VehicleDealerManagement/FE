@@ -47,10 +47,10 @@ export default function DealerDashboard() {
       (order) => order.customerId !== null
     );
 
-    const totalAmount = ordersWithCustomers.reduce(
-      (sum, order) => sum + (order.totalPrice || 0),
-      0
-    );
+    // Tính tổng doanh thu chỉ từ các đơn hàng không bị hủy
+    const totalAmount = ordersWithCustomers
+      .filter((order) => order.status !== "CANCELLED")
+      .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
 
     const statusCounts = ordersWithCustomers.reduce((acc, order) => {
       acc[order.status] = (acc[order.status] || 0) + 1;

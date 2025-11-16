@@ -18,6 +18,7 @@ import {
   LeftOutlined,
   CheckOutlined,
   CloseOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -335,15 +336,33 @@ export default function DeaerDebtDetail() {
   const isLoading =
     isLoadingDealerDebtById || isLoadingDebtSchedules || isDealerLoading;
 
+  const handleRefresh = () => {
+    if (debtId) {
+      fetchDealerDebtById(debtId);
+      fetchDebtSchedules(debtId);
+      fetchPaymentHistory(debtId);
+      fetchDealers();
+    }
+  };
+
   return (
     <div>
-      <Button
-        onClick={() => navigate(-1)}
-        icon={<LeftOutlined />}
-        style={{ marginBottom: 16 }}
-      >
-        Quay lại danh sách
-      </Button>
+      <div className="flex justify-between items-center mb-4">
+        <Button
+          onClick={() => navigate(-1)}
+          icon={<LeftOutlined />}
+        >
+          Quay lại danh sách
+        </Button>
+        <Button
+          type="primary"
+          icon={<ReloadOutlined />}
+          onClick={handleRefresh}
+          loading={isLoading}
+        >
+          Làm mới
+        </Button>
+      </div>
 
       <Spin spinning={isLoading}>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
