@@ -119,8 +119,10 @@ export default function VehicleList() {
     setSearchText("");
   };
 
-  const handleViewDetail = (vehicleId) => {
-    navigate(`/dealer-manager/vehicles/${vehicleId}`);
+  const handleViewDetail = (vehicleId, price) => {
+    navigate(`/dealer-manager/vehicles/${vehicleId}`, {
+      state: { price: price },
+    });
   };
 
   const showTestDriveModal = (vehicleId) => {
@@ -389,7 +391,7 @@ export default function VehicleList() {
             type="primary"
             icon={<EyeOutlined />}
             size="small"
-            onClick={() => handleViewDetail(record.vehicleId)}
+            onClick={() => handleViewDetail(record.vehicleId, record.price)}
           >
             Chi tiết
           </Button>
@@ -408,6 +410,10 @@ export default function VehicleList() {
     },
   ];
 
+  const filteredVehicles = React.useMemo(() => {
+    return dealerCarLists.filter((vehicle) => vehicle.status !== "TEST_DRIVE");
+  }, [dealerCarLists]);
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -424,7 +430,7 @@ export default function VehicleList() {
         ) : (
           <Table
             columns={columns}
-            dataSource={dealerCarLists}
+            dataSource={filteredVehicles}
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
@@ -453,8 +459,8 @@ export default function VehicleList() {
           </span>
         </div>
         <p style={{ marginLeft: 34, color: "#666" }}>
-          Xe sẽ được sử dụng cho mục đích lái thử và không thể bán cho khách hàng
-          cho đến khi được chuyển về trạng thái sẵn sàng.
+          Xe sẽ được sử dụng cho mục đích lái thử và không thể bán cho khách
+          hàng cho đến khi được chuyển về trạng thái sẵn sàng.
         </p>
       </Modal>
     </div>

@@ -44,14 +44,15 @@ export default function VehicleDetail() {
     loadData();
   }, [vehicleId, fetchVehicleById]);
 
+ 
   useEffect(() => {
     let objectUrl = null;
 
     const fetchImage = async () => {
-      if (vehicleDetail?.variantImage) {
+      if (vehicleDetail?.imageUrl) {
         try {
           // Dùng axiosClient để get, vì nó đã có interceptor gắn token
-          const response = await axiosClient.get(vehicleDetail?.variantImage, {
+          const response = await axiosClient.get(vehicleDetail?.imageUrl, {
             responseType: "blob",
           });
           // Tạo URL tạm thời từ blob
@@ -62,19 +63,18 @@ export default function VehicleDetail() {
           setVehicleImageUrl(null);
         }
       } else {
-        setVehicleImageUrl(null); // Reset nếu không có ảnh
+        setVehicleImageUrl(null); 
       }
     };
 
     fetchImage();
 
-    // Cleanup: Xóa object URL khi component unmount hoặc ảnh thay đổi
     return () => {
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [vehicleDetail?.variantImage]);
+  }, [vehicleDetail?.imageUrl]);
 
   const statusMap = {
     IN_MANUFACTURER_STOCK: { text: "Trong kho nhà SX", color: "blue" },
@@ -130,7 +130,7 @@ export default function VehicleDetail() {
         <Col span={8}>
           <Card title="Thông tin cơ bản" bordered={false}>
             <div className="flex flex-col items-center mb-6">
-              {vehicleDetail?.variantImage ? (
+              {vehicleDetail?.imageUrl ? (
                 <Image
                   width={250}
                   height={200}

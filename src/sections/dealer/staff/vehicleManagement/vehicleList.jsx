@@ -53,26 +53,26 @@ export default function VehicleList() {
       if (dealerCarLists && dealerCarLists.length > 0) {
         // Lọc ra những images chưa được fetch
         const imagesToFetch = dealerCarLists.filter(
-          (vehicle) => vehicle.variantImage && !imageUrls[vehicle.variantImage]
+          (vehicle) => vehicle.imageUrl && !imageUrls[vehicle.imageUrl]
         );
 
         if (imagesToFetch.length === 0) return;
 
         const fetchPromises = imagesToFetch.map(async (vehicle) => {
           try {
-            const response = await axiosClient.get(vehicle.variantImage, {
+            const response = await axiosClient.get(vehicle.imageUrl, {
               responseType: "blob",
             });
             const objectUrl = URL.createObjectURL(response.data);
             objectUrlsToRevoke.push(objectUrl);
             return {
-              path: vehicle.variantImage,
+              path: vehicle.imageUrl,
               url: objectUrl,
             };
           } catch (error) {
-            console.error("Không thể tải ảnh:", vehicle.variantImage, error);
+            console.error("Không thể tải ảnh:", vehicle.imageUrl, error);
             return {
-              path: vehicle.variantImage,
+              path: vehicle.imageUrl,
               url: null,
             };
           }
@@ -98,7 +98,7 @@ export default function VehicleList() {
     return () => {
       objectUrlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [dealerCarLists.length]);
+  }, [dealerCarLists]);
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -130,6 +130,10 @@ export default function VehicleList() {
       selectedVehicles.includes(vehicle.vehicleId)
     );
   }, [dealerCarLists, selectedVehicles]);
+
+  const filteredVehicles = React.useMemo(() => {
+    return dealerCarLists.filter((vehicle) => vehicle.status !== "TEST_DRIVE");
+  }, [dealerCarLists]);
 
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
@@ -217,8 +221,8 @@ export default function VehicleList() {
     },
     {
       title: "Hình ảnh",
-      dataIndex: "variantImage",
-      key: "variantImage",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
       width: "25%",
       render: (imagePath, record) => {
         const blobUrl = imageUrls[imagePath];
@@ -398,7 +402,7 @@ export default function VehicleList() {
           <Table
             rowSelection={rowSelection}
             columns={columns}
-            dataSource={dealerCarLists}
+            dataSource={filteredVehicles}
             rowKey="vehicleId"
             pagination={pagination}
             onChange={(pagination) => setPagination(pagination)}
