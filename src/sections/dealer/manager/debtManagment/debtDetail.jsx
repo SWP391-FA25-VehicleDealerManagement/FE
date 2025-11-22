@@ -149,14 +149,6 @@ export default function DebtDetailPage() {
       render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
     },
     {
-      title: "Lãi",
-      dataIndex: "interest",
-      key: "interest",
-      width: 120,
-      align: "right",
-      render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
-    },
-    {
       title: "Tổng kỳ",
       dataIndex: "installment",
       key: "installment",
@@ -217,13 +209,6 @@ export default function DebtDetailPage() {
       width: 100,
       render: (overdue) =>
         overdue ? <Tag color="error">Quá hạn</Tag> : <Tag>Không</Tag>,
-    },
-    {
-      title: "Ghi chú",
-      dataIndex: "notes",
-      key: "notes",
-      width: 150,
-      render: (text) => text || "N/A",
     },
     {
       title: "Thao tác",

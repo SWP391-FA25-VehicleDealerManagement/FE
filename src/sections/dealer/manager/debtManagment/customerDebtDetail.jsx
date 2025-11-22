@@ -96,14 +96,6 @@ export default function CustomerDebtDetail() {
       render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
     },
     {
-      title: "Lãi",
-      dataIndex: "interest",
-      key: "interest",
-      width: 120,
-      align: "right",
-      render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
-    },
-    {
       title: "Tổng kỳ",
       dataIndex: "installment",
       key: "installment",

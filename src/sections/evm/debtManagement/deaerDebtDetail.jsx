@@ -177,14 +177,6 @@ export default function DeaerDebtDetail() {
       render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
     },
     {
-      title: "Lãi",
-      dataIndex: "interest",
-      key: "interest",
-      width: 100,
-      align: "right",
-      render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
-    },
-    {
       title: "Tổng kỳ",
       dataIndex: "installment",
       key: "installment",
@@ -215,6 +207,14 @@ export default function DeaerDebtDetail() {
           "vi-VN"
         )} đ`}</Text>
       ),
+    },
+    {
+      title: "Quá hạn",
+      dataIndex: "overdue",
+      key: "overdue",
+      width: 100,
+      render: (overdue) =>
+        overdue ? <Tag color="error">Quá hạn</Tag> : <Tag>Không</Tag>,
     },
     {
       title: "Trạng thái",
@@ -322,8 +322,7 @@ export default function DeaerDebtDetail() {
     },
   ];
 
-  const isLoading =
-    isLoadingDealerDebtById || isLoadingDebtSchedules;
+  const isLoading = isLoadingDealerDebtById || isLoadingDebtSchedules;
 
   const handleRefresh = () => {
     if (debtId) {
@@ -336,10 +335,7 @@ export default function DeaerDebtDetail() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <Button
-          onClick={() => navigate(-1)}
-          icon={<LeftOutlined />}
-        >
+        <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
           Quay lại danh sách
         </Button>
         <Button
@@ -363,10 +359,14 @@ export default function DeaerDebtDetail() {
               <Card title="Thông tin đại lý" size="small">
                 <Descriptions bordered column={2} size="small">
                   <Descriptions.Item label="Tên đại lý">
-                    <Text strong>{selectedDebt.dealer?.dealerName || "N/A"}</Text>
+                    <Text strong>
+                      {selectedDebt.dealer?.dealerName || "N/A"}
+                    </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
-                    {selectedDebt.dealer?.phoneNumber || selectedDebt.dealer?.phone || "N/A"}
+                    {selectedDebt.dealer?.phoneNumber ||
+                      selectedDebt.dealer?.phone ||
+                      "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Địa chỉ" span={2}>
                     {selectedDebt.dealer?.address || "N/A"}
