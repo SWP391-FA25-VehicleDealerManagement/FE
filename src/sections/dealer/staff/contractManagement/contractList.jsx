@@ -18,6 +18,7 @@ import {
   EyeOutlined,
   FileTextOutlined,
   SearchOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import useContract from "../../../../hooks/useContract";
 import useAuthen from "../../../../hooks/useAuthen";
@@ -191,7 +192,7 @@ export default function ContractList() {
     {
       title: "Thao tác",
       key: "action",
-      width: 100,
+      width: 150,
       fixed: "right",
       render: (_, record) => (
         <Space>
