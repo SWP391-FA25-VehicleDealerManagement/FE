@@ -221,22 +221,6 @@ export default function InventoryManagement() {
         <span className="font-semibold text-blue-600">{quantity}</span>
       ),
     },
-    {
-      title: "Trạng thái",
-      key: "status",
-      align: "center",
-      render: (_, record) => {
-        if (record.totalQuantity === 0) {
-          return <Tag color="red">Hết hàng</Tag>;
-        } else if (record.totalQuantity <= 5) {
-          return <Tag color="orange">Sắp hết</Tag>;
-        } else if (record.totalQuantity <= 10) {
-          return <Tag color="warning">Ít hàng</Tag>;
-        } else {
-          return <Tag color="green">Còn hàng</Tag>;
-        }
-      },
-    },
   ];
 
   const expandedRowRender = (record) => {
