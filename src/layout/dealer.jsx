@@ -25,22 +25,65 @@ function getItem(label, key, icon, children, path) {
     path,
   };
 }
+
 const menuItems = [
   getItem(
     "Tổng quan",
-    "1",
+    "dashboard",
     <PieChartOutlined />,
     null,
     "/dealer-manager/dashboard"
   ),
-  getItem("Hợp đồng và công nợ", "2", <FileOutlined />, [
-    // getItem(
-    //   "Hợp đồng với hãng",
-    //   "evm-contract",
-    //   null,
-    //   null,
-    //   "/dealer-manager/evm-contract"
-    // ),
+
+  getItem("Quản lý xe", "vehicle-management", <CarOutlined />, [
+    getItem(
+      "Danh sách xe",
+      "vehicle-list",
+      null,
+      null,
+      "/dealer-manager/vehicles"
+    ),
+    getItem(
+      "Xe lái thử",
+      "test-drive-vehicles",
+      null,
+      null,
+      "/dealer-manager/test-drive-vehicles"
+    ),
+    getItem(
+      "Quản lý giá bán",
+      "sale-prices",
+      null,
+      null,
+      "/dealer-manager/sale-prices"
+    ),
+  ]),
+
+  getItem("Đơn hàng và yêu cầu", "orders", <InboxOutlined />, [
+    getItem(
+      "Yêu cầu xe từ hãng",
+      "vehicle-requests",
+      null,
+      null,
+      "/dealer-manager/vehicle-requests"
+    ),
+    getItem(
+      "Danh sách yêu cầu",
+      "request-list",
+      null,
+      null,
+      "/dealer-manager/request-list"
+    ),
+    getItem(
+      "Danh sách đơn hàng",
+      "dealer-orders",
+      null,
+      null,
+      "/dealer-manager/dealer-orders"
+    ),
+  ]),
+
+  getItem("Hợp đồng và công nợ", "contracts", <FileOutlined />, [
     getItem(
       "Công nợ với hãng",
       "dealer-debt",
@@ -63,52 +106,9 @@ const menuItems = [
       "/dealer-manager/customer-debt"
     ),
   ]),
-  getItem("Quản lý xe", "3", <CarOutlined />, [
-    getItem(
-      "Danh sách xe",
-      "vehicle-list",
-      null,
-      null,
-      "/dealer-manager/vehicles"
-    ),
-    getItem(
-      "Xe lái thử",
-      "test-drive-vehicles",
-      null,
-      null,
-      "/dealer-manager/test-drive-vehicles"
-    ),
-    getItem(
-      "Quản lý giá bán",
-      "sale-prices",
-      null,
-      null,
-      "/dealer-manager/sale-prices"
-    ),
-    getItem(
-      "Yêu cầu xe từ hãng",
-      "vehicle-requests",
-      null,
-      null,
-      "/dealer-manager/vehicle-requests"
-    ),
-    getItem(
-      "Danh mục đơn yêu cầu xe",
-      "request-management",
-      null,
-      null,
-      "/dealer-manager/request-list"
-    ),
-    getItem(
-      "Danh mục đơn hàng",
-      "dealer-orders",
-      null,
-      null,
-      "/dealer-manager/dealer-orders"
-    ),
-  ]),
-  getItem("Quản lý người dùng", "sub1", <UserOutlined />, [
-    getItem("Nhân viên", "3", null, null, "/dealer-manager/staff"),
+
+  getItem("Quản lý người dùng", "user-management", <UserOutlined />, [
+    getItem("Nhân viên", "staff-list", null, null, "/dealer-manager/staff"),
     getItem(
       "Khách hàng",
       "customer-list",
@@ -117,15 +117,22 @@ const menuItems = [
       "/dealer-manager/customer-list"
     ),
   ]),
-  getItem("Báo cáo", "sub2", <TeamOutlined />, [
+
+  getItem("Báo cáo", "reports", <TeamOutlined />, [
     getItem(
       "Báo cáo bán hàng",
-      "4",
+      "sales-report",
       null,
       null,
       "/dealer-manager/sales-report"
     ),
-    getItem("Báo cáo kho", "5", null, null, "/dealer-manager/inventory"),
+    getItem(
+      "Báo cáo kho",
+      "inventory-report",
+      null,
+      null,
+      "/dealer-manager/inventory"
+    ),
   ]),
 ];
 
