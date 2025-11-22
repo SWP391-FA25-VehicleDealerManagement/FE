@@ -244,9 +244,7 @@ export default function InventoryList() {
         align: "right",
         render: (quantity) => {
           let textColor = "text-green-600";
-          if (quantity === 0) {
-            textColor = "text-red-600";
-          } else if (quantity <= 5) {
+          if (quantity <= 5) {
             textColor = "text-orange-600";
           }
           return <span className={`font-medium ${textColor}`}>{quantity}</span>;
