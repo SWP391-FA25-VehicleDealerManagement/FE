@@ -35,7 +35,6 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
     try {
       // Build payload and remove empty values to avoid server validation errors
       const raw = {
-        userName: values.userName,
         fullName: values.fullName,
         email: values.email,
         phone: values.phone,
@@ -84,14 +83,6 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
     >
       <Form form={form} layout="vertical" onFinish={handleSave}>
         <Form.Item
-          name="userName"
-          label="Tên đăng nhập"
-          rules={[{ required: true, message: "Nhập tên đăng nhập" }]}
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
           name="fullName"
           label="Họ và tên"
           rules={[{ required: true, message: "Nhập họ và tên" }]}
@@ -105,10 +96,6 @@ export default function EditEvmStaffModal({ isOpen, onClose, staff, onSuccess })
 
         <Form.Item name="phone" label="Số điện thoại">
           <Input />
-        </Form.Item>
-
-        <Form.Item name="role" label="Vai trò" rules={[{ required: true, message: "Chọn vai trò" }]}>
-          <Input disabled placeholder="Vai trò không thể thay đổi" />
         </Form.Item>
       </Form>
     </Modal>

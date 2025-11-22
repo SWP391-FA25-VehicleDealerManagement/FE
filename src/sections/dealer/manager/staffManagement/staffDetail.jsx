@@ -72,56 +72,6 @@ export default function StaffDetail() {
     }
   };
 
-  // ===== Dữ liệu mẫu cho Tabs (chưa có API thật) =====
-  const workInfoData = [
-    { key: "1", date: "2025-01-18", action: "Tạo lead mới", note: "Khách Hà Nội" },
-    { key: "2", date: "2025-01-20", action: "Chốt hợp đồng", note: "VF8 bản Plus" },
-  ];
-  const assignmentsData = [
-    { key: "1", id: "VF-1001", model: "VF8", task: "CSKH sau bán", status: "ongoing" },
-    { key: "2", id: "VF-1032", model: "VF9", task: "Demo lái thử", status: "done" },
-  ];
-
-  const workInfoCols = [
-    { title: "Ngày", dataIndex: "date", key: "date" },
-    { title: "Hành động", dataIndex: "action", key: "action" },
-    { title: "Ghi chú", dataIndex: "note", key: "note" },
-  ];
-  const assignmentsCols = [
-    { title: "Mã xe", dataIndex: "id", key: "id" },
-    { title: "Model", dataIndex: "model", key: "model" },
-    { title: "Công việc", dataIndex: "task", key: "task" },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (s) => <Tag color={s === "done" ? "green" : "blue"}>{s === "done" ? "Hoàn tất" : "Đang thực hiện"}</Tag>,
-    },
-  ];
-
-  const tabItems = [
-    {
-      key: "1",
-      label: (
-        <span>
-          <TeamOutlined /> Thông tin công việc
-        </span>
-      ),
-      children: <Table columns={workInfoCols} dataSource={workInfoData} pagination={{ pageSize: 5 }} rowKey="key" />,
-    },
-    {
-      key: "2",
-      label: (
-        <span>
-          <CarOutlined /> Xe phụ trách
-        </span>
-      ),
-      children: (
-        <Table columns={assignmentsCols} dataSource={assignmentsData} pagination={{ pageSize: 5 }} rowKey="key" />
-      ),
-    },
-  ];
-  // ===================================================
 
   if (isLoading) {
     return (
@@ -181,11 +131,11 @@ export default function StaffDetail() {
         </Col>
 
         {/* Tabs */}
-        <Col span={16}>
+        {/* <Col span={16}>
           <Card>
             <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
           </Card>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* Modal xác nhận xóa */}
@@ -205,7 +155,7 @@ export default function StaffDetail() {
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
 
-      {/* TODO: UpdateStaffModal khi backend sẵn sàng */}
+     
     </div>
   );
 }

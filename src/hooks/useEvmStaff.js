@@ -92,23 +92,18 @@ const useEvmStaffStore = create(
           throw err;
         }
       },
-
+      isLoadingDelete: false,
       deleteEvmStaff: async (id) => {
-        set({ isLoading: true });
+        set({ isLoadingDelete: true });
         try {
           const res = await apiDelete(id);
-          console.log(`DELETE /api/evmstaff/${id} response:`, res);
-          set({
-            evmStaffs: get().evmStaffs.filter(
-              (s) => String(s.staffId ?? s.id ?? s.userId) !== String(id)
-            ),
-            isLoading: false,
-          });
-          toast.success("Xoá nhân viên thành công.");
+          if (res && res.status === 200) {
+            set({ isLoadingDelete: false });
+          }
+          return res;
         } catch (err) {
           console.error("deleteEvmStaff error:", err);
-          set({ isLoading: false });
-          toast.error("Xoá thất bại.");
+          set({ isLoadingDelete: false });
           throw err;
         }
       },

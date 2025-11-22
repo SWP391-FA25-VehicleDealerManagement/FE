@@ -10,10 +10,10 @@ export const createEvmStaff = (data) => {
     return axiosClient.post("/api/admin/create-evm-staff", data);
 };
 export const updateEvmStaff = (id, data) => {
-    return axiosClient.put(`/api/evmstaff/${id}`, data);
+    return axiosClient.put(`/api/admin/evm-staff/${id}`, data);
 }
 export const deleteEvmStaff = (id) => {
-    return axiosClient.delete(`/api/evmstaff/${id}`);
+    return axiosClient.delete(`/api/admin/evm-staff/${id}`);
 }
 export default {
     getAllEvmStaff,
