@@ -23,7 +23,6 @@ import {
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import useDealerDebt from "../../../hooks/useDealerDebt";
-import useDealerStore from "../../../hooks/useDealer";
 import useAuthen from "../../../hooks/useAuthen";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -38,7 +37,6 @@ export default function DeaerDebtDetail() {
     dealerDebtById,
     isLoadingDealerDebtById,
     fetchDealerDebtById,
-    clearDealerDebtById,
     debtSchedules,
     isLoadingDebtSchedules,
     fetchDebtSchedules,
@@ -52,23 +50,16 @@ export default function DeaerDebtDetail() {
     isLoadingConfirmPayment,
     isLoadingRejectPayment,
   } = useDealerDebt();
-  const {
-    fetchDealers,
-    dealers,
-    isLoading: isDealerLoading,
-  } = useDealerStore();
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [currentPayment, setCurrentPayment] = useState(null);
   const [rejectForm] = Form.useForm();
-  const [confirmForm] = Form.useForm();
 
   useEffect(() => {
     if (debtId) {
       fetchDealerDebtById(debtId);
       fetchDebtSchedules(debtId);
       fetchPaymentHistory(debtId);
-      fetchDealers();
     }
     return () => {
       clearDebtSchedules();
@@ -79,25 +70,23 @@ export default function DeaerDebtDetail() {
     fetchDealerDebtById,
     fetchDebtSchedules,
     fetchPaymentHistory,
-    fetchDealers,
     clearDebtSchedules,
     clearPaymentHistory,
   ]);
 
   const selectedDebt = useMemo(() => {
-    if (!dealerDebtById || !dealers || dealers.length === 0) return null;
+    if (!dealerDebtById) return null;
 
-    const dealer = dealers.find(
-      (d) => d.dealerId === Number(dealerDebtById.dealerId)
-    );
+    // Sử dụng dealer từ userDetail hoặc từ dealerDebtById
+    const dealer = dealerDebtById.dealer || userDetail?.dealer;
 
     return {
       ...dealerDebtById,
       dealerName: dealer ? dealer.dealerName : "Không tìm thấy",
-      phone: dealer ? dealer.phone : "N/A",
+      phone: dealer ? dealer.phone || dealer.phoneNumber : "N/A",
       address: dealer ? dealer.address : "N/A",
     };
-  }, [dealerDebtById, dealers]);
+  }, [dealerDebtById, userDetail]);
 
   const handleShowConfirmModal = (paymentRecord) => {
     setCurrentPayment(paymentRecord); //
@@ -334,14 +323,13 @@ export default function DeaerDebtDetail() {
   ];
 
   const isLoading =
-    isLoadingDealerDebtById || isLoadingDebtSchedules || isDealerLoading;
+    isLoadingDealerDebtById || isLoadingDebtSchedules;
 
   const handleRefresh = () => {
     if (debtId) {
       fetchDealerDebtById(debtId);
       fetchDebtSchedules(debtId);
       fetchPaymentHistory(debtId);
-      fetchDealers();
     }
   };
 
@@ -378,12 +366,7 @@ export default function DeaerDebtDetail() {
                     <Text strong>{selectedDebt.dealer?.dealerName || "N/A"}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
-                    {selectedDebt.dealer?.phoneNumber || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Số phiếu nhập">
-                    <Tag color="blue">
-                      {selectedDebt.invoiceNumber || `#${selectedDebt.debtId}`}
-                    </Tag>
+                    {selectedDebt.dealer?.phoneNumber || selectedDebt.dealer?.phone || "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Địa chỉ" span={2}>
                     {selectedDebt.dealer?.address || "N/A"}

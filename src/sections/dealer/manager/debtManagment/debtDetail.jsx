@@ -373,15 +373,6 @@ export default function DebtDetailPage() {
                       {dealerDebtById.dealer?.dealerName || "N/A"}
                     </Text>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Mã Dealer">
-                    {dealerDebtById.dealer?.dealerCode || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Người liên hệ">
-                    {dealerDebtById.dealer?.contactPerson || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Email">
-                    {dealerDebtById.dealer?.email || "N/A"}
-                  </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
                     {dealerDebtById.dealer?.phoneNumber || "N/A"}
                   </Descriptions.Item>
@@ -459,9 +450,6 @@ export default function DebtDetailPage() {
                 </Descriptions.Item>
                 <Descriptions.Item label="Ngày cập nhật">
                   {dayjs(dealerDebtById.updatedDate).format("DD/MM/YYYY HH:mm")}
-                </Descriptions.Item>
-                <Descriptions.Item label="Ghi chú" span={2}>
-                  {dealerDebtById.notes || "N/A"}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
