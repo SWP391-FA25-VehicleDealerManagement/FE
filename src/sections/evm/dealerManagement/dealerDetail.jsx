@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import useDealerStore from "../../../hooks/useDealer";
 import {
   Card,
@@ -39,7 +39,8 @@ const { TabPane } = Tabs;
 
 export default function DealerDetail() {
   const { dealerId } = useParams();
-  const { dealerDetail, isLoading, fetchDealerById, deleteDealer } =
+  const navigate = useNavigate();
+  const { dealerDetail, isLoading, isLoadingDelete, fetchDealerById, deleteDealer } =
     useDealerStore();
   const { dealerAccounts, fetchDealerAccounts, isLoadingDealerAccounts } =
     useUserStore();
@@ -102,7 +103,8 @@ export default function DealerDetail() {
           autoClose: 3000,
           hideProgressBar: false,
         });
-        window.location.href = "/evm-staff/dealer-list";
+        setIsDeleteModalOpen(false);
+        navigate("/evm-staff/dealer-list");
       }
     } catch (error) {
       console.error("Error deleting dealer:", error);
@@ -111,7 +113,6 @@ export default function DealerDetail() {
         autoClose: 3000,
         hideProgressBar: false,
       });
-    } finally {
       setIsDeleteModalOpen(false);
     }
   };
@@ -360,6 +361,7 @@ export default function DealerDetail() {
         cancelText="Hủy"
         okType="danger"
         closable={false}
+        confirmLoading={isLoadingDelete}
       >
         <p>
           Bạn có chắc chắn muốn xóa đại lý{" "}
