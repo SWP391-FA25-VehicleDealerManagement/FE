@@ -378,13 +378,42 @@ export default function InventoryManagement() {
           </Row>
 
           {inventoryStats.lowStockItems.length > 0 && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <div className="flex items-center text-yellow-800">
-                <ExclamationCircleOutlined className="mr-2 text-lg" />
-                <span className="font-medium">
-                  Cảnh báo: {inventoryStats.lowStockItems.length} mặt hàng có số
-                  lượng tồn kho thấp (≤ 5 xe). Cần nhập thêm hàng!
-                </span>
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+              <div className="flex items-start text-yellow-800 mb-3">
+                <ExclamationCircleOutlined className="mr-2 text-lg mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-semibold text-base mb-2">
+                    Cảnh báo tồn kho: {inventoryStats.lowStockItems.length} mặt
+                    hàng có số lượng thấp (≤ 5 xe)
+                  </div>
+                  <div className="text-sm">
+                    <div className="font-medium mb-1">
+                      Danh sách cần nhập thêm:
+                    </div>
+                    <ul className="list-none space-y-1 ml-0">
+                      {inventoryStats.lowStockItems.map((item, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="inline-block w-1.5 h-1.5 bg-yellow-600 rounded-full mr-2"></span>
+                          <span className="font-medium">{item.modelName}</span>
+                          <span className="mx-1">-</span>
+                          <span>{item.variantName}</span>
+                          {item.color && (
+                            <>
+                              <span className="mx-1">|</span>
+                              <span className="text-gray-600">
+                                Màu: {item.color}
+                              </span>
+                            </>
+                          )}
+                          <span className="mx-1">-</span>
+                          <span className="font-semibold text-orange-700">
+                            Còn {item.quantity} xe
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -430,7 +459,10 @@ export default function InventoryManagement() {
         >
           <Row gutter={[16, 16]} className="mb-6">
             <Col xs={24} sm={12}>
-              <Card className="text-center bg-gradient-to-br from-blue-50 to-blue-100" hoverable={true}>
+              <Card
+                className="text-center bg-gradient-to-br from-blue-50 to-blue-100"
+                hoverable={true}
+              >
                 <Statistic
                   title="Tổng số đại lý"
                   value={dealers.length}
@@ -440,7 +472,10 @@ export default function InventoryManagement() {
               </Card>
             </Col>
             <Col xs={24} sm={12}>
-              <Card className="text-center bg-gradient-to-br from-green-50 to-green-100" hoverable={true}>
+              <Card
+                className="text-center bg-gradient-to-br from-green-50 to-green-100"
+                hoverable={true}
+              >
                 <Statistic
                   title="Đại lý hoạt động"
                   value={dealers.filter((d) => d.status === "ACTIVE").length}
