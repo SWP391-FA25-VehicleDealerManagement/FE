@@ -18,7 +18,7 @@ export default function CreateDealerManagerModal({
       const managerData = {
         dealerId: dealerId,
         username: values.username,
-        email: values.username,
+        email: values.email,
         password: values.password,
       };
       console.log("Manager Data:", managerData);
@@ -32,7 +32,7 @@ export default function CreateDealerManagerModal({
       });
 
       form.resetFields();
-      onClose();
+      onClose(true);
     } catch (error) {
       console.error("Error creating dealer manager account:", error);
       toast.error(

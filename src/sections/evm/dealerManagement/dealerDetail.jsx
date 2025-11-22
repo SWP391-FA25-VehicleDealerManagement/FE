@@ -269,7 +269,12 @@ export default function DealerDetail() {
       {/* Create Dealer Manager Modal */}
       <CreateDealerManagerModal
         isOpen={createManagerModalVisible}
-        onClose={() => setCreateManagerModalVisible(false)}
+        onClose={async (shouldRefresh) => {
+          setCreateManagerModalVisible(false);
+          if (shouldRefresh) {
+            await fetchDealerAccounts(dealerId);
+          }
+        }}
         dealerId={dealerDetail.dealerId}
         dealerName={dealerDetail.dealerName}
       />
