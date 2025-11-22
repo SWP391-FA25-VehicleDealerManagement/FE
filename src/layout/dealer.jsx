@@ -232,7 +232,7 @@ const Dealer = ({ children }) => {
           theme="light"
           defaultSelectedKeys={defaultSelectedKeys}
           mode="inline"
-          defaultOpenKeys={["2", "3", "sub1", "sub2"]}
+         defaultOpenKeys={["vehicle-management", "orders", "contracts", "user-management", "reports"]}
           className="border-0 h-full"
           style={{
             backgroundColor: "white",
