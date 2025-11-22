@@ -243,13 +243,10 @@ export default function InventoryList() {
         key: "quantity",
         align: "right",
         render: (quantity) => {
-          let color = "green";
           let textColor = "text-green-600";
           if (quantity === 0) {
-            color = "red";
             textColor = "text-red-600";
           } else if (quantity <= 5) {
-            color = "orange";
             textColor = "text-orange-600";
           }
           return <span className={`font-medium ${textColor}`}>{quantity}</span>;
@@ -337,7 +334,8 @@ export default function InventoryList() {
             <ExclamationCircleOutlined className="mr-2 text-lg mt-0.5" />
             <div className="flex-1">
               <div className="font-semibold text-base mb-2">
-                Cảnh báo tồn kho: {inventoryStats.lowStockItems.length} mặt hàng có số lượng thấp (≤ 5 xe)
+                Cảnh báo tồn kho: {inventoryStats.lowStockItems.length} mặt hàng
+                có số lượng thấp (≤ 5 xe)
               </div>
               <div className="text-sm">
                 <div className="font-medium mb-1">Danh sách cần nhập thêm:</div>
@@ -351,7 +349,9 @@ export default function InventoryList() {
                       {item.color && (
                         <>
                           <span className="mx-1">|</span>
-                          <span className="text-gray-600">Màu: {item.color}</span>
+                          <span className="text-gray-600">
+                            Màu: {item.color}
+                          </span>
                         </>
                       )}
                       <span className="mx-1">-</span>
