@@ -281,7 +281,7 @@ export default function SalePriceList() {
       ...getColumnSearchProps("variantName"),
       render: (text, record) => {
         const modelName = record.variant?.model?.name || "N/A";
-        const variantName = record.variant?.name || "";
+        const variantName = record.variantName || "";
         return (
           <div>
             <div className="font-semibold">{modelName}</div>

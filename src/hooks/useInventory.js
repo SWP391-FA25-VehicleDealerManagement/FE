@@ -4,6 +4,7 @@ import {
   recallInventory,
   allocateInventory,
 } from "../api/inventory";
+import { toast } from "react-toastify";
 
 const useInventoryStore = create((set) => ({
   inventory: [],
@@ -21,7 +22,6 @@ const useInventoryStore = create((set) => ({
     }
   },
 
-  
   isLoadingRecall: false,
   recallInventory: async (data) => {
     try {
@@ -35,17 +35,18 @@ const useInventoryStore = create((set) => ({
       throw error;
     }
   },
-  
+
   isLoadingAllocate: false,
   allocateInventory: async (data) => {
     try {
       const response = await allocateInventory(data);
       if (response && response.status === 200) {
         set({ isLoadingAllocate: false });
+        toast.success(response.data.message, { autoClose: 2000 });
       }
       return response;
     } catch (error) {
-      set({ isLoading: false });
+      set({ isLoadingAllocate: false });
       console.error("Error allocating inventory:", error);
       throw error;
     }

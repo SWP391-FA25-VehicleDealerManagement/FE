@@ -216,23 +216,11 @@ export default function VehicleAllocation() {
     try {
       const values = await recallForm.validateFields();
 
-      // Prepare recall data from request details
-      const recallData = selectedRequest.requestDetails?.map((detail) => ({
-        variantId: detail.variantId,
+      // Call recall API with requestId and dealerId
+      await recallInventory({
+        requestId: selectedRequest.requestId,
         dealerId: selectedRequest.dealerId,
-        color: detail.color,
-        quantity: detail.quantity,
-      }));
-
-      if (!recallData || recallData.length === 0) {
-        toast.error("Không tìm thấy thông tin để thu hồi");
-        return;
-      }
-
-      // Call recall API for each item
-      for (const item of recallData) {
-        await recallInventory(item);
-      }
+      });
 
       toast.success("Thu hồi xe thành công", {
         position: "top-right",
@@ -264,24 +252,23 @@ export default function VehicleAllocation() {
     try {
       // Get dealerId from selectedRequest
       const dealerId = selectedRequest?.dealerId;
+      const requestId = selectedRequest?.requestId;
 
-      if (!dealerId) {
-        toast.error("Không tìm thấy thông tin đại lý");
+      if (!dealerId || !requestId) {
+        toast.error("Không tìm thấy thông tin đại lý hoặc yêu cầu");
         return;
       }
 
-      // Extract allocation data from request details (color already exists)
-      const allocationData = selectedRequest.requestDetails.map((detail) => ({
+      // Extract allocation items from request details
+      const items = selectedRequest.requestDetails.map((detail) => ({
         variantId: detail.variantId,
-        dealerId: dealerId,
         color: detail.color,
         quantity: detail.quantity,
       }));
 
-      // Validate allocation data
-      const hasInvalidData = allocationData.some(
-        (item) =>
-          !item.variantId || !item.color || !item.quantity || !item.dealerId
+      // Validate allocation items
+      const hasInvalidData = items.some(
+        (item) => !item.variantId || !item.color || !item.quantity
       );
 
       if (hasInvalidData) {
@@ -289,12 +276,12 @@ export default function VehicleAllocation() {
         return;
       }
 
-      // Send allocation request to API
-      for (const allocation of allocationData) {
-        await allocateInventory(allocation);
-      }
-
-      toast.success("Phân bổ xe thành công!");
+      // Send allocation request to API with requestId and items
+      await allocateInventory({
+        requestId,
+        dealerId,
+        items,
+      });
 
       // Reset form and close modal
       setIsAllocationModalVisible(false);
