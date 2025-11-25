@@ -508,8 +508,8 @@ export default function SalePriceList() {
         <p>
           Bạn có chắc chắn muốn xóa giá bán cho{" "}
           <strong>
-            {selectedSalePrice?.variant?.model?.name || "N/A"} -{" "}
-            {selectedSalePrice?.variant?.name || ""}
+            {selectedSalePrice?.modelName || "N/A"} -{" "}
+            {selectedSalePrice?.variantName || "N/A"}
           </strong>{" "}
           không?
         </p>

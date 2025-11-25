@@ -17,12 +17,12 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
     try {
       const payload = {
         username: values.username.trim(),
-        password: values.password,           // để nguyên
+        password: values.password, // để nguyên
         fullName: values.fullName.trim(),
         phone: values.phone.trim(),
         email: values.email.trim(),
         role: "DEALER_STAFF",
-        dealerId,                            // bắt buộc
+        dealerId, // bắt buộc
       };
 
       await createStaff(payload);
@@ -33,7 +33,9 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
       onClose();
     } catch (error) {
       console.error("Error creating staff:", error);
-      toast.error(error?.response?.data?.message || "Tạo nhân viên thất bại!", { autoClose: 3000 });
+      toast.error(error?.response?.data?.message || "Tạo nhân viên thất bại!", {
+        autoClose: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +65,12 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
         />
       )}
 
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        autoComplete="off"
+      >
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -112,7 +119,11 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
               label="Số điện thoại"
               rules={[
                 { required: true, message: "Vui lòng nhập số điện thoại!" },
-                { pattern: /^[0-9+\-\s()]+$/, message: "Số điện thoại không hợp lệ!" },
+                {
+                  pattern: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/,
+                  message:
+                    "SĐT không hợp lệ! (VD: 0901234567 hoặc +84901234567)",
+                },
               ]}
             >
               <Input placeholder="vd: 0909222222" size="large" />
@@ -132,8 +143,16 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess }) {
         </Form.Item>
 
         <div className="flex justify-start gap-4 mt-6">
-          <Button onClick={handleCancel} size="large">Hủy</Button>
-          <Button type="primary" htmlType="submit" loading={isLoading} disabled={!dealerId} size="large">
+          <Button onClick={handleCancel} size="large">
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isLoading}
+            disabled={!dealerId}
+            size="large"
+          >
             Tạo nhân viên
           </Button>
         </div>

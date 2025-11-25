@@ -1,11 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Table, Input, Button, Space, Card, Typography, Spin, Modal } from "antd";
-import { SearchOutlined, UserAddOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Card,
+  Typography,
+  Spin,
+  Modal,
+} from "antd";
+import {
+  SearchOutlined,
+  UserAddOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
-import useDealerStaff from "../../../../hooks/useDealerStaff";   // <- store mới
-import useAuthen from "../../../../hooks/useAuthen";             // <- lấy dealerId
+import useDealerStaff from "../../../../hooks/useDealerStaff"; // <- store mới
+import useAuthen from "../../../../hooks/useAuthen"; // <- lấy dealerId
 import CreateStaffModal from "./createStaffModal";
+import { toast } from "react-toastify";
 
 const { Title } = Typography;
 
@@ -20,6 +35,7 @@ export default function StaffList() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -36,12 +52,19 @@ export default function StaffList() {
 
   // Tìm kiếm cột
   const getColumnSearchProps = (dataIndex) => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }) => (
       <div style={{ padding: 8 }}>
         <Input
           placeholder={`Tìm ${dataIndex}`}
           value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
           onPressEnter={() => {
             confirm();
             setSearchText(selectedKeys[0]);
@@ -76,7 +99,9 @@ export default function StaffList() {
         </Space>
       </div>
     ),
-    filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />,
+    filterIcon: (filtered) => (
+      <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
+    ),
     onFilter: (value, record) =>
       String(record?.[dataIndex] ?? "")
         .toLowerCase()
@@ -90,7 +115,8 @@ export default function StaffList() {
       dataIndex: "staffId",
       key: "id",
       render: (_, r) => r.staffId ?? r.userId ?? r.id,
-      sorter: (a, b) => (a.staffId ?? a.userId ?? 0) - (b.staffId ?? b.userId ?? 0),
+      sorter: (a, b) =>
+        (a.staffId ?? a.userId ?? 0) - (b.staffId ?? b.userId ?? 0),
       width: 100,
     },
     {
@@ -123,11 +149,14 @@ export default function StaffList() {
         const id = r.staffId ?? r.userId ?? r.id;
         return (
           <Space size="middle">
-            <Link to={`/dealer-manager/staff/${id}`}>
-              <Button type="primary" icon={<EyeOutlined />} size="small">
-                Xem
-              </Button>
-            </Link>
+            <Button type="primary" icon={<EyeOutlined />} size="small"
+            onClick={() =>{
+              setSelectedStaff(r);
+              setIsEditModalOpen(true);
+            }}
+            >
+              Sửa
+            </Button>
             <Button
               danger
               icon={<DeleteOutlined />}
@@ -199,11 +228,28 @@ export default function StaffList() {
         open={isDeleteOpen}
         onOk={async () => {
           try {
-            await deleteStaff(selectedStaff?.staffId ?? selectedStaff?.userId);
-          } finally {
-            setIsDeleteOpen(false);
-            setSelectedStaff(null);
-            if (dealerId) fetchStaffs(dealerId); // refetch đúng dealer
+            const response = await deleteStaff(selectedStaff?.userId);
+            if (response && response.status === 200) {
+              setIsDeleteOpen(false);
+              setSelectedStaff(null);
+              toast.success(
+                response.data.message || "Xóa nhân viên thành công.",
+                {
+                  autoClose: 3000,
+                  position: "top-right",
+                }
+              );
+              if (dealerId) fetchStaffs(dealerId);
+            }
+          } catch (err) {
+            toast.error(
+              err.response?.data?.message ||
+                "Xóa nhân viên thất bại. Vui lòng thử lại.",
+              {
+                autoClose: 3000,
+                position: "top-right",
+              }
+            );
           }
         }}
         onCancel={() => {
@@ -217,7 +263,12 @@ export default function StaffList() {
       >
         <p>
           Bạn có chắc chắn muốn xóa nhân viên{" "}
-          <strong>{selectedStaff?.staffName ?? selectedStaff?.fullName ?? selectedStaff?.userName}</strong> không?
+          <strong>
+            {selectedStaff?.staffName ??
+              selectedStaff?.fullName ??
+              selectedStaff?.userName}
+          </strong>{" "}
+          không?
         </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>

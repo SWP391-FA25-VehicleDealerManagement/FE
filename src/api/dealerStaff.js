@@ -13,3 +13,7 @@ export const getUserById = (userId) => {
 export const createDealerStaff = (data) => {
   return axiosClient.post(`/api/admin/create-dealer-staff`, data);
 };
+
+export const deleteDealerStaff = (userId) => {
+  return axiosClient.delete(`/api/admin/dealer-staff/${userId}`);
+}

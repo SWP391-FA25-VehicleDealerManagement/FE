@@ -3,6 +3,8 @@ import { Modal, Form, Input, Button, Spin } from "antd";
 import { UserOutlined, PhoneOutlined, MailOutlined } from "@ant-design/icons";
 import useCustomerStore from "../../../../hooks/useCustomer";
 import { toast } from "react-toastify";
+import useAuthen from "../../../../hooks/useAuthen";
+
 
 export default function UpdateCustomerModal({
   isOpen,
@@ -12,6 +14,9 @@ export default function UpdateCustomerModal({
 }) {
   const [form] = Form.useForm();
   const { updateCustomer, isLoadingUpdateCustomer } = useCustomerStore();
+  const { userDetail } = useAuthen();
+  const dealerId = userDetail?.dealer?.dealerId || null;
+  const createdBy = userDetail?.userName || "unknown";
 
   useEffect(() => {
     if (isOpen && customer) {
@@ -28,7 +33,15 @@ export default function UpdateCustomerModal({
 
   const handleFinish = async (values) => {
     try {
-      const response = await updateCustomer(customer.customerId, values);
+      const payLoad = {
+        dealerId: dealerId,
+        customerName: values.customerName,
+        phone: values.phone,
+        email: values.email,
+        address: values.address,
+        createBy: createdBy,
+      };
+      const response = await updateCustomer(customer.customerId, payLoad);
       if (response && response.status === 200) {
         toast.success("Cập nhật khách hàng thành công!");
         form.resetFields();
