@@ -105,7 +105,9 @@ export default function DebtDetailPage() {
       const response = await makePayment(debtId, paymentData);
 
       if (response && response.status === 200) {
-        toast.success("Thanh toán thành công!", { autoClose: 2000 });
+        toast.success(response.data.message || "Thanh toán thành công!", {
+          autoClose: 2000,
+        });
         handleClosePaymentModal();
         fetchDebtSchedules(debtId);
         fetchPaymentHistory(debtId);
@@ -113,7 +115,11 @@ export default function DebtDetailPage() {
       }
     } catch (error) {
       console.error("Error making payment:", error);
-      toast.error("Thanh toán thất bại. Vui lòng thử lại.");
+      toast.error(
+        error.response?.data?.message ||
+          "Thanh toán thất bại. Vui lòng thử lại.",
+        { autoClose: 2000 }
+      );
     }
   };
 
@@ -215,18 +221,45 @@ export default function DebtDetailPage() {
       key: "action",
       fixed: "right",
       width: 120,
-      render: (_, record) =>
-        record.status !== "PAID" && (record.remainingAmount || 0) > 0 ? (
-          <Button
-            type="primary"
-            size="small"
-            style={{ backgroundColor: "green", borderColor: "green" }}
-            icon={<CreditCardOutlined />}
-            onClick={() => showPaymentModal(record)}
-          >
-            Thanh toán
-          </Button>
-        ) : null,
+      render: (_, record) => {
+        // 1. Kỳ hiện tại chưa PAID
+        // 2. Tất cả các kỳ trước đó đã PAID (hoặc đây là kỳ đầu tiên)
+        const canPay = record.status !== "PAID" && (record.remainingAmount || 0) > 0;
+        
+        // Kiểm tra xem tất cả các kỳ trước đã thanh toán chưa
+        const allPreviousPaid = debtSchedules
+          .filter((s) => s.periodNo < record.periodNo)
+          .every((s) => s.status === "PAID");
+        
+        // Chỉ hiển thị nút thanh toán nếu đủ điều kiện
+        if (canPay && allPreviousPaid) {
+          return (
+            <Button
+              type="primary"
+              size="small"
+              style={{ backgroundColor: "green", borderColor: "green" }}
+              icon={<CreditCardOutlined />}
+              onClick={() => showPaymentModal(record)}
+            >
+              Thanh toán
+            </Button>
+          );
+        }
+        
+        // Nếu kỳ này chưa tới lượt (các kỳ trước chưa thanh toán hết)
+        if (canPay && !allPreviousPaid) {
+          return (
+            <Button
+              size="small"
+              disabled
+              title="Vui lòng thanh toán các kỳ trước"
+            >
+              Chưa đến 
+            </Button>
+          );
+        }
+        return null;
+      },
     },
   ];
 

@@ -216,18 +216,46 @@ export default function CustomerDebtDetail() {
       key: "action",
       fixed: "right",
       width: 120,
-      render: (_, record) =>
-        record.status !== "PAID" && (record.remainingAmount || 0) > 0 ? (
-          <Button
-            type="primary"
-            size="small"
-            style={{ backgroundColor: "green", borderColor: "green" }}
-            icon={<CreditCardOutlined />}
-            onClick={() => showPaymentModal(record)}
-          >
-            Thanh toán
-          </Button>
-        ) : null,
+      render: (_, record) => {
+        // 1. Kỳ hiện tại chưa PAID
+        // 2. Tất cả các kỳ trước đó đã PAID (hoặc đây là kỳ đầu tiên)
+        const canPay =
+          record.status !== "PAID" && (record.remainingAmount || 0) > 0;
+
+        // Kiểm tra xem tất cả các kỳ trước đã thanh toán chưa
+        const allPreviousPaid = debtSchedules
+          .filter((s) => s.periodNo < record.periodNo)
+          .every((s) => s.status === "PAID");
+
+        // Chỉ hiển thị nút thanh toán nếu đủ điều kiện
+        if (canPay && allPreviousPaid) {
+          return (
+            <Button
+              type="primary"
+              size="small"
+              style={{ backgroundColor: "green", borderColor: "green" }}
+              icon={<CreditCardOutlined />}
+              onClick={() => showPaymentModal(record)}
+            >
+              Thanh toán
+            </Button>
+          );
+        }
+
+        // Nếu kỳ này chưa tới lượt (các kỳ trước chưa thanh toán hết)
+        if (canPay && !allPreviousPaid) {
+          return (
+            <Button
+              size="small"
+              disabled
+              title="Vui lòng thanh toán các kỳ trước"
+            >
+              Chưa đến
+            </Button>
+          );
+        }
+        return null;
+      },
     },
   ];
 
@@ -320,22 +348,22 @@ export default function CustomerDebtDetail() {
       {/* Header của trang */}
       <Space direction="vertical" style={{ width: "100%" }} size="large">
         <div className="flex flex-row justify-between">
-        <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
-          Quay lại danh sách
-        </Button>
+          <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
+            Quay lại danh sách
+          </Button>
 
-        <Button
-          type="primary"
-          icon={<ReloadOutlined />}
-          onClick={handleRefresh}
-          loading={
-            isLoadingDealerDebtById ||
-            isLoadingDebtSchedules ||
-            isLoadingPaymentHistory
-          }
-        >
-          Làm mới
-        </Button>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={
+              isLoadingDealerDebtById ||
+              isLoadingDebtSchedules ||
+              isLoadingPaymentHistory
+            }
+          >
+            Làm mới
+          </Button>
         </div>
         <Title level={2} className="flex items-center">
           <FileTextOutlined style={{ marginRight: 8 }} />
@@ -347,7 +375,9 @@ export default function CustomerDebtDetail() {
             <Card title="Thông tin khách hàng" size="small" className="mb-4">
               <Descriptions bordered column={2} size="small">
                 <Descriptions.Item label="Tên khách hàng">
-                  <Text strong>{dealerDebtById.customer?.customerName || "N/A"}</Text>
+                  <Text strong>
+                    {dealerDebtById.customer?.customerName || "N/A"}
+                  </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Số điện thoại">
                   {dealerDebtById.customer?.phoneNumber || "N/A"}
@@ -415,8 +445,8 @@ export default function CustomerDebtDetail() {
                   {dayjs(dealerDebtById.dueDate).format("DD/MM/YYYY")}
                 </Descriptions.Item>
                 <Descriptions.Item label="Phương thức thanh toán">
-                  {dealerDebtById.paymentMethod === "CASH" 
-                    ? "Tiền mặt" 
+                  {dealerDebtById.paymentMethod === "CASH"
+                    ? "Tiền mặt"
                     : dealerDebtById.paymentMethod === "BANK_TRANSFER"
                     ? "Chuyển khoản"
                     : dealerDebtById.paymentMethod}
