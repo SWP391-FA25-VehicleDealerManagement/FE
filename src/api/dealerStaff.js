@@ -17,3 +17,7 @@ export const createDealerStaff = (data) => {
 export const deleteDealerStaff = (userId) => {
   return axiosClient.delete(`/api/admin/dealer-staff/${userId}`);
 }
+
+export const updateDealerStaff = (userId, data) => {
+  return axiosClient.put(`/api/admin/dealer-staff/${userId}`, data);
+}
