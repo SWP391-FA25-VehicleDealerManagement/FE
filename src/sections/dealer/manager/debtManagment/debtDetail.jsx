@@ -65,14 +65,7 @@ export default function DebtDetailPage() {
       clearDebtSchedules();
       clearPaymentHistory();
     };
-  }, [
-    debtId,
-    fetchDebtSchedules,
-    fetchPaymentHistory,
-    clearDebtSchedules,
-    clearPaymentHistory,
-    fetchDealerDebtById,
-  ]);
+  }, [debtId]);
 
   // Hàm mở modal thanh toán
   const showPaymentModal = (scheduleRecord) => {
@@ -224,21 +217,22 @@ export default function DebtDetailPage() {
       render: (_, record) => {
         // 1. Kỳ hiện tại chưa PAID
         // 2. Tất cả các kỳ trước đó đã PAID (hoặc đây là kỳ đầu tiên)
-        const canPay = record.status !== "PAID" && (record.remainingAmount || 0) > 0;
-        
+        const canPay =
+          record.status !== "PAID" && (record.remainingAmount || 0) > 0;
+
         // Kiểm tra xem tất cả các kỳ trước đã thanh toán chưa
         const allPreviousPaid = debtSchedules
           .filter((s) => s.periodNo < record.periodNo)
           .every((s) => s.status === "PAID");
-        
+
         // Kiểm tra xem kỳ này có payment PENDING nào không
         const hasPendingPayment = paymentHistory?.some(
           (payment) =>
             (payment.debtSchedule?.scheduleId === record.scheduleId ||
-             payment.scheduleId === record.scheduleId) &&
+              payment.scheduleId === record.scheduleId) &&
             payment.status === "PENDING"
         );
-        
+
         // Nếu có payment đang chờ duyệt, hiển thị thông báo
         if (hasPendingPayment) {
           return (
@@ -247,7 +241,7 @@ export default function DebtDetailPage() {
             </Tag>
           );
         }
-        
+
         // Chỉ hiển thị nút thanh toán nếu đủ điều kiện
         if (canPay && allPreviousPaid) {
           return (
@@ -262,7 +256,7 @@ export default function DebtDetailPage() {
             </Button>
           );
         }
-        
+
         // Nếu kỳ này chưa tới lượt (các kỳ trước chưa thanh toán hết)
         if (canPay && !allPreviousPaid) {
           return (

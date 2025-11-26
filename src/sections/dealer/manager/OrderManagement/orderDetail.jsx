@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Spin,
@@ -32,7 +32,7 @@ import usePaymentStore from "../../../../hooks/usePayment";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import axiosClient from "../../../../config/axiosClient";
-import PaymentModal from "./PaymentModal.jsx"; 
+import PaymentModal from "./PaymentModal.jsx";
 
 const { Title, Text } = Typography;
 
@@ -40,247 +40,167 @@ export default function OrderDetail() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { userDetail } = useAuthen();
-
   const {
-    CustomerOrder,
-    isLoadingCustomerOrder,
-    getCustomerOrders,
+    OrderDetail: OrderInfo,
+    CustomerDetail,
     CustomerOrderDetail,
-    isLoadingOrderDetail,
+    fetchOrderById,
     fetchCustomerOrderById,
+    getCustomerById,
   } = useDealerOrder();
-  const { payment, isLoadingPayment, getPayment } = usePaymentStore();
+  const { payment, getPayment } = usePaymentStore();
   const { fetchVehicleById } = useVehicleStore();
-  const [orderInfo, setOrderInfo] = useState(null);
-  const [vehicleDetails, setVehicleDetails] = useState([]);
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
-  const [error, setError] = useState(null);
-  const [vehicleImageUrls, setVehicleImageUrls] = useState({});
+  const [listItems, setListItems] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [totalPaidAmount, setTotalPaidAmount] = useState(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   const dealerId = userDetail?.dealer?.dealerId;
 
+  // 1. Fetch dữ liệu: Thông tin đơn hàng & Danh sách item trong đơn
   useEffect(() => {
     if (orderId && dealerId) {
-      getCustomerOrders(dealerId);
-      fetchCustomerOrderById(orderId);
-      getPayment();
+      setIsLoadingData(true);
+      Promise.all([
+        fetchOrderById(orderId),
+        fetchCustomerOrderById(orderId),
+        getPayment(),
+      ]).finally(() => setIsLoadingData(false));
     }
-  }, [
-    orderId,
-    dealerId,
-    getCustomerOrders,
-    fetchCustomerOrderById,
-    getPayment,
-  ]);
+  }, [orderId, dealerId]);
 
+  // 2. Fetch dữ liệu khách hàng khi có OrderInfo
   useEffect(() => {
-    if (CustomerOrder && CustomerOrder.length > 0) {
-      const currentOrder = CustomerOrder.find((o) => o.orderId == orderId);
-      if (currentOrder) {
-        setOrderInfo(currentOrder);
-      } else {
-        console.warn(`Order with ID ${orderId} not found in the list.`);
-      }
+    if (OrderInfo?.customerId) {
+      getCustomerById(OrderInfo.customerId);
     }
-  }, [orderId, CustomerOrder]);
+  }, [OrderInfo]);
 
+  // 3. Fetch dữ liệu xe và ảnh khi có CustomerOrderDetail
   useEffect(() => {
-    if (Array.isArray(CustomerOrderDetail) && CustomerOrderDetail.length > 0) {
-      const fetchVehicles = async () => {
-        setIsLoadingVehicles(true);
-        setError(null);
+    const fetchVehiclesAndImages = async () => {
+      if (
+        Array.isArray(CustomerOrderDetail) &&
+        CustomerOrderDetail.length > 0
+      ) {
+        setIsLoadingData(true);
         try {
-          const vehiclePromises = CustomerOrderDetail.map((item) =>
-            fetchVehicleById(item.vehicleId)
+          const processedItems = await Promise.all(
+            CustomerOrderDetail.map(async (item) => {
+              const vehicleData = await fetchVehicleById(item.vehicleId);
+
+              console.log("check vehicle data", vehicleData);
+              let blobUrl = null;
+
+              if (vehicleData?.imageUrl) {
+                try {
+                  const response = await axiosClient.get(vehicleData.imageUrl, {
+                    responseType: "blob",
+                  });
+                  blobUrl = URL.createObjectURL(response.data);
+                } catch (err) {
+                  console.error("Lỗi tải ảnh blob:", err);
+                }
+              }
+
+              return {
+                ...item,
+                vehicle: vehicleData,
+                blobUrl: blobUrl,
+              };
+            })
           );
 
-          const vehiclesData = await Promise.all(vehiclePromises);
-
-          setVehicleDetails(vehiclesData.filter(Boolean));
-        } catch (err) {
-          console.error("Error fetching vehicle details:", err);
-          setError("Không thể tải chi tiết một số xe.");
-          setVehicleDetails([]);
+          setListItems(processedItems);
+        } catch (error) {
+          console.error("Lỗi trong quá trình lấy thông tin xe:", error);
+          toast.error("Không thể tải chi tiết xe.");
         } finally {
-          setIsLoadingVehicles(false);
+          setIsLoadingData(false);
         }
-      };
-      fetchVehicles();
-    } else {
-      setVehicleDetails([]);
-    }
-  }, [CustomerOrderDetail, fetchVehicleById]);
-
-  useEffect(() => {
-    let objectUrlsToRevoke = [];
-
-    const fetchAllImages = async () => {
-      if (vehicleDetails && vehicleDetails.length > 0) {
-        const newImageUrls = { ...vehicleImageUrls };
-        const pathsToFetch = vehicleDetails
-          .map((v) => v?.variantImage)
-          .filter(Boolean)
-          .filter((path) => !newImageUrls[path]);
-
-        if (pathsToFetch.length === 0) return;
-        const fetchPromises = pathsToFetch.map(async (imagePath) => {
-          try {
-            const response = await axiosClient.get(imagePath, {
-              responseType: "blob",
-            });
-            const objectUrl = URL.createObjectURL(response.data);
-            objectUrlsToRevoke.push(objectUrl);
-            return { path: imagePath, url: objectUrl };
-          } catch (error) {
-            console.error(`Không thể tải ảnh: ${imagePath}`, error);
-            return { path: imagePath, url: null };
-          }
-        });
-
-        const results = await Promise.all(fetchPromises);
-
-        results.forEach((result) => {
-          if (result) {
-            newImageUrls[result.path] = result.url;
-          }
-        });
-        setVehicleImageUrls(newImageUrls);
       }
     };
 
-    fetchAllImages();
+    fetchVehiclesAndImages();
 
-    // Hàm cleanup: Thu hồi tất cả Object URL đã tạo trong useEffect này
+    // Cleanup Blob URL khi unmount
     return () => {
-      objectUrlsToRevoke.forEach((url) => {
-        if (url) URL.revokeObjectURL(url);
+      setListItems((prevItems) => {
+        prevItems.forEach((item) => {
+          if (item.blobUrl) URL.revokeObjectURL(item.blobUrl);
+        });
+        return [];
       });
-      objectUrlsToRevoke = [];
     };
-  }, [vehicleDetails]);
+  }, [CustomerOrderDetail]);
 
+  // 4. Tính toán tiền đã trả
   useEffect(() => {
-  if (orderInfo && orderInfo.amountPaid != null && orderInfo.amountPaid > 0) {
-    setTotalPaidAmount(orderInfo.amountPaid);
-    return;
-  }
-  
-  if (payment && payment.length > 0 && orderId) {
-    const relevantPayments = payment.filter(
-      (p) => {
+    if (payment && payment.length > 0 && orderId) {
+      const relevantPayments = payment.filter((p) => {
         if (p.orderId != orderId) return false;
-        if (p.status === "COMPLETED" || p.status === "Completed") {
-          return true;
-        }
-        if (p.status === "PENDING" || p.status === "Pending") {
+        if (["COMPLETED", "Completed"].includes(p.status)) return true;
+        if (["PENDING", "Pending"].includes(p.status))
           return p.paymentType === "INSTALLMENT";
-        }
         return false;
-      }
-    );
-    const totalPaid = relevantPayments.reduce(
-      (sum, p) => sum + (p.amount || 0),
-      0
-    );
-    setTotalPaidAmount(totalPaid);
-  } else {
-    setTotalPaidAmount(0);
-  }
-}, [payment, orderId, orderInfo]);
-
-  const mergedData = useMemo(() => {
-    if (
-      !orderInfo ||
-      !Array.isArray(CustomerOrderDetail) ||
-      CustomerOrderDetail.length === 0 ||
-      vehicleDetails.length === 0 ||
-      vehicleDetails.length !== CustomerOrderDetail.length
-    ) {
-      return null;
-    }
-    const itemsWithVehicles = CustomerOrderDetail.map((item) => {
-      const vehicle = vehicleDetails.find(
-        (v) => v.vehicleId === item.vehicleId
+      });
+      const totalPaid = relevantPayments.reduce(
+        (sum, p) => sum + (p.amount || 0),
+        0
       );
-      return {
-        ...item,
-        vehicle: vehicle || null,
-      };
-    });
+      setTotalPaidAmount(totalPaid);
+    } else {
+      setTotalPaidAmount(0);
+    }
+  }, [payment, orderId]);
 
-    return {
-      order: orderInfo,
-      items: itemsWithVehicles,
-    };
-  }, [orderInfo, CustomerOrderDetail, vehicleDetails]);
-
-  const isLoading =
-    isLoadingOrderDetail ||
-    isLoadingCustomerOrder ||
-    isLoadingVehicles ||
-    isLoadingPayment ||
-    !mergedData;
-
-  // 3. Cập nhật hàm handlePayment
-  const handlePayment = () => {
-    if (!mergedData || !mergedData.order) {
-      toast.error("Không tìm thấy thông tin đơn hàng để thanh toán.");
+  const handlePayment = useCallback(() => {
+    if (!OrderInfo) {
+      toast.error("Dữ liệu đơn hàng chưa sẵn sàng.");
       return;
     }
-
-    const orderForModal = {
-      orderId: mergedData.order.orderId,
-      totalPrice: mergedData.order.totalPrice,
-      customerName: userDetail?.dealer?.dealerName || "Đơn hàng nội bộ",
-    };
-
-    setSelectedOrderForPayment(orderForModal);
+    setSelectedOrderForPayment({
+      orderId: OrderInfo.orderId,
+      totalPrice: OrderInfo.totalPrice,
+      customerName: CustomerDetail?.customerName || "Khách hàng",
+    });
     setIsPaymentModalOpen(true);
-  };
+  }, [OrderInfo, CustomerDetail]);
 
-  // 4. Thêm hàm đóng Modal và refresh dữ liệu
-  const handleClosePaymentModal = () => {
+  const handleClosePaymentModal = useCallback(() => {
     setIsPaymentModalOpen(false);
     setSelectedOrderForPayment(null);
-    
-    // Tải lại dữ liệu sau khi thanh toán thành công
     if (orderId && dealerId) {
-      getCustomerOrders(dealerId);
-      fetchCustomerOrderById(orderId);
+      fetchOrderById(orderId);
       getPayment();
     }
-  };
+  }, [orderId, dealerId]);
 
-  const getStatusTag = (status) => {
+  const getStatusTag = useCallback((status) => {
     let color = "processing";
     let text = status;
-    if (status === "COMPLETED") {
+    const s = status?.toUpperCase();
+    if (s === "COMPLETED") {
       color = "success";
       text = "Hoàn thành";
-    }
-    if (status === "PAID") {
+    } else if (s === "PAID") {
       color = "blue";
       text = "Đã thanh toán";
-    }
-    if (status === "PARTIAL") {
+    } else if (s === "PARTIAL") {
       color = "orange";
       text = "Thanh toán một phần";
-    }
-    if (status === "CANCELLED") {
+    } else if (s === "CANCELLED") {
       color = "error";
       text = "Đã hủy";
-    }
-    if (status === "PENDING") {
+    } else if (s === "PENDING") {
       color = "warning";
       text = "Đang chờ";
     }
     return { color, text };
-  };
+  }, []);
 
-  if (isLoading && !error) {
+  if (isLoadingData && !OrderInfo) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Spin size="large" />
@@ -288,44 +208,21 @@ export default function OrderDetail() {
     );
   }
 
-  if (error) {
+  if (!OrderInfo) {
     return (
       <Card>
-        <Title level={4} type="danger">
-          Lỗi tải dữ liệu
-        </Title>
-        <Text>{error}</Text>
-        <Button
-          onClick={() => navigate("/dealer-manager/dealer-orders")}
-          style={{ marginTop: "16px" }}
-        >
-          Quay lại
-        </Button>
+        <Title level={4}>Không tìm thấy thông tin đơn hàng</Title>
+        <Button onClick={() => navigate(-1)}>Quay lại</Button>
       </Card>
     );
   }
 
-  if (!mergedData) {
-    return (
-      <Card>
-        <Title level={4}>Không tìm thấy chi tiết đơn hàng</Title>
-        <Text>Không thể tìm thấy thông tin cho mã đơn hàng #{orderId}.</Text>
-        <Button
-          onClick={() => navigate("/dealer-manager/dealer-orders")}
-          style={{ marginTop: "16px" }}
-        >
-          Quay lại
-        </Button>
-      </Card>
-    );
-  }
-
-  const { order, items } = mergedData;
-  const isActionDisabled =
-    order.status === "COMPLETED" ||
-    order.status === "CANCELLED" ||
-    order.status === "PAID" ||
-    order.status === "PARTIAL";
+  const isActionDisabled = [
+    "COMPLETED",
+    "CANCELLED",
+    "PAID",
+    "PARTIAL",
+  ].includes(OrderInfo.status);
 
   return (
     <div>
@@ -339,15 +236,14 @@ export default function OrderDetail() {
         Quay lại danh sách
       </Button>
 
-      {/* Header và nút Action */}
       <div className="flex justify-between items-center mb-6">
-        <Title level={2}>Chi tiết đơn hàng: #{order.orderId}</Title>
-        {/* 5. Cập nhật logic các nút dựa trên isActionDisabled */}
+        <Title level={2}>Chi tiết đơn hàng: #{OrderInfo.orderId}</Title>
+
         <Space>
           <Button
             type="primary"
             icon={<CreditCardOutlined />}
-            onClick={handlePayment} // 6. Gọi hàm handlePayment
+            onClick={handlePayment}
             disabled={isActionDisabled}
           >
             Thanh toán
@@ -385,11 +281,11 @@ export default function OrderDetail() {
           <Card title="Thông tin đơn hàng">
             <Descriptions column={2}>
               <Descriptions.Item label="Ngày tạo">
-                {dayjs(order.createdDate).format("DD/MM/YYYY HH:mm")}
+                {dayjs(OrderInfo.createdDate).format("DD/MM/YYYY HH:mm")}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color={getStatusTag(order.status).color}>
-                  {getStatusTag(order.status).text}
+                <Tag color={getStatusTag(OrderInfo.status).color}>
+                  {getStatusTag(OrderInfo.status).text}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item
@@ -406,7 +302,7 @@ export default function OrderDetail() {
 
               <Descriptions.Item label="Tổng tiền">
                 <Text strong style={{ color: "red" }}>
-                  {(order.totalPrice || 0).toLocaleString("vi-VN")} VNĐ
+                  {(OrderInfo.totalPrice || 0).toLocaleString("vi-VN")} VNĐ
                 </Text>
               </Descriptions.Item>
             </Descriptions>
@@ -417,77 +313,58 @@ export default function OrderDetail() {
         <Col span={24}>
           <Card title="Danh sách xe trong đơn hàng">
             <List
+              loading={isLoadingData}
               itemLayout="horizontal"
-              dataSource={items || []}
-              renderItem={(item) => {
-                const imageUrl = item.vehicle?.variantImage
-                  ? vehicleImageUrls[item.vehicle.variantImage]
-                  : null;
-                const isImageLoading =
-                  item.vehicle?.variantImage &&
-                  !(item.vehicle.variantImage in vehicleImageUrls);
-
-                return (
-                  <List.Item
-                    actions={[
-                      <Text strong>
-                        {(item.price || 0).toLocaleString("vi-VN")} VNĐ
-                      </Text>,
-                      item.vehicle ? (
-                        <Link
-                          to={`/dealer-manager/vehicles/${item.vehicle.vehicleId}`}
-                        >
-                          Xem chi tiết xe
-                        </Link>
-                      ) : (
-                        <Text type="secondary">Chi tiết xe không có</Text>
-                      ),
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={
-                        <div
-                          style={{
-                            width: 64,
-                            height: 64,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "#f0f0f0",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          {isImageLoading ? (
-                            <Spin size="small" />
-                          ) : imageUrl ? (
-                            <Image
-                              src={imageUrl}
-                              alt={item.vehicle?.variantName}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                borderRadius: "4px",
-                              }}
-                              preview={true}
-                            />
-                          ) : (
-                            <CarOutlined
-                              style={{ fontSize: 32, color: "#999" }}
-                            />
-                          )}
-                        </div>
-                      }
-                      title={`${item.vehicle?.modelName || "N/A"} ${
-                        item.vehicle?.variantName || "N/A"
-                      }`}
-                      description={`Màu: ${
-                        item.vehicle?.color || "N/A"
-                      } - VIN: ${item.vehicle?.vinNumber || "N/A"}`}
-                    />
-                  </List.Item>
-                );
-              }}
+              dataSource={listItems} // Sử dụng listItems đã xử lý ở trên
+              renderItem={(item) => (
+                <List.Item
+                  actions={[
+                    <Text strong>
+                      {(item.price || 0).toLocaleString("vi-VN")} VNĐ
+                    </Text>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <div
+                        style={{
+                          width: 64,
+                          height: 64,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "#f0f0f0",
+                          borderRadius: "4px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {item.blobUrl ? (
+                          <Image
+                            src={item.blobUrl} // Link Blob đã tạo
+                            alt={item.vehicle?.variantName}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            preview={true}
+                          />
+                        ) : (
+                          <CarOutlined
+                            style={{ fontSize: 32, color: "#999" }}
+                          />
+                        )}
+                      </div>
+                    }
+                    title={`${item.vehicle?.modelName || "N/A"} ${
+                      item.vehicle?.variantName || "N/A"
+                    }`}
+                    description={`Màu: ${item.vehicle?.color || "N/A"} - VIN: ${
+                      item.vehicle?.vinNumber || "N/A"
+                    }`}
+                  />
+                </List.Item>
+              )}
             />
           </Card>
         </Col>

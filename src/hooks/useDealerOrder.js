@@ -6,6 +6,7 @@ import {
   getCustomerOrderById,
   getCustomerById,
   CancelCustomerOrderById,
+  getOrderById,
 } from "../api/dealerOrder";
 
 const useDealerOrder = create((set) => ({
@@ -112,6 +113,26 @@ const useDealerOrder = create((set) => ({
     } catch (error) {
       console.error("Failed to cancel customer order:", error);
       set({ isLoadingCancelOrder: false });
+      throw error;
+    }
+  },
+
+  isLoadingFetchOrderById: false,
+  OrderDetail: {},
+  fetchOrderById: async (id) => {
+    try {
+      set({ isLoadingFetchOrderById: true });
+      const response = await getOrderById(id);
+      if (response && response.status === 200) {
+        set({
+          isLoadingFetchOrderById: false,
+          OrderDetail: response.data.data,
+        });
+      }
+      return response;
+    } catch (error) {
+      console.error("Failed to fetch order by ID:", error);
+      set({ isLoadingFetchOrderById: false });
       throw error;
     }
   },

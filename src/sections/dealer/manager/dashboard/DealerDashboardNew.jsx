@@ -12,6 +12,7 @@ import OrderStatusChart from "./OrderStatusChart";
 import OrderCountChart from "./OrderCountChart";
 import TestDriveStatistics from "./TestDriveStatistics";
 import ContractStatistics from "./ContractStatistics";
+import OrdersTable from "./OrdersTable";
 
 export default function DealerDashboard() {
   const { userDetail } = useAuthen();
@@ -64,6 +65,26 @@ export default function DealerDashboard() {
       orders: ordersWithCustomers,
     };
   }, [orderData]);
+
+  console.log("check customer data", customerData);
+
+  const mergedOrders = React.useMemo(() => {
+    if (!orderData || !customerData) return [];
+    const ordersWithCustomers = orderData.filter(
+      (order) => order.customerId !== null
+    );
+    return ordersWithCustomers.map((order) => {
+      const customer = customerData.find(
+        (c) => c.customerId === order.customerId
+      );
+      return {
+        ...order,
+        customerName: customer?.customerName || order.customerName || "N/A",
+        customerPhone: customer?.phone || "",
+        customerEmail: customer?.email || "",
+      };
+    });
+  }, [orderData, customerData]);
 
   // Tối ưu: Memoize stats data calculation
   const statsData = React.useMemo(() => {
@@ -142,9 +163,11 @@ export default function DealerDashboard() {
       const statusMap = {
         COMPLETED: "Hoàn thành",
         PENDING: "Chờ xử lý",
-        PARTIAL: "Một phần",
+        PARTIAL: "Thanh toán một phần",
         CANCELLED: "Đã hủy",
         PROCESSING: "Đang xử lý",
+        PAID: "Đã thanh toán",
+        SHIPPED: "đang vận chuyển",
       };
       return statusMap[status] || status;
     });
@@ -172,6 +195,8 @@ export default function DealerDashboard() {
     });
   }, [customerDebtData, customerData]);
 
+
+
   return (
     <div className="fade-in">
       <Spin spinning={isLoading}>
@@ -198,6 +223,11 @@ export default function DealerDashboard() {
         {/* Order Count Chart */}
         <div className="py-4">
           <OrderCountChart orders={processedOrders.orders} />
+        </div>
+
+        {/* Orders Table */}
+        <div className="py-4">
+          <OrdersTable data={mergedOrders} />
         </div>
 
         {/* Test Drive Statistics */}

@@ -1,39 +1,59 @@
 import React from "react";
 import { Card } from "antd";
 import { PieChartOutlined } from "@ant-design/icons";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 const OrderStatusChart = ({ data }) => {
-  // Transform data for Recharts - merge PAID and PARTIAL into "Đã thanh toán"
-  const mergedData = {};
-  
-  data.labels.forEach((label, index) => {
-    const value = data.values[index];
-    
-    // Merge PAID and PARTIAL into "Đã thanh toán"
-    if (label === "PAID" || label === "PARTIAL" || label === "Đã thanh toán" || label === "Thanh toán 1 phần") {
-      mergedData["Đã thanh toán"] = (mergedData["Đã thanh toán"] || 0) + value;
-    } else {
-      mergedData[label] = (mergedData[label] || 0) + value;
-    }
-  });
+  const chartData = React.useMemo(() => {
+    if (!data) return [];
 
-  const chartData = Object.entries(mergedData).map(([name, value]) => ({
-    name,
-    value,
-  }));
+    // Nếu data là object có labels và values
+    if (data.labels && data.values) {
+      return data.labels.map((label, index) => ({
+        name: label,
+        value: data.values[index] || 0,
+      }));
+    }
+
+    // Nếu data là object đơn giản { "PENDING": 5, "COMPLETED": 10 }
+    if (typeof data === "object" && !Array.isArray(data)) {
+      return Object.entries(data).map(([name, value]) => ({
+        name,
+        value: typeof value === "number" ? value : 0,
+      }));
+    }
+
+    return [];
+  }, [data]);
 
   // Colors based on status type
   const getColorForStatus = (status) => {
-    if (status === "Đã thanh toán") return "#52c41a"; // green
-    if (status === "CANCELLED" || status === "Đã hủy" || status === "Huỷ") return "#f5222d"; // red
+    if (status === "CANCELLED" || status === "Đã hủy" || status === "Huỷ")
+      return "#f5222d"; // red
     if (status === "PENDING" || status === "Chờ xử lý") return "#faad14"; // orange
     if (status === "PROCESSING" || status === "Đang xử lý") return "#1890ff"; // blue
-    if (status === "DELIVERED" || status === "Đã giao" || status === "Hoàn thành" || status === "COMPLETED") return "#52c41a"; // green/success
+    if (
+      status === "DELIVERED" ||
+      status === "Đã giao" ||
+      status === "Hoàn thành" ||
+      status === "COMPLETED"
+    )
+      return "#52c41a"; // green/success
+    if (status === "SHIPPED" || status === "đang vận chuyển") return "blue"; // purple
+    if (status === "PAID" || status === "Đã thanh toán") return "#722ed1"; // purple
+    if (status === "PARTIAL" || status === "Thanh toán một phần")
+      return "#fa8c16"; // gold
     return "#8884d8"; // default
   };
 
-  const COLORS = chartData.map(item => getColorForStatus(item.name));
+  const COLORS = chartData.map((item) => getColorForStatus(item.name));
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
@@ -126,10 +146,15 @@ const OrderStatusChart = ({ data }) => {
               wrapperStyle={{ paddingTop: "20px" }}
               formatter={(value, entry) => {
                 const total = data.values.reduce((a, b) => a + b, 0);
-                const percentage = ((entry.payload.value / total) * 100).toFixed(1);
+                const percentage = (
+                  (entry.payload.value / total) *
+                  100
+                ).toFixed(1);
                 return (
                   <span className="text-sm">
-                    {value}: <span className="font-semibold">{entry.payload.value}</span> ({percentage}%)
+                    {value}:{" "}
+                    <span className="font-semibold">{entry.payload.value}</span>{" "}
+                    ({percentage}%)
                   </span>
                 );
               }}
