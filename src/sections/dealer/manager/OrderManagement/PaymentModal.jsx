@@ -97,7 +97,7 @@ export default function PaymentModal({ isOpen, onClose, order }) {
         const successResponse = await paymentSuccess(orderId, statusToUpdate);
 
         if (successResponse && successResponse.status === 200) {
-          toast.success("Thanh toán và cập nhật trạng thái thành công!", {
+          toast.success("Thanh toán thành công!", {
             position: "top-right",
             autoClose: 3000,
           });

@@ -16,6 +16,10 @@ const getCustomerOrders = (id) => {
   return axiosClient.get(`/api/orders/dealer/${id}`);
 };
 
+const getOrderById = (id) => {
+  return axiosClient.get(`/api/orders/${id}`);
+}
+
 const getCustomerOrderById = (id) => {
   return axiosClient.get(`/api/orders/${id}/details`);
 };
@@ -32,4 +36,5 @@ export {
   getCustomer,
   getCustomerById,
   CancelCustomerOrderById,
+  getOrderById,
 };

@@ -4,6 +4,7 @@ import {
   getUserById,
   createDealerStaff,
   deleteDealerStaff,
+  updateDealerStaff,
 } from "../api/dealerStaff";
 
 const useDealerStaff = create((set) => ({
@@ -67,9 +68,23 @@ const useDealerStaff = create((set) => ({
     }
   },
 
-  updateStaff: async () => {
-    toast.info("Cập nhật nhân viên hiện chưa được hỗ trợ bởi API.");
-    return Promise.reject(new Error("Not supported"));
+  updateStaff: async (payload) => {
+   try {
+      set({ isLoading: true });
+      const { staffId, userId, ...body } = payload;
+      const id = staffId ?? userId;
+      if (!id) {
+        throw new Error("Missing staffId/userId in payload");
+      }
+
+      const res = await updateDealerStaff(id, body);
+      set({ isLoading: false });
+      return res?.data;
+    } catch (err) {
+      console.error("Error updating staff:", err);
+      set({ isLoading: false });
+      throw err;
+    }
   },
 }));
 

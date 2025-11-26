@@ -11,7 +11,7 @@ const RequestStatusChart = ({ data }) => {
   }));
 
   // Colors for different status
-  const COLORS = ["#faad14", "#1890ff", "#52c41a", "#722ed1", "#f5222d"];
+  const COLORS = ["#52c41a", "#1890ff", "#52c41a", "#722ed1", "#f5222d"];
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {

@@ -45,14 +45,19 @@ const useVehicleStore = create((set) => ({
   },
 
   vehicleDetail: {},
+  isLoadingVehicleById: false,
   fetchVehicleById: async (id) => {
     try {
-      set({ isLoading: true });
+      set({ isLoading: true, isLoadingVehicleById: true });
       const response = await getVehicleById(id);
-      set({ isLoading: false, vehicleDetail: response.data.data });
+      set({
+        isLoading: false,
+        isLoadingVehicleById: false,
+        vehicleDetail: response.data.data,
+      });
       return response.data.data;
     } catch (error) {
-      set({ isLoading: false });
+      set({ isLoading: false, isLoadingVehicleById: false });
       return null;
     }
   },

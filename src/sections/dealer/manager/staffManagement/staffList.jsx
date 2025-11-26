@@ -17,9 +17,11 @@ import {
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
-import useDealerStaff from "../../../../hooks/useDealerStaff"; // <- store mới
-import useAuthen from "../../../../hooks/useAuthen"; // <- lấy dealerId
+
+import useDealerStaff from "../../../../hooks/useDealerStaff";
+import useAuthen from "../../../../hooks/useAuthen"; 
 import CreateStaffModal from "./createStaffModal";
+import EditStaffModal from "./editStaffModal";
 import { toast } from "react-toastify";
 
 const { Title } = Typography;
@@ -277,6 +279,17 @@ export default function StaffList() {
       <CreateStaffModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => dealerId && fetchStaffs(dealerId)}
+      />
+
+      {/* Edit Staff Modal */}
+      <EditStaffModal
+        isOpen={isEditModalOpen}
+        staff={selectedStaff}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedStaff(null);
+        }}
         onSuccess={() => dealerId && fetchStaffs(dealerId)}
       />
     </div>
