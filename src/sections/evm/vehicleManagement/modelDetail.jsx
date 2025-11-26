@@ -26,8 +26,13 @@ const { TextArea } = Input;
 const ModelDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { modelDetail, isLoading, fetchModelById, updateModel, deleteModelById } =
-    useModelStore();
+  const {
+    modelDetail,
+    isLoading,
+    fetchModelById,
+    updateModel,
+    deleteModelById,
+  } = useModelStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,6 +49,9 @@ const ModelDetail = () => {
       form.setFieldsValue({
         name: modelDetail.name || "",
         description: modelDetail.description || "",
+        body_type: modelDetail.body_type || "",
+        year: modelDetail.year || "",
+        manufacturer: modelDetail.manufacturer || "",
       });
     }
   }, [modelDetail, isEditModalOpen, form]);
@@ -177,6 +185,15 @@ const ModelDetail = () => {
           <Descriptions.Item label="Tên Model">
             <strong>{modelDetail.name}</strong>
           </Descriptions.Item>
+          <Descriptions.Item label="Kiểu dáng">
+            {modelDetail.body_type || "Không xác định"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Hãng Xe">
+            {modelDetail.manufacturer || "Không xác định"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Năm Sản Xuất">
+            {modelDetail.year || "Không xác định"}
+          </Descriptions.Item>
           <Descriptions.Item label="Mô Tả">
             {modelDetail.description || "Không có mô tả"}
           </Descriptions.Item>
@@ -200,11 +217,36 @@ const ModelDetail = () => {
             label="Tên Model"
             rules={[{ required: true, message: "Vui lòng nhập tên model" }]}
           >
-            <Input placeholder="Ví dụ: Toyota Vios" />
+            <Input placeholder="Ví dụ: VF 8" />
           </Form.Item>
 
-          <Form.Item name="description" label="Mô Tả">
-            <TextArea
+          <Form.Item
+            name="body_type"
+            label="Kiểu dáng"
+            rules={[{ required: true, message: "Vui lòng nhập kiểu dáng" }]}
+          >
+            <Input placeholder="Ví dụ: SUV, Sedan, Hatchback" />
+          </Form.Item>
+
+          <Form.Item
+            name="year"
+            label="Năm sản xuất"
+            rules={[{ required: true, message: "Vui lòng nhập năm sản xuất" }]}
+          >
+            <Input
+              type="number"
+              placeholder="Ví dụ: 2024"
+              min={1900}
+              max={2100}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Mô Tả"
+            rules={[{ required: false }]}
+          >
+            <Input.TextArea
               rows={4}
               placeholder="Nhập mô tả chi tiết về model xe"
             />
@@ -225,8 +267,8 @@ const ModelDetail = () => {
         confirmLoading={isDeleting}
       >
         <p>
-          Bạn có chắc chắn muốn xóa model{" "}
-          <strong>{modelDetail?.name}</strong> không?
+          Bạn có chắc chắn muốn xóa model <strong>{modelDetail?.name}</strong>{" "}
+          không?
         </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>

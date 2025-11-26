@@ -233,6 +233,11 @@ const UserProfile = () => {
                           required: true,
                           message: "Vui lòng nhập số điện thoại",
                         },
+                        {
+                          pattern: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/,
+                          message:
+                            "SĐT không hợp lệ! (VD: 0901234567 hoặc +84901234567)",
+                        },
                       ]}
                     >
                       <Input prefix={<PhoneOutlined />} />
@@ -301,7 +306,11 @@ const UserProfile = () => {
         <Tabs defaultActiveKey="security">
           <TabPane tab="Bảo mật" key="security">
             <Card title="Thay đổi mật khẩu" bordered={false}>
-              <Form form={passwordForm} layout="vertical" onFinish={handlePasswordChange}>
+              <Form
+                form={passwordForm}
+                layout="vertical"
+                onFinish={handlePasswordChange}
+              >
                 <Form.Item
                   label="Mật khẩu hiện tại"
                   name="currentPassword"

@@ -18,6 +18,7 @@ export default function CreateDealerManagerModal({
       const managerData = {
         dealerId: dealerId,
         username: values.username,
+        email: values.email,
         password: values.password,
       };
       console.log("Manager Data:", managerData);
@@ -31,7 +32,7 @@ export default function CreateDealerManagerModal({
       });
 
       form.resetFields();
-      onClose();
+      onClose(true);
     } catch (error) {
       console.error("Error creating dealer manager account:", error);
       toast.error(
@@ -78,6 +79,17 @@ export default function CreateDealerManagerModal({
           ]}
         >
           <Input placeholder="Nhập tên đăng nhập" size="large" />
+        </Form.Item>
+
+        <Form.Item
+          name="email"
+          label="Email"
+          rules={[
+            { required: true, message: "Vui lòng nhập email!" },
+            { type: "email", message: "Email không hợp lệ!" },
+          ]}
+        >
+          <Input placeholder="Nhập email" size="large" />
         </Form.Item>
 
         <Form.Item

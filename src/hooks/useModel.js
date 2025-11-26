@@ -38,18 +38,18 @@ const useModelStore = create((set) => ({
       console.log("Error", error);
     }
   },
-
+  isCreateModelLoading: false,
   createModel: async (data) => {
     try {
-      set({ isLoading: true });
+      set({ isCreateModelLoading: true });
       const response = await createModel(data);
       console.log("check response", response);
       if (response && response.status === 200) {
-        set({ isLoading: false });
-        return response;
+        set({ isCreateModelLoading: false });
       }
+      return response;
     } catch (error) {
-      set({ isLoading: false });
+      set({ isCreateModelLoading: false });
       console.error("Error creating model:", error);
       throw error;
     }

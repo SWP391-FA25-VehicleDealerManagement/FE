@@ -9,19 +9,25 @@ import {
   createVehicleVariantDetails,
   updateVehicleVariantDetails,
 } from "../api/vehicleVariant";
+import { toast } from "react-toastify";
 
 const useVariantStore = create((set) => ({
   variants: [],
   isLoading: false,
+  isLoadingVariantList: false,
   fetchVariants: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, isLoadingVariantList: true });
     try {
       const response = await getVehicleVariants();
-      set({ variants: response.data.data, isLoading: false });
+      set({
+        variants: response.data.data,
+        isLoading: false,
+        isLoadingVariantList: false,
+      });
     } catch (error) {
       console.error("Failed to fetch variants:", error);
-    } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, isLoadingVariantList: false });
+      throw error;
     }
   },
 

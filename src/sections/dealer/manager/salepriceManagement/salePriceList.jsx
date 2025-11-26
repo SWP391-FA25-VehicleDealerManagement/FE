@@ -201,13 +201,10 @@ export default function SalePriceList() {
       }
     } catch (error) {
       console.error("Error deleting sale price:", error);
-      toast.error(
-        error.response?.data?.message || "Xóa giá bán thất bại",
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
+      toast.error(error.response?.data?.message || "Xóa giá bán thất bại", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -248,7 +245,11 @@ export default function SalePriceList() {
           >
             Tìm
           </Button>
-          <Button onClick={() => clearFilters()} size="small" style={{ width: 90 }}>
+          <Button
+            onClick={() => clearFilters()}
+            size="small"
+            style={{ width: 90 }}
+          >
             Xóa
           </Button>
         </Space>
@@ -275,20 +276,16 @@ export default function SalePriceList() {
       sorter: (a, b) => a.salepriceId - b.salepriceId,
     },
     {
+      title: "Mẫu xe",
+      dataIndex: "modelName",
+      key: "modelName",
+      ...getColumnSearchProps("modelName"),
+    },
+    {
       title: "Phiên bản xe",
       dataIndex: "variantName",
       key: "variantName",
       ...getColumnSearchProps("variantName"),
-      render: (text, record) => {
-        const modelName = record.variant?.model?.name || "N/A";
-        const variantName = record.variant?.name || "";
-        return (
-          <div>
-            <div className="font-semibold">{modelName}</div>
-            <div className="text-sm text-gray-500">{variantName}</div>
-          </div>
-        );
-      },
     },
     {
       title: "Giá gốc (MSRP)",
@@ -312,8 +309,7 @@ export default function SalePriceList() {
       title: "Ngày áp dụng",
       dataIndex: "effectiveDate",
       key: "effectiveDate",
-      render: (date) =>
-        date ? dayjs(date).format("DD/MM/YYYY") : "N/A",
+      render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "N/A"),
       sorter: (a, b) => {
         if (!a.effectiveDate) return -1;
         if (!b.effectiveDate) return 1;
@@ -441,6 +437,9 @@ export default function SalePriceList() {
               style={{ width: "100%" }}
               format="DD/MM/YYYY"
               placeholder="Chọn ngày áp dụng"
+              disabledDate={(current) =>
+                current && current < dayjs().startOf("day")
+              }
             />
           </Form.Item>
         </Form>
@@ -487,6 +486,9 @@ export default function SalePriceList() {
               style={{ width: "100%" }}
               format="DD/MM/YYYY"
               placeholder="Chọn ngày áp dụng"
+              disabledDate={(current) =>
+                current && current < dayjs().startOf("day")
+              }
             />
           </Form.Item>
         </Form>
@@ -506,8 +508,8 @@ export default function SalePriceList() {
         <p>
           Bạn có chắc chắn muốn xóa giá bán cho{" "}
           <strong>
-            {selectedSalePrice?.variant?.model?.name || "N/A"} -{" "}
-            {selectedSalePrice?.variant?.name || ""}
+            {selectedSalePrice?.modelName || "N/A"} -{" "}
+            {selectedSalePrice?.variantName || "N/A"}
           </strong>{" "}
           không?
         </p>

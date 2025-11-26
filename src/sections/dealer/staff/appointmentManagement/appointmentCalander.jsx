@@ -904,8 +904,7 @@ export default function WeeklyCalendar() {
 
               {/* Hiện nút Đổi lịch và Hủy lịch nếu chưa qua giờ và chưa hoàn thành/hủy */}
               {selectedAppointment &&
-                (selectedAppointment.status === "SCHEDULED" ||
-                  selectedAppointment.status === "CONFIRMED") &&
+                selectedAppointment.status !== "COMPLETED" &&
                 dayjs(selectedAppointment.scheduledDate).isAfter(dayjs()) && (
                   <>
                     <Button

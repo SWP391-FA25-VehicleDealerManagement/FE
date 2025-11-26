@@ -23,7 +23,6 @@ import {
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import useDealerDebt from "../../../hooks/useDealerDebt";
-import useDealerStore from "../../../hooks/useDealer";
 import useAuthen from "../../../hooks/useAuthen";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -38,7 +37,6 @@ export default function DeaerDebtDetail() {
     dealerDebtById,
     isLoadingDealerDebtById,
     fetchDealerDebtById,
-    clearDealerDebtById,
     debtSchedules,
     isLoadingDebtSchedules,
     fetchDebtSchedules,
@@ -52,23 +50,16 @@ export default function DeaerDebtDetail() {
     isLoadingConfirmPayment,
     isLoadingRejectPayment,
   } = useDealerDebt();
-  const {
-    fetchDealers,
-    dealers,
-    isLoading: isDealerLoading,
-  } = useDealerStore();
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [currentPayment, setCurrentPayment] = useState(null);
   const [rejectForm] = Form.useForm();
-  const [confirmForm] = Form.useForm();
 
   useEffect(() => {
     if (debtId) {
       fetchDealerDebtById(debtId);
       fetchDebtSchedules(debtId);
       fetchPaymentHistory(debtId);
-      fetchDealers();
     }
     return () => {
       clearDebtSchedules();
@@ -79,25 +70,23 @@ export default function DeaerDebtDetail() {
     fetchDealerDebtById,
     fetchDebtSchedules,
     fetchPaymentHistory,
-    fetchDealers,
     clearDebtSchedules,
     clearPaymentHistory,
   ]);
 
   const selectedDebt = useMemo(() => {
-    if (!dealerDebtById || !dealers || dealers.length === 0) return null;
+    if (!dealerDebtById) return null;
 
-    const dealer = dealers.find(
-      (d) => d.dealerId === Number(dealerDebtById.dealerId)
-    );
+    // Sử dụng dealer từ userDetail hoặc từ dealerDebtById
+    const dealer = dealerDebtById.dealer || userDetail?.dealer;
 
     return {
       ...dealerDebtById,
       dealerName: dealer ? dealer.dealerName : "Không tìm thấy",
-      phone: dealer ? dealer.phone : "N/A",
+      phone: dealer ? dealer.phone || dealer.phoneNumber : "N/A",
       address: dealer ? dealer.address : "N/A",
     };
-  }, [dealerDebtById, dealers]);
+  }, [dealerDebtById, userDetail]);
 
   const handleShowConfirmModal = (paymentRecord) => {
     setCurrentPayment(paymentRecord); //
@@ -188,14 +177,6 @@ export default function DeaerDebtDetail() {
       render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
     },
     {
-      title: "Lãi",
-      dataIndex: "interest",
-      key: "interest",
-      width: 100,
-      align: "right",
-      render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
-    },
-    {
       title: "Tổng kỳ",
       dataIndex: "installment",
       key: "installment",
@@ -226,6 +207,14 @@ export default function DeaerDebtDetail() {
           "vi-VN"
         )} đ`}</Text>
       ),
+    },
+    {
+      title: "Quá hạn",
+      dataIndex: "overdue",
+      key: "overdue",
+      width: 100,
+      render: (overdue) =>
+        overdue ? <Tag color="error">Quá hạn</Tag> : <Tag>Không</Tag>,
     },
     {
       title: "Trạng thái",
@@ -333,25 +322,20 @@ export default function DeaerDebtDetail() {
     },
   ];
 
-  const isLoading =
-    isLoadingDealerDebtById || isLoadingDebtSchedules || isDealerLoading;
+  const isLoading = isLoadingDealerDebtById || isLoadingDebtSchedules;
 
   const handleRefresh = () => {
     if (debtId) {
       fetchDealerDebtById(debtId);
       fetchDebtSchedules(debtId);
       fetchPaymentHistory(debtId);
-      fetchDealers();
     }
   };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <Button
-          onClick={() => navigate(-1)}
-          icon={<LeftOutlined />}
-        >
+        <Button onClick={() => navigate(-1)} icon={<LeftOutlined />}>
           Quay lại danh sách
         </Button>
         <Button
@@ -375,15 +359,14 @@ export default function DeaerDebtDetail() {
               <Card title="Thông tin đại lý" size="small">
                 <Descriptions bordered column={2} size="small">
                   <Descriptions.Item label="Tên đại lý">
-                    <Text strong>{selectedDebt.dealer?.dealerName || "N/A"}</Text>
+                    <Text strong>
+                      {selectedDebt.dealer?.dealerName || "N/A"}
+                    </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Số điện thoại">
-                    {selectedDebt.dealer?.phoneNumber || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Số phiếu nhập">
-                    <Tag color="blue">
-                      {selectedDebt.invoiceNumber || `#${selectedDebt.debtId}`}
-                    </Tag>
+                    {selectedDebt.dealer?.phoneNumber ||
+                      selectedDebt.dealer?.phone ||
+                      "N/A"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Địa chỉ" span={2}>
                     {selectedDebt.dealer?.address || "N/A"}
@@ -420,7 +403,7 @@ export default function DeaerDebtDetail() {
                       đ
                     </Text>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái" span={2}>
+                  <Descriptions.Item label="Trạng thái">
                     <Tag
                       color={
                         selectedDebt.overdue && selectedDebt.status !== "PAID"
@@ -442,6 +425,28 @@ export default function DeaerDebtDetail() {
                         ? "Quá hạn"
                         : selectedDebt.status}
                     </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Loại công nợ">
+                    <Tag color="purple">
+                      {selectedDebt.debtType === "DEALER_DEBT"
+                        ? "Công nợ Dealer"
+                        : selectedDebt.debtType === "CUSTOMER_DEBT"
+                        ? "Công nợ Khách hàng"
+                        : selectedDebt.debtType}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Phương thức thanh toán">
+                    {selectedDebt.paymentMethod === "CASH"
+                      ? "Tiền mặt"
+                      : selectedDebt.paymentMethod === "BANK_TRANSFER"
+                      ? "Chuyển khoản"
+                      : selectedDebt.paymentMethod}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ngày tạo">
+                    {dayjs(selectedDebt.createdDate).format("DD/MM/YYYY HH:mm")}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ngày cập nhật">
+                    {dayjs(selectedDebt.updatedDate).format("DD/MM/YYYY HH:mm")}
                   </Descriptions.Item>
                 </Descriptions>
               </Card>

@@ -36,27 +36,19 @@ const useDealerStore = create((set) => ({
       set({ isLoading: false });
     }
   },
-
+  isLoadingDelete: false,
   deleteDealer: async (id) => {
     try {
-      set({ isLoading: true });
+      set({ isLoadingDelete: true });
       const response = await deleteDealer(id);
       if (response && response.status === 200) {
-        set({ isLoading: false });
-        toast.success("Xoá đại lý thành công", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-        });
+        set({ isLoadingDelete: false });
       }
+      return response;
     } catch (error) {
       console.error("Error deleting dealer:", error);
-      toast.error(error.response.data.message || "Failed to delete dealer", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-      set({ isLoading: false });
+
+      set({ isLoadingDelete: false });
     }
   },
 
@@ -90,8 +82,6 @@ const useDealerStore = create((set) => ({
       throw error;
     }
   },
-
-
 }));
 
 export default useDealerStore;

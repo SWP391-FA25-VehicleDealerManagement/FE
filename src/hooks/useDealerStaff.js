@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import { getDealerStaffByDealerId, getUserById, createDealerStaff } from "../api/dealerStaff";
+import {
+  getDealerStaffByDealerId,
+  getUserById,
+  createDealerStaff,
+  deleteDealerStaff,
+} from "../api/dealerStaff";
 
 const useDealerStaff = create((set) => ({
   staffs: [],
@@ -33,10 +38,20 @@ const useDealerStaff = create((set) => ({
     }
   },
 
-  // Các API chưa có backend — giữ stub để không vỡ UI
-  deleteStaff: async () => {
-    toast.info("Xoá nhân viên hiện chưa được hỗ trợ bởi API.");
-    return Promise.reject(new Error("Not supported"));
+  isLoadingDeleteStaff: false,
+  deleteStaff: async (userId) => {
+    try {
+      set({ isLoadingDeleteStaff: true });
+      const response = await deleteDealerStaff(userId);
+      if (response && response.status === 200) {
+        set({ isLoadingDeleteStaff: false });
+      }
+      return response;
+    } catch (err) {
+      console.error("Error deleting staff:", err);
+      set({ isLoadingDeleteStaff: false });
+      throw err;
+    }
   },
 
   createStaff: async (payload) => {

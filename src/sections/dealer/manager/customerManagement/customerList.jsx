@@ -33,12 +33,19 @@ export default function CustomerList() {
   };
 
   const getColSearch = (dataIndex) => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }) => (
       <div style={{ padding: 8 }}>
         <Input
           placeholder={`Tìm ${dataIndex}`}
           value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
           onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
           style={{ marginBottom: 8, display: "block" }}
         />
@@ -52,19 +59,33 @@ export default function CustomerList() {
           >
             Tìm kiếm
           </Button>
-          <Button onClick={() => handleReset(clearFilters)} size="small" style={{ width: 90 }}>
+          <Button
+            onClick={() => handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
             Đặt lại
           </Button>
         </Space>
       </div>
     ),
-    filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />,
+    filterIcon: (filtered) => (
+      <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
+    ),
     onFilter: (value, record) =>
-      record[dataIndex]?.toString()?.toLowerCase().includes(value.toLowerCase()),
+      record[dataIndex]
+        ?.toString()
+        ?.toLowerCase()
+        .includes(value.toLowerCase()),
   });
 
   const columns = [
-    { title: "ID", dataIndex: "customerId", key: "customerId", sorter: (a, b) => a.customerId - b.customerId },
+    {
+      title: "ID",
+      dataIndex: "customerId",
+      key: "customerId",
+      sorter: (a, b) => a.customerId - b.customerId,
+    },
     {
       title: "Tên khách hàng",
       dataIndex: "customerName",
@@ -72,20 +93,23 @@ export default function CustomerList() {
       ...getColSearch("customerName"),
       sorter: (a, b) => a.customerName.localeCompare(b.customerName),
     },
-    { title: "Số điện thoại", dataIndex: "phone", key: "phone", ...getColSearch("phone") },
-    { title: "Email", dataIndex: "email", key: "email", ...getColSearch("email") },
     {
-      title: "Thao tác",
-      key: "action",
-      render: (_, record) => (
-        <Space size="middle">
-          <Link to={`/dealer-manager/customer-list/${record.customerId}`}>
-            <Button type="primary" icon={<EyeOutlined />} size="small">
-              Xem
-            </Button>
-          </Link>
-        </Space>
-      ),
+      title: "Số điện thoại",
+      dataIndex: "phone",
+      key: "phone",
+      ...getColSearch("phone"),
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      ...getColSearch("email"),
+    },
+    {
+      title: "Tạo bởi",
+      dataIndex: "createBy",
+      key: "createBy",
+      ...getColSearch("createBy"),
     },
   ];
 
@@ -108,7 +132,8 @@ export default function CustomerList() {
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
-              showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} của ${total} mục`,
             }}
           />
         )}

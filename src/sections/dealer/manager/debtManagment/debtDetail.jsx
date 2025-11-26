@@ -19,6 +19,7 @@ import {
   FileTextOutlined,
   CreditCardOutlined,
   LeftOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -105,7 +106,9 @@ export default function DebtDetailPage() {
       const response = await makePayment(debtId, paymentData);
 
       if (response && response.status === 200) {
-        toast.success("Thanh toán thành công!", { autoClose: 2000 });
+        toast.success(response.data.message || "Thanh toán thành công!", {
+          autoClose: 2000,
+        });
         handleClosePaymentModal();
         fetchDebtSchedules(debtId);
         fetchPaymentHistory(debtId);
@@ -113,7 +116,11 @@ export default function DebtDetailPage() {
       }
     } catch (error) {
       console.error("Error making payment:", error);
-      toast.error("Thanh toán thất bại. Vui lòng thử lại.");
+      toast.error(
+        error.response?.data?.message ||
+          "Thanh toán thất bại. Vui lòng thử lại.",
+        { autoClose: 2000 }
+      );
     }
   };
 
@@ -145,14 +152,6 @@ export default function DebtDetailPage() {
       dataIndex: "principal",
       key: "principal",
       width: 130,
-      align: "right",
-      render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
-    },
-    {
-      title: "Lãi",
-      dataIndex: "interest",
-      key: "interest",
-      width: 120,
       align: "right",
       render: (val) => `${(val || 0).toLocaleString("vi-VN")} đ`,
     },
@@ -219,29 +218,66 @@ export default function DebtDetailPage() {
         overdue ? <Tag color="error">Quá hạn</Tag> : <Tag>Không</Tag>,
     },
     {
-      title: "Ghi chú",
-      dataIndex: "notes",
-      key: "notes",
-      width: 150,
-      render: (text) => text || "N/A",
-    },
-    {
       title: "Thao tác",
       key: "action",
       fixed: "right",
       width: 120,
-      render: (_, record) =>
-        record.status !== "PAID" && (record.remainingAmount || 0) > 0 ? (
-          <Button
-            type="primary"
-            size="small"
-            style={{ backgroundColor: "green", borderColor: "green" }}
-            icon={<CreditCardOutlined />}
-            onClick={() => showPaymentModal(record)}
-          >
-            Thanh toán
-          </Button>
-        ) : null,
+      render: (_, record) => {
+        // 1. Kỳ hiện tại chưa PAID
+        // 2. Tất cả các kỳ trước đó đã PAID (hoặc đây là kỳ đầu tiên)
+        const canPay = record.status !== "PAID" && (record.remainingAmount || 0) > 0;
+        
+        // Kiểm tra xem tất cả các kỳ trước đã thanh toán chưa
+        const allPreviousPaid = debtSchedules
+          .filter((s) => s.periodNo < record.periodNo)
+          .every((s) => s.status === "PAID");
+        
+        // ✅ Kiểm tra xem kỳ này có payment PENDING nào không
+        const hasPendingPayment = paymentHistory?.some(
+          (payment) =>
+            (payment.debtSchedule?.scheduleId === record.scheduleId ||
+             payment.scheduleId === record.scheduleId) &&
+            payment.status === "PENDING"
+        );
+        
+        // Nếu có payment đang chờ duyệt, hiển thị thông báo
+        if (hasPendingPayment) {
+          return (
+            <Tag color="orange" icon={<ClockCircleOutlined />}>
+              Chờ duyệt
+            </Tag>
+          );
+        }
+        
+        // Chỉ hiển thị nút thanh toán nếu đủ điều kiện
+        if (canPay && allPreviousPaid) {
+          return (
+            <Button
+              type="primary"
+              size="small"
+              style={{ backgroundColor: "green", borderColor: "green" }}
+              icon={<CreditCardOutlined />}
+              onClick={() => showPaymentModal(record)}
+            >
+              Thanh toán
+            </Button>
+          );
+        }
+        
+        // Nếu kỳ này chưa tới lượt (các kỳ trước chưa thanh toán hết)
+        if (canPay && !allPreviousPaid) {
+          return (
+            <Button
+              size="small"
+              disabled
+              title="Vui lòng thanh toán các kỳ trước"
+            >
+              Chưa đến
+            </Button>
+          );
+        }
+        return null;
+      },
     },
   ];
 
@@ -363,36 +399,97 @@ export default function DebtDetailPage() {
           Chi tiết công nợ - Mã #{dealerDebtById?.debtId || debtId}
         </Title>
         {dealerDebtById && (
-          <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Tổng tiền">
-              <Text strong style={{ fontSize: 16 }}>
-                {dealerDebtById.amountDue?.toLocaleString("vi-VN")} đ
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Đã thanh toán">
-              <Text type="success" strong style={{ fontSize: 16 }}>
-                {dealerDebtById.amountPaid?.toLocaleString("vi-VN")} đ
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Còn nợ">
-              <Text type="danger" strong style={{ fontSize: 18 }}>
-                {dealerDebtById.remainingAmount?.toLocaleString("vi-VN")} đ
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag
-                color={
-                  dealerDebtById.overdue && dealerDebtById.status !== "PAID"
-                    ? "error"
-                    : "default"
-                }
-              >
-                {dealerDebtById.overdue && dealerDebtById.status !== "PAID"
-                  ? "Quá hạn"
-                  : dealerDebtById.status}
-              </Tag>
-            </Descriptions.Item>
-          </Descriptions>
+          <>
+            {/* Thông tin Dealer */}
+            {dealerDebtById.dealer && (
+              <Card title="Thông tin Dealer" size="small" className="mb-4">
+                <Descriptions bordered column={2} size="small">
+                  <Descriptions.Item label="Tên Dealer">
+                    <Text strong>
+                      {dealerDebtById.dealer?.dealerName || "N/A"}
+                    </Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Số điện thoại">
+                    {dealerDebtById.dealer?.phoneNumber || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Địa chỉ">
+                    {dealerDebtById.dealer?.address || "N/A"}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            )}
+            {/* Thông tin công nợ */}
+            <Card title="Thông tin công nợ" size="small">
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="Tổng tiền">
+                  <Text strong style={{ fontSize: 16 }}>
+                    {dealerDebtById.amountDue?.toLocaleString("vi-VN")} đ
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Đã thanh toán">
+                  <Text type="success" strong style={{ fontSize: 16 }}>
+                    {dealerDebtById.amountPaid?.toLocaleString("vi-VN")} đ
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Còn nợ">
+                  <Text type="danger" strong style={{ fontSize: 18 }}>
+                    {dealerDebtById.remainingAmount?.toLocaleString("vi-VN")} đ
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái">
+                  <Tag
+                    color={
+                      dealerDebtById.overdue && dealerDebtById.status !== "PAID"
+                        ? "error"
+                        : dealerDebtById.status === "PAID"
+                        ? "success"
+                        : dealerDebtById.status === "ACTIVE"
+                        ? "processing"
+                        : "default"
+                    }
+                  >
+                    {dealerDebtById.overdue && dealerDebtById.status !== "PAID"
+                      ? "Quá hạn"
+                      : dealerDebtById.status === "PAID"
+                      ? "Đã thanh toán"
+                      : dealerDebtById.status === "ACTIVE"
+                      ? "Đang hoạt động"
+                      : dealerDebtById.status === "OVERDUE"
+                      ? "Quá hạn"
+                      : dealerDebtById.status}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Loại công nợ">
+                  <Tag color="purple">
+                    {dealerDebtById.debtType === "DEALER_DEBT"
+                      ? "Công nợ Dealer"
+                      : dealerDebtById.debtType === "CUSTOMER_DEBT"
+                      ? "Công nợ Khách hàng"
+                      : dealerDebtById.debtType}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày bắt đầu">
+                  {dayjs(dealerDebtById.startDate).format("DD/MM/YYYY")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày đến hạn">
+                  {dayjs(dealerDebtById.dueDate).format("DD/MM/YYYY")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Phương thức thanh toán">
+                  {dealerDebtById.paymentMethod === "CASH"
+                    ? "Tiền mặt"
+                    : dealerDebtById.paymentMethod === "BANK_TRANSFER"
+                    ? "Chuyển khoản"
+                    : dealerDebtById.paymentMethod}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày tạo">
+                  {dayjs(dealerDebtById.createdDate).format("DD/MM/YYYY HH:mm")}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày cập nhật">
+                  {dayjs(dealerDebtById.updatedDate).format("DD/MM/YYYY HH:mm")}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </>
         )}
 
         {/* 2. Bảng Lịch trả nợ */}

@@ -19,6 +19,7 @@ import {
   FileTextOutlined,
   SearchOutlined,
   CheckCircleOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import useContract from "../../../../../hooks/useContract";
 import useAuthen from "../../../../../hooks/useAuthen";
@@ -39,11 +40,15 @@ export default function CustomerContractList() {
     fetchOrderList,
     createNewContract,
     isLoadingCreateContract,
+    deleteExistingContract,
+    isLoadingDeleteContract,
   } = useContract();
 
   const [searchText, setSearchText] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState(null);
   const [form] = Form.useForm();
 
   const dealerId = userDetail?.dealer?.dealerId;
@@ -86,6 +91,29 @@ export default function CustomerContractList() {
     } catch (error) {
       toast.error(error.response?.data?.message || "Tạo hợp đồng thất bại!");
     }
+  };
+
+  const handleDeleteClick = (contract) => {
+    setSelectedContract(contract);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteContract = async () => {
+    try {
+      const response = await deleteExistingContract(selectedContract.contractId);
+      if (response && response.status === 200) {
+        toast.success("Xóa hợp đồng thành công!");
+        if (dealerId) {
+          fetchContractList(dealerId);
+        }
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Xóa hợp đồng thất bại!"
+      );
+    }
+    setIsDeleteModalOpen(false);
+    setSelectedContract(null);
   };
 
   const getStatusColor = (status) => {
@@ -201,7 +229,7 @@ export default function CustomerContractList() {
     {
       title: "Thao tác",
       key: "action",
-      width: "15%",
+      width: "20%",
       fixed: "right",
       render: (_, record) => (
         <Space>
@@ -215,9 +243,18 @@ export default function CustomerContractList() {
             Chi tiết
           </Button>
           {record.status === "DRAFT" && (
-            <Tag color="orange" icon={<CheckCircleOutlined />}>
-              Chờ duyệt
-            </Tag>
+            <>
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteClick(record)}
+              >
+                Xóa
+              </Button>
+              <Tag color="orange" icon={<CheckCircleOutlined />}>
+                Chờ duyệt
+              </Tag>
+            </>
           )}
         </Space>
       ),
@@ -423,6 +460,26 @@ export default function CustomerContractList() {
             </Form.Item>
           </Form>
         </Spin>
+      </Modal>
+
+      {/* Modal xác nhận xóa */}
+      <Modal
+        title="Xác nhận xóa hợp đồng"
+        open={isDeleteModalOpen}
+        onOk={handleDeleteContract}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedContract(null);
+        }}
+        okText="Xóa"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true, loading: isLoadingDeleteContract }}
+      >
+        <p>
+          Bạn có chắc chắn muốn xóa hợp đồng{" "}
+          <strong>#{selectedContract?.contractNumber}</strong> không?
+        </p>
+        <p className="text-red-500">Hành động này không thể hoàn tác!</p>
       </Modal>
     </div>
   );

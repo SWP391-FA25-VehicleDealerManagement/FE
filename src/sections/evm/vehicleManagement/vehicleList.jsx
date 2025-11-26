@@ -182,7 +182,7 @@ export default function VehicleList() {
   const handleAddSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+
       // Validate file upload
       if (fileList.length === 0) {
         toast.error("Vui lòng chọn hình ảnh xe", {
@@ -196,6 +196,7 @@ export default function VehicleList() {
       const formData = new FormData();
       formData.append("variantId", values.variantId);
       formData.append("color", values.color);
+      formData.append("vinNumber ", values.vinNumber);
       formData.append("file", fileList[0].originFileObj);
 
       const response = await createNewVehicle(formData);
@@ -211,10 +212,13 @@ export default function VehicleList() {
         });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Thêm phương tiện thất bại", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(
+        error.response?.data?.message || "Thêm phương tiện thất bại",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
     }
   };
 
@@ -572,7 +576,7 @@ export default function VehicleList() {
               }
               loading={!variants.length}
               showSearch
-              disabled={!selectedModelId} 
+              disabled={!selectedModelId}
               filterOption={(input, option) =>
                 (option?.children ?? "")
                   .toLowerCase()
@@ -598,8 +602,15 @@ export default function VehicleList() {
           >
             <Input placeholder="Nhập màu sắc xe" />
           </Form.Item>
+          {/* === BƯỚC 4: Nhập Vin number === */}
+          <Form.Item
+            name="vinNumber"
+            label="Vin number"
+            rules={[{ required: true, message: "Vui lòng nhập Vin number" }]}
+          >
+            <Input placeholder="Nhập Vin number xe" />
+          </Form.Item>
 
-          {/* === BƯỚC 4: TẢI ẢNH XE === */}
           <Form.Item
             label="Hình ảnh xe"
             required

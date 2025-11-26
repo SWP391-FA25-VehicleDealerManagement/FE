@@ -83,8 +83,9 @@ export default function CreateDealerModal({ isOpen, onClose, onSuccess }) {
               rules={[
                 { required: true, message: "Vui lòng nhập số điện thoại!" },
                 {
-                  pattern: /^[0-9+\-\s()]+$/,
-                  message: "Số điện thoại không hợp lệ!",
+                  pattern: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/,
+                  message:
+                    "SĐT không hợp lệ! (VD: 0901234567 hoặc +84901234567)",
                 },
               ]}
             >

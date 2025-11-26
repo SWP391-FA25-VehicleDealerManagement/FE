@@ -100,7 +100,13 @@ export default function CreateEvmStaffModal({ isOpen, onClose, onSuccess }) {
         <Form.Item
           name="phone"
           label="Số điện thoại"
-          rules={[{ required: true }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập số điện thoại!" },
+            {
+              pattern: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/,
+              message: "SĐT không hợp lệ! (VD: 0901234567 hoặc +84901234567)",
+            },
+          ]}
         >
           <Input />
         </Form.Item>

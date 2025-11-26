@@ -18,6 +18,7 @@ import {
 import useEvmStaffStore from "../../../hooks/useEvmStaff";
 import CreateEvmStaffModal from "./createEvmStaffModal";
 import UpdateEvmStaffModal from "./updateEvmStaffModal";
+import { toast } from "react-toastify";
 
 const { Title } = Typography;
 
@@ -50,7 +51,12 @@ export default function EvmStaffList() {
     setSearchText("");
   };
   const getColSearch = (dataIndex) => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }) => (
       <div style={{ padding: 8 }}>
         <Input
           placeholder={`Tìm ${dataIndex}`}
@@ -224,6 +230,15 @@ export default function EvmStaffList() {
         onOk={async () => {
           try {
             await deleteEvmStaff(getRowId(selected));
+            toast.success("Xóa nhân viên EVM thành công", {
+              position: "top-right",
+              autoClose: 2500,
+            });
+          } catch (e) {
+            toast.error(
+              e?.response?.data?.message || "Xóa nhân viên thất bại",
+              { autoClose: 3000 }
+            );
           } finally {
             setIsDeleteOpen(false);
             setSelected(null);
@@ -240,8 +255,7 @@ export default function EvmStaffList() {
         closable={false}
       >
         <p>
-          Bạn có chắc muốn xóa{" "}
-          <strong>{getName(selected ?? {})}</strong> không?
+          Bạn có chắc muốn xóa <strong>{getName(selected ?? {})}</strong> không?
         </p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>

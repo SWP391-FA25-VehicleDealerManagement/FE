@@ -17,11 +17,11 @@ export default function CreateCustomerModal({ isOpen, onClose, onSuccess }) {
     setIsLoading(true);
     try {
       const payload = {
-        dealerId,
+        dealerId: dealerId,
         customerName: values.customerName?.trim(),
-        email: values.email?.trim() || null,
+        email: values.email?.trim(),
         phone: values.phone?.trim(),
-        createBy: createdBy, 
+        createBy: createdBy,
       };
 
       await createCustomer(payload);
@@ -62,7 +62,12 @@ export default function CreateCustomerModal({ isOpen, onClose, onSuccess }) {
         />
       )}
 
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        autoComplete="off"
+      >
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -83,7 +88,11 @@ export default function CreateCustomerModal({ isOpen, onClose, onSuccess }) {
               label="Số điện thoại"
               rules={[
                 { required: true, message: "Vui lòng nhập SĐT!" },
-                { pattern: /^[0-9+\-\s()]+$/, message: "SĐT không hợp lệ!" },
+                {
+                  pattern: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/,
+                  message:
+                    "SĐT không hợp lệ! (VD: 0901234567 hoặc +84901234567)",
+                },
               ]}
             >
               <Input placeholder="Nhập số điện thoại" size="large" />
@@ -94,7 +103,10 @@ export default function CreateCustomerModal({ isOpen, onClose, onSuccess }) {
         <Form.Item
           name="email"
           label="Email (tuỳ chọn)"
-          rules={[{ type: "email", message: "Email không hợp lệ!" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập email!" },
+            { type: "email", message: "Email không hợp lệ!" },
+          ]}
         >
           <Input placeholder="Nhập email" size="large" />
         </Form.Item>

@@ -25,8 +25,14 @@ const { Title } = Typography;
 
 const ModelLists = () => {
   const navigate = useNavigate();
-  const { models, isLoading, fetchModels, createModel, deleteModelById } =
-    useModelStore();
+  const {
+    models,
+    isLoading,
+    fetchModels,
+    createModel,
+    deleteModelById,
+    isCreateModelLoading,
+  } = useModelStore();
   const [searchText, setSearchText] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -116,7 +122,7 @@ const ModelLists = () => {
         name: values.name,
         manufacturer: "Vinfast",
         year: values.year,
-        body_type: values.bodyType,
+        body_type: values.body_type,
         description: values.description,
       };
 
@@ -208,8 +214,16 @@ const ModelLists = () => {
       title: "Tên Model",
       dataIndex: "name",
       key: "name",
+      width: 150,
       ...getColumnSearchProps("name"),
       sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: "Kiểu dáng",
+      dataIndex: "body_type",
+      key: "body_type",
+      width: 200,
+      ...getColumnSearchProps("body_type"),
     },
     {
       title: "Mô Tả",
@@ -228,6 +242,20 @@ const ModelLists = () => {
           {text || "Không có mô tả"}
         </div>
       ),
+    },
+    {
+      title: "Năm sản xuất",
+      dataIndex: "year",
+      key: "year",
+      width: 150,
+      sorter: (a, b) => a.year - b.year,
+    },
+    {
+      title: "Hãng sản xuất",
+      dataIndex: "manufacturer",
+      key: "manufacturer",
+      width: 200,
+      ...getColumnSearchProps("manufacturer"),
     },
     {
       title: "Thao tác",
@@ -312,6 +340,7 @@ const ModelLists = () => {
         cancelText="Hủy"
         closable={false}
         width={600}
+        confirmLoading={isCreateModelLoading}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -320,6 +349,14 @@ const ModelLists = () => {
             rules={[{ required: true, message: "Vui lòng nhập tên model" }]}
           >
             <Input placeholder="Ví dụ: VF 8" />
+          </Form.Item>
+
+          <Form.Item
+            name="body_type"
+            label="Kiểu dáng"
+            rules={[{ required: true, message: "Vui lòng nhập kiểu dáng" }]}
+          >
+            <Input placeholder="Ví dụ: SUV, Sedan, Hatchback" />
           </Form.Item>
 
           <Form.Item
@@ -333,14 +370,6 @@ const ModelLists = () => {
               min={1900}
               max={2100}
             />
-          </Form.Item>
-
-          <Form.Item
-            name="bodyType"
-            label="Kiểu dáng"
-            rules={[{ required: true, message: "Vui lòng nhập kiểu dáng" }]}
-          >
-            <Input placeholder="Ví dụ: SUV, Sedan, Hatchback" />
           </Form.Item>
 
           <Form.Item

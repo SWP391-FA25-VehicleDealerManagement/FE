@@ -264,14 +264,14 @@ const Routes = () => {
         </Suspense>
       ),
     },
-    {
-      path: "/payment-callback",
-      element: (
-        <Suspense fallback={<Loading />}>
-          <PaymentCallbackPage />
-        </Suspense>
-      ),
-    },
+    // {
+    //   path: "/payment-callback",
+    //   element: (
+    //     <Suspense fallback={<Loading />}>
+    //       <PaymentCallbackPage />
+    //     </Suspense>
+    //   ),
+    // },
 
     // Admin routes
     {

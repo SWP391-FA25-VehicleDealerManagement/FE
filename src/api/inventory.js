@@ -9,12 +9,15 @@ const getDealerInventory = (id) => {
   return axiosClient.get(`/api/vehicles/dealer/${id}/stock`);
 };
 
-const recallInventory = (data) => {
-  return axiosClient.post(`/api/inventory/recall`, data);
+const recallInventory = ({ requestId, dealerId }) => {
+  return axiosClient.post(`/api/inventory/recall/${requestId}`, { dealerId });
 };
 
-const allocateInventory = (data) => {
-  return axiosClient.post(`/api/inventory/allocate`, data);
+const allocateInventory = ({ requestId, dealerId, items }) => {
+  return axiosClient.post(`/api/inventory/allocate/${requestId}`, {
+    dealerId,
+    items,
+  });
 };
 
 export {

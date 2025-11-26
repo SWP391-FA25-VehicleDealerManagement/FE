@@ -164,6 +164,13 @@ export default function RequestDetail() {
       ),
     },
     {
+      title: "Màu sắc",
+      dataIndex: "color",
+      key: "color",
+      width: 120,
+      render: (color) => <span>{color || "N/A"}</span>,
+    },
+    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
