@@ -19,6 +19,7 @@ import {
   FileTextOutlined,
   CreditCardOutlined,
   LeftOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -231,6 +232,23 @@ export default function DebtDetailPage() {
           .filter((s) => s.periodNo < record.periodNo)
           .every((s) => s.status === "PAID");
         
+        // ✅ Kiểm tra xem kỳ này có payment PENDING nào không
+        const hasPendingPayment = paymentHistory?.some(
+          (payment) =>
+            (payment.debtSchedule?.scheduleId === record.scheduleId ||
+             payment.scheduleId === record.scheduleId) &&
+            payment.status === "PENDING"
+        );
+        
+        // Nếu có payment đang chờ duyệt, hiển thị thông báo
+        if (hasPendingPayment) {
+          return (
+            <Tag color="orange" icon={<ClockCircleOutlined />}>
+              Chờ duyệt
+            </Tag>
+          );
+        }
+        
         // Chỉ hiển thị nút thanh toán nếu đủ điều kiện
         if (canPay && allPreviousPaid) {
           return (
@@ -254,7 +272,7 @@ export default function DebtDetailPage() {
               disabled
               title="Vui lòng thanh toán các kỳ trước"
             >
-              Chưa đến 
+              Chưa đến
             </Button>
           );
         }
