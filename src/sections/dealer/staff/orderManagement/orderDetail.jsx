@@ -176,10 +176,6 @@ export default function OrderDetail() {
     }
   }, [orderId, dealerId]);
 
-  const handleCancelOrder = useCallback(() => {
-    toast.warn(`Thực hiện huỷ đơn hàng ${orderId}`);
-  }, [orderId]);
-
   const getStatusTag = useCallback((status) => {
     let color = "processing";
     let text = status;
@@ -248,14 +244,6 @@ export default function OrderDetail() {
             disabled={isActionDisabled}
           >
             Thanh toán
-          </Button>
-          <Button
-            danger
-            icon={<CloseCircleOutlined />}
-            onClick={handleCancelOrder}
-            disabled={isActionDisabled || OrderInfo.status === "PENDING"}
-          >
-            Huỷ đơn
           </Button>
         </Space>
       </div>
