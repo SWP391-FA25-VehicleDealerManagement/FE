@@ -31,7 +31,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// Đây là trang mới hoàn toàn
 export default function DebtDetailPage() {
   const { userDetail } = useAuthen();
   const { debtId } = useParams();
@@ -232,7 +231,7 @@ export default function DebtDetailPage() {
           .filter((s) => s.periodNo < record.periodNo)
           .every((s) => s.status === "PAID");
         
-        // ✅ Kiểm tra xem kỳ này có payment PENDING nào không
+        // Kiểm tra xem kỳ này có payment PENDING nào không
         const hasPendingPayment = paymentHistory?.some(
           (payment) =>
             (payment.debtSchedule?.scheduleId === record.scheduleId ||
