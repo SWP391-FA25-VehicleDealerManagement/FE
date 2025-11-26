@@ -23,9 +23,6 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import useAuthen from "../../../../hooks/useAuthen";
-import useDealerOrder from "../../../../hooks/useDealerOrder";
-import { toast } from "react-toastify";
 import axiosClient from "../../../../config/axiosClient";
 
 const { Title, Text } = Typography;
@@ -33,18 +30,17 @@ const { Title, Text } = Typography;
 export default function Quote() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userDetail } = useAuthen();
-  const { createDealerOrder, isLoadingCreateOrder } = useDealerOrder();
   const [quoteData, setQuoteData] = useState(location.state?.quoteData || null);
-  const [isLoading, setIsLoading] = useState(false);
   const [vehicleImageUrls, setVehicleImageUrls] = useState({});
+
+  console.log("quote dâta", quoteData);
 
   useEffect(() => {
     let objectUrlsToRevoke = [];
     const fetchAllImages = async () => {
       if (quoteData?.items && quoteData.items.length > 0) {
         const pathsToFetch = quoteData.items
-          .map((item) => item.vehicle?.variantImage)
+          .map((item) => item.vehicle?.imageUrl)
           .filter(Boolean)
           .filter((path) => !vehicleImageUrls[path]);
         if (pathsToFetch.length === 0) return;
@@ -54,6 +50,7 @@ export default function Quote() {
               responseType: "blob",
             });
             const objectUrl = URL.createObjectURL(response.data);
+            console.log("check image url", objectUrl)
             objectUrlsToRevoke.push(objectUrl);
             return { path: imagePath, url: objectUrl };
           } catch (error) {
@@ -82,50 +79,6 @@ export default function Quote() {
     };
   }, [quoteData?.items?.length, vehicleImageUrls]);
 
-  // Hàm xử lý tạo đơn hàng
-  const handleCreateOrder = useCallback(async () => {
-    if (
-      !quoteData ||
-      !quoteData.customer ||
-      !quoteData.items ||
-      !userDetail?.dealer?.dealerId ||
-      !userDetail?.userId
-    ) {
-      toast.error("Thiếu thông tin để tạo đơn hàng.");
-      return;
-    }
-    setIsLoading(true);
-    const payload = {
-      customerId: quoteData.customer.customerId,
-      userId: userDetail.userId,
-      dealerId: userDetail.dealer.dealerId,
-      orderDetails: quoteData.items.map((item) => ({
-        vehicleId: item.vehicleId,
-        promotionId: null,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    };
-
-    try {
-      const response = await createDealerOrder(payload);
-      if (response && response.status === 200) {
-        toast.success("Tạo đơn hàng thành công!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        navigate("/dealer-staff/orders");
-      }
-      s;
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Tạo đơn hàng thất bại.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [quoteData, userDetail, createDealerOrder, navigate]);
 
   const itemColumns = useMemo(() => [
     {
@@ -133,12 +86,12 @@ export default function Quote() {
       key: "vehicle",
       render: (_, record) => {
         // Lấy URL ảnh từ state
-        const imageUrl = record.vehicle?.variantImage
-          ? vehicleImageUrls[record.vehicle.variantImage]
+        const imageUrl = record.vehicle?.imageUrl
+          ? vehicleImageUrls[record.vehicle.imageUrl]
           : null;
         const isImageLoading =
-          record.vehicle?.variantImage &&
-          !(record.vehicle.variantImage in vehicleImageUrls);
+          record.vehicle?.imageUrl &&
+          !(record.vehicle.imageUrl in vehicleImageUrls);
         return (
           <Space>
             <div

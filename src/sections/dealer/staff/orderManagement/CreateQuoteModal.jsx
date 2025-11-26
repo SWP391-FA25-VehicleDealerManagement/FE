@@ -129,7 +129,7 @@ export default function CreateQuoteModal({ isOpen, onClose }) {
           vinNumber: vehicle.vinNumber,
           color: vehicle.color,
           msrp: vehicle.price,
-          variantImage: vehicle.variantImage,
+          imageUrl: vehicle.imageUrl,
         },
       })),
       dealerInfo: {
